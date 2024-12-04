@@ -1,4 +1,5 @@
-import fs from "fs";
+
+import * as fs from 'fs';
 import { createPath} from '../../../util/generator-utils.js'
 import { MarkdownBacklogService } from "./MarkdownBacklogService.js";
 import { MarkdownTimeBoxService } from "./MarkdownTimeBoxService.js";

@@ -1,10 +1,10 @@
 import {IssuesDTO, Roadmap} from '../../../model/models.js'
-import path from "path";
+import * as path from 'path';
+import * as fs from 'fs';
 import { LowSync } from 'lowdb';
 import { JSONFileSync  } from 'lowdb/node';
 import { RoadmapReportGenerator } from "./report/RoadmapReportGenerator.js";
 
-import fs from "fs";
 
 export class MardownRoadmapService {
 
