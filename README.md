@@ -56,7 +56,8 @@ npm i made-report-lib
 import { ReportManager } from "./index";
 
 const report = new ReportManager ()
-report.createReport()
+const dbpath = "./example"
+report.createReport(dbpath)
 
 ```
 ## Referencia

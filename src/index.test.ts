@@ -3,6 +3,7 @@ import { ReportManager } from "./index";
 
 test("greet function", () => {
   const report = new ReportManager ()
-  report.createReport()
+  const dbpath = "./example"
+  report.createReport(dbpath)
   expect("World").toBe("World");
 });

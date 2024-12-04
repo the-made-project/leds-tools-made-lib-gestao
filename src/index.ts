@@ -2,8 +2,8 @@ import { MarkdownService } from "./documentation/service/markdown/MarkdownServic
 
 export class ReportManager {
 
-    public createReport(){
-        const markdownService = new MarkdownService("./example");
+    public createReport(dbPath: string){
+        const markdownService = new MarkdownService(dbPath);
         markdownService.createManagementDocumenation()
     }
 }
