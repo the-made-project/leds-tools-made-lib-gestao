@@ -1,0 +1,23 @@
+{
+  "name": "leds-tools-made-lib",
+  "version": "1.0.0",
+  "description": "Uma lib para gerar os gráficos do made",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/lowdb": "^1.0.15",
+    "@types/node": "^22.10.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "lowdb": "^7.0.1"
+  }
+}
