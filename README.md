@@ -46,9 +46,8 @@ A TypeScript library to generate agile metrics and reports in Markdown format, m
 ## 🛠 Installation
 
 ```bash
-npm install @made/metrics-generator
-# or
-yarn add @made/metrics-generator
+npm i made-report-lib
+
 ```
 
 ## 📖 How to Use
