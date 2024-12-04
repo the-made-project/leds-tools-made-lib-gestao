@@ -53,7 +53,7 @@ npm i made-report-lib
 ## 📖 How to Use
 
 ```typescript
-import { ReportManager } from "./index";
+import { ReportManager } from "made-report-lib"
 
 const report = new ReportManager ()
 const dbpath = "./example"
