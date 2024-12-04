@@ -41,7 +41,6 @@ A TypeScript library to generate agile metrics and reports in Markdown format, m
 #### Monte Carlo Simulation
 - Probabilistic delivery forecasts
 - Risk analysis
-- What-if scenarios
 - Confidence intervals for estimates
 
 ## 🛠 Installation
@@ -55,11 +54,14 @@ yarn add @made/metrics-generator
 ## 📖 How to Use
 
 ```typescript
+import { ReportManager } from "./index";
 
-
+const report = new ReportManager ()
+report.createReport()
 
 ```
-
+## Referencia
+* [How to Create Your Own TypeScript Library in 2024: A Step-by-Step Guide](https://simonboisset.com/blog/create-typescript-library-tsup)
 
 
 
