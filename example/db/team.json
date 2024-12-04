@@ -1,0 +1,26 @@
+{
+  "data": [
+    {
+      "id": "blackops",
+      "name": "Team Black Ops",
+      "description": "Equipe responsável por produzir artefatos de segurança",
+      "teammebers": [
+        {
+          "id": "rafaelemerick",
+          "name": "Rafael Emerick",
+          "email": "rafael.emerick@blackops.com.br"
+        },
+        {
+          "id": "joaomarcos",
+          "name": "João Marcos ",
+          "email": "joao.marcos@blackops.com.br"
+        },
+        {
+          "id": "Arthur",
+          "name": "Arthur Cremasco",
+          "email": "arthur.cremasco@blackops.com.br"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "data": [
+    {
+      "id": "spike.epic1",
+      "title": "Estudar sobre Autorização",
+      "description": "Estudo sobre autorização de usuários a recursos de redes",
+      "type": "epic",
+      "issues": [
+        {
+          "id": "spike.epic1.story1",
+          "title": "Estudar a arquitetura proposta pelo OPA",
+          "description": "",
+          "type": "atomicuserstory",
+          "issues": [
+            {
+              "id": "spike.epic1.story1.estudar",
+              "title": "Estudar sobre OPA",
+              "description": "",
+              "type": "taskbacklog",
+              "depends": []
+            },
+            {
+              "id": "spike.epic1.story1.apresentar",
+              "title": "Apresentar o estudo OPA",
+              "description": "",
+              "type": "taskbacklog",
+              "depends": [
+                {
+                  "id": "spike.epic1.story2.estudar"
+                },
+                {
+                  "id": "spike.epic1.story1.estudar"
+                }
+              ]
+            }
+          ],
+          "depends": []
+        },
+        {
+          "id": "spike.epic1.story2",
+          "title": "Estudar a arquitetura proposta pelo OpenFGA",
+          "description": "",
+          "type": "atomicuserstory",
+          "issues": [
+            {
+              "id": "spike.epic1.story2.estudar",
+              "title": "Estudar sobre OpenFGA",
+              "description": "",
+              "type": "taskbacklog",
+              "depends": []
+            },
+            {
+              "id": "spike.epic1.story2.apresentar",
+              "title": "Apresentar o estudo OpenFGA",
+              "description": "",
+              "type": "taskbacklog",
+              "depends": [
+                {
+                  "id": "spike.epic1.story2.estudar"
+                },
+                {
+                  "id": "spike.epic1.story1.estudar"
+                }
+              ]
+            }
+          ],
+          "depends": []
+        }
+      ],
+      "depends": []
+    }
+  ]
+}

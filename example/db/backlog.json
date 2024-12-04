@@ -1,0 +1,80 @@
+{
+  "data": [
+    {
+      "id": "Spike",
+      "name": "Backlog de Estudo",
+      "description": "Backlog dedicado a estudo da equipe",
+      "issues": [
+        {
+          "id": "Spike.epic1",
+          "title": "Estudar sobre Autorização",
+          "description": "Estudo sobre autorização de usuários a recursos de redes",
+          "type": "epic",
+          "issues": [
+            {
+              "id": "Spike.epic1.story1",
+              "title": "Estudar a arquitetura proposta pelo OPA",
+              "description": "",
+              "type": "atomicuserstory",
+              "issues": [
+                {
+                  "id": "Spike.epic1.story1.estudar",
+                  "title": "Estudar sobre OPA",
+                  "description": "",
+                  "type": "taskbacklog",
+                  "depends": []
+                },
+                {
+                  "id": "Spike.epic1.story1.apresentar",
+                  "title": "Apresentar o estudo OPA",
+                  "description": "",
+                  "type": "taskbacklog",
+                  "depends": [
+                    {
+                      "id": "spike.epic1.story2.estudar"
+                    },
+                    {
+                      "id": "spike.epic1.story1.estudar"
+                    }
+                  ]
+                }
+              ],
+              "depends": []
+            },
+            {
+              "id": "Spike.epic1.story2",
+              "title": "Estudar a arquitetura proposta pelo OpenFGA",
+              "description": "",
+              "type": "atomicuserstory",
+              "issues": [
+                {
+                  "id": "Spike.epic1.story2.estudar",
+                  "title": "Estudar sobre OpenFGA",
+                  "description": "",
+                  "type": "taskbacklog",
+                  "depends": []
+                },
+                {
+                  "id": "Spike.epic1.story2.apresentar",
+                  "title": "Apresentar o estudo OpenFGA",
+                  "description": "",
+                  "type": "taskbacklog",
+                  "depends": [
+                    {
+                      "id": "spike.epic1.story2.estudar"
+                    },
+                    {
+                      "id": "spike.epic1.story1.estudar"
+                    }
+                  ]
+                }
+              ],
+              "depends": []
+            }
+          ],
+          "depends": []
+        }
+      ]
+    }
+  ]
+}

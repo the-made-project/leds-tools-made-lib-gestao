@@ -1,4 +1,4 @@
-# Made Metrics Generator
+# Made Metrics Report
 
 A TypeScript library to generate agile metrics and reports in Markdown format, making it easy to visualize and analyze data from your agile process.
 
