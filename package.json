@@ -4,7 +4,9 @@
   "description": "Uma lib para gerar os gráficos do made",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc",
+    "start": "node dist/example/index.js"
   },
   "keywords": [],
   "author": "",

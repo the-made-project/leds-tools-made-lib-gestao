@@ -4,7 +4,7 @@ import path from "path";
 import { LowSync } from 'lowdb';
 import { JSONFileSync  } from 'lowdb/node';
 
-import {IssuesDTO,Project,TimeBox} from '../../../model/models.js'
+import {IssuesDTO,TimeBox} from '../../../model/models.js'
 import { ProjectMetricsGenerator } from "./chart/project/ProjectMetricsGenerator.js";
 import { BacklogMarkdownConverter } from "./report/BacklogReport.js";
 
