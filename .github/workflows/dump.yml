@@ -18,7 +18,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18.x'
+        node-version: '22.x'
         registry-url: 'https://registry.npmjs.org'
         
     - name: Configure Git
@@ -30,7 +30,7 @@ jobs:
       run: npm install
         
     - name: Build
-      run: npm run build # Ajuste para seu comando de build se for diferente
+      run: npm run build 
         
     - name: Bump version
       run: |
