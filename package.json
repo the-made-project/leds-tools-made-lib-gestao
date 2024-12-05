@@ -31,7 +31,8 @@
   "homepage": "https://github.com/your-username/my-ts-library#readme",
   "dependencies": {
     "@types/lowdb": "^1.0.15",
-    "lowdb": "^7.0.1"
+    "lowdb": "^7.0.1",
+    "url": "^0.11.4"
   },
   "devDependencies": {
     "tsup": "^8.3.5",
