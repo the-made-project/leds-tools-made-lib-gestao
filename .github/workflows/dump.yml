@@ -1,0 +1,47 @@
+name: Bump Version and Publish
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        registry-url: 'https://registry.npmjs.org'
+        
+    - name: Configure Git
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        
+    - name: Install dependencies
+      run: npm install
+        
+    - name: Build
+      run: npm run build # Ajuste para seu comando de build se for diferente
+        
+    - name: Bump version
+      run: |
+        npm version patch -m "Bump version to %s [skip ci]"
+        
+    - name: Push changes
+      run: |
+        git push
+        git push --tags
+        
+    - name: Publish to NPM
+      run: npm publish
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

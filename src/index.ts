@@ -6,6 +6,9 @@ export class ReportManager {
         const markdownService = new MarkdownService(dbPath);
         markdownService.createManagementDocumenation()
     }
-    
+    public createSprintSummary(dbPath: string){
+        const markdownService = new MarkdownService(dbPath);
+        return markdownService.createSprintSummary()
+    }
 }
   
