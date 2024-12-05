@@ -23,7 +23,6 @@ export class MarkdownService {
         
         this.markdownBacklogService = new MarkdownBacklogService(this.target_folder,this.DB_PATH)
         this.markdownTimeBoxService = new MarkdownTimeBoxService(this.target_folder, this.DB_PATH)
-
         this.markdownRoadmapService = new MardownRoadmapService(this.target_folder, this.DB_PATH)
         
     }
@@ -34,6 +33,11 @@ export class MarkdownService {
         this.markdownRoadmapService.create()
     }
 
+    public createSprintSummary(){
+        return this.markdownTimeBoxService.createSprintSummary()
+    }
+
+ 
     
      
 

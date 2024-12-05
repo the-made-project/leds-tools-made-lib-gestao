@@ -9,6 +9,7 @@ import { IssuesDTO, TimeBox} from '../../../model/models.js'
 import { CumulativeFlowDiagram } from './chart/sprint/CumulativeFlowDiagram.js';
 import { SprintMonteCarlo } from "./chart/sprint/MonteCarlo.js";
 import { ProjectDependencyAnalyzer } from "./chart/sprint/ProjectDependencyAnalyzer.js";
+import { SprintSummaryGenerator } from './sprint/SprintSummaryGenerator.js';
 
 export class MarkdownTimeBoxService {
 
@@ -142,7 +143,30 @@ export class MarkdownTimeBoxService {
             return Number(a.id) - Number(b.id);
         }); 
         
-    }  
+    }
+
+    protected async retrive_status_in_progress(database: string) {
+        const ISSUEPATH = path.join(this.DB_PATH, database);
+        
+        const adapter = new JSONFileSync<IssuesDTO>(ISSUEPATH);
+        const defaultData: IssuesDTO = { data: [] };
+    
+        const db = new LowSync<IssuesDTO>(adapter, defaultData);
+        await db.read();
+        
+        return db.data.data
+            .filter(sprint => sprint.status === 'IN_PROGRESS')
+            .sort((a, b) => {
+                return Number(a.id) - Number(b.id);
+            }); 
+    }
+
+    public async createSprintSummary(){
+        const sprints = await this.retrive_status_in_progress(this.jsonFile)
+        const generator = new SprintSummaryGenerator(sprints);
+        const summary = await generator.generateSprintsSummary();
+        return summary
+    }
 
    
 

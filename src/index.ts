@@ -6,5 +6,6 @@ export class ReportManager {
         const markdownService = new MarkdownService(dbPath);
         markdownService.createManagementDocumenation()
     }
+    
 }
   
