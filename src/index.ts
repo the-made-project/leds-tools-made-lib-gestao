@@ -10,5 +10,9 @@ export class ReportManager {
         const markdownService = new MarkdownService(dbPath);
         return markdownService.createSprintSummary()
     }
+    public createSprintSummaryReport(dbPath: string){
+        const markdownService = new MarkdownService(dbPath);
+        return markdownService.createSprintSumaryReport()
+    }
 }
   

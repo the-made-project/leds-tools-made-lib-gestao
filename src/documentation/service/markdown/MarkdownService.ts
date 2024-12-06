@@ -37,6 +37,11 @@ export class MarkdownService {
         return this.markdownTimeBoxService.createSprintSummary()
     }
 
+    public createSprintSumaryReport(){
+        return this.markdownTimeBoxService.createSprintSummaryReport()
+        
+    }
+
  
     
      

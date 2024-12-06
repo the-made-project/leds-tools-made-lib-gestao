@@ -1,11 +1,11 @@
 import { TimeBox, SprintItem } from "../../../../model/models";
-type SprintSummaryStats = {
+export type SprintSummaryStats = {
     total: number;
     statusCount: Record<string, number>;
     statusPercentage: Record<string, string>;
   }
   
-  type PersonSummary = {
+  export   type PersonSummary = {
     id: string;
     name: string;
     email: string;
@@ -23,7 +23,7 @@ type SprintSummaryStats = {
     }>;
   }
   
-  type SprintSummary = {
+  export   type SprintSummary = {
     id: string;
     name: string;
     description: string;
@@ -118,6 +118,80 @@ export class SprintSummaryGenerator {
           };
         });
     }
+
+    public createSprintDiscordMarkdown(sprints: SprintSummary[]): string {
+      // Função auxiliar para formatar o status
+      function getStatusEmoji(status: string): string {
+          const statusEmojis: Record<string, string> = {
+              'TODO': '🔵',
+              'IN_PROGRESS': '🟡',
+              'DONE': '🟢',
+              'BLOCKED': '🔴',
+              'CANCELLED': '⚫'
+          };
+          return statusEmojis[status] || '⚪';
+      }
+  
+      let markdown = '';
+      
+      sprints.forEach((sprint, index) => {
+          // Adiciona separador entre sprints (exceto para a primeira)
+          if (index > 0) {
+              markdown += '---\n\n';
+          }
+  
+          // Começa a construir o markdown para cada sprint
+          markdown += `# 🎯 Sprint: ${sprint.name}\n\n`;
+          
+          // Descrição
+          markdown += `> ${sprint.description}\n\n`;
+          
+          // Informações Gerais
+          markdown += `## 📋 Informações Gerais\n`;
+          markdown += `• **Período:** ${sprint.startDate} a ${sprint.endDate}\n`;
+          markdown += `• **Status:** ${getStatusEmoji(sprint.status)} ${sprint.status}\n`;
+          markdown += `• **Total de Tarefas:** ${sprint.stats.total}\n\n`;
+          
+          // Estatísticas
+          markdown += `## 📊 Estatísticas\n`;
+          Object.entries(sprint.stats.statusPercentage).forEach(([status, percentage]) => {
+              markdown += `${getStatusEmoji(status)} **${status}:** \`${percentage}\` (${sprint.stats.statusCount[status]} tarefas)\n`;
+          });
+          markdown += '\n';
+          
+          // Detalhes por pessoa
+          sprint.peopleStats.forEach(person => {
+              markdown += `## 👤 ${person.name}\n`;
+              markdown += `**Email:** ${person.email}\n`;
+              markdown += `**Total de Tarefas:** ${person.total}\n\n`;
+              
+              // Progresso da pessoa
+              markdown += `### Progresso\n`;
+              Object.entries(person.statusPercentage).forEach(([status, percentage]) => {
+                  markdown += `${getStatusEmoji(status)} **${status}:** \`${percentage}\`\n`;
+              });
+              markdown += '\n';
+              
+              // Lista de tarefas
+              markdown += `### Tarefas\n`;
+              person.items.forEach(item => {
+                  const dateInfo = [];
+                  if (item.startDate) dateInfo.push(`📅 ${item.startDate}`);
+                  if (item.dueDate) dateInfo.push(`⏰ ${item.dueDate}`);
+                  if (item.completedDate) dateInfo.push(`✅ ${item.completedDate}`);
+                  
+                  markdown += `${getStatusEmoji(item.status)} **${item.title}**\n`;
+                  if (dateInfo.length > 0) {
+                      markdown += `> ${dateInfo.join(' | ')}\n`;
+                  }
+              });
+              markdown += '\n';
+          });
+      });
+  
+      return markdown;
+  }
+  
   }
 
   

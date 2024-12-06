@@ -15,3 +15,11 @@ test("greet2 function", async () => {
   console.log (JSON.stringify(value))
   expect("World").toBe("World");
 });
+
+test("greet3 function", async () => {
+  const report = new ReportManager ()
+  const dbpath = "./example"
+  const value = await report.createSprintSummaryReport(dbpath)
+  console.log (JSON.stringify(value))
+  expect("World").toBe("World");
+});

@@ -9,7 +9,7 @@ import { IssuesDTO, TimeBox} from '../../../model/models.js'
 import { CumulativeFlowDiagram } from './chart/sprint/CumulativeFlowDiagram.js';
 import { SprintMonteCarlo } from "./chart/sprint/MonteCarlo.js";
 import { ProjectDependencyAnalyzer } from "./chart/sprint/ProjectDependencyAnalyzer.js";
-import { SprintSummaryGenerator } from './sprint/SprintSummaryGenerator.js';
+import { SprintSummary, SprintSummaryGenerator } from './sprint/SprintSummaryGenerator.js';
 
 export class MarkdownTimeBoxService {
 
@@ -168,6 +168,12 @@ export class MarkdownTimeBoxService {
         return summary
     }
 
+    public async createSprintSummaryReport(){
+        const sprints = await this.retrive_status_in_progress(this.jsonFile)
+        const generator = new SprintSummaryGenerator(sprints);
+        let summary: SprintSummary[] = await generator.generateSprintsSummary();
+        return await generator.createSprintDiscordMarkdown(summary)
+    }
    
 
 }
