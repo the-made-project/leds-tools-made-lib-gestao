@@ -132,6 +132,26 @@ export class SprintSummaryGenerator {
           return statusEmojis[status] || '⚪';
       }
   
+      // Função auxiliar para verificar se uma tarefa está atrasada
+      function isOverdue(item: PersonSummary['items'][0]): boolean {
+          if (!item.dueDate || item.status === 'DONE') return false;
+          const today = new Date();
+          const dueDate = new Date(item.dueDate);
+          return dueDate < today;
+      }
+  
+      // Função auxiliar para verificar se uma tarefa é do dia
+      function isToday(item: PersonSummary['items'][0]): boolean {
+          if (!item.dueDate) return false;
+          const today = new Date();
+          const dueDate = new Date(item.dueDate);
+          return (
+              dueDate.getDate() === today.getDate() &&
+              dueDate.getMonth() === today.getMonth() &&
+              dueDate.getFullYear() === today.getFullYear()
+          );
+      }
+  
       let markdown = '';
       
       sprints.forEach((sprint, index) => {
@@ -165,6 +185,28 @@ export class SprintSummaryGenerator {
               markdown += `**Email:** ${person.email}\n`;
               markdown += `**Total de Tarefas:** ${person.total}\n\n`;
               
+              // Tarefas Atrasadas
+              const overdueTasks = person.items.filter(isOverdue);
+              if (overdueTasks.length > 0) {
+                  markdown += `### ⚠️ Tarefas Atrasadas (${overdueTasks.length})\n`;
+                  overdueTasks.forEach(item => {
+                      markdown += `${getStatusEmoji(item.status)} **${item.title}**\n`;
+                      markdown += `> ⏰ Vencimento: ${item.dueDate}\n`;
+                  });
+                  markdown += '\n';
+              }
+  
+              // Tarefas do Dia
+              const todayTasks = person.items.filter(isToday);
+              if (todayTasks.length > 0) {
+                  markdown += `### 📅 Tarefas do Dia (${todayTasks.length})\n`;
+                  todayTasks.forEach(item => {
+                      markdown += `${getStatusEmoji(item.status)} **${item.title}**\n`;
+                      markdown += `> ⏰ Vencimento: ${item.dueDate}\n`;
+                  });
+                  markdown += '\n';
+              }
+              
               // Progresso da pessoa
               markdown += `### Progresso\n`;
               Object.entries(person.statusPercentage).forEach(([status, percentage]) => {
@@ -172,8 +214,8 @@ export class SprintSummaryGenerator {
               });
               markdown += '\n';
               
-              // Lista de tarefas
-              markdown += `### Tarefas\n`;
+              // Lista completa de tarefas
+              markdown += `### Todas as Tarefas\n`;
               person.items.forEach(item => {
                   const dateInfo = [];
                   if (item.startDate) dateInfo.push(`📅 ${item.startDate}`);
