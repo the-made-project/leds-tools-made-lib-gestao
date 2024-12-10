@@ -13,8 +13,7 @@ export class MardownRoadmapService {
     DB_PATH: string
     
     constructor ( target_folder:string, db_path:string){
-        this.target_folder = target_folder
-        //this.MANAGEMENT_PATH = createPath(this.target_folder,'management')        
+        this.target_folder = target_folder       
         this.jsonFile = "roadmap.json"
         this.DB_PATH = db_path
     }
