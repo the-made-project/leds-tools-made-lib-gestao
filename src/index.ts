@@ -1,7 +1,7 @@
 import { MarkdownService } from "./documentation/service/markdown/MarkdownService";
 
 export * from './model/models';
-
+export * from './documentation/service/markdown/MarkdownService'
 export class ReportManager {
 
     public createReport(dbPath: string){
