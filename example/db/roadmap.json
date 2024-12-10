@@ -2,55 +2,52 @@
   "data": [
     {
       "id": "projeto",
-      "name": "Rodmap do projeto",
-      "description": "Roadmap de todo do projeto",
+      "name": "Rodmap do BI",
+      "description": "Roadmap do BI",
       "milestones": [
         {
-          "id": "beta",
-          "name": "Primeira versão",
-          "description": "Contem apenas estudo das tecnologias do projeto",
-          "startDate": "20/11/2024",
-          "dueDate": "30/11/2024",
+          "id": "dashbolsaAlpha",
+          "name": "Versão de Dashboard com Bolsas",
+          "description": "Versão do Dashboard com a infraestrutura local",
+          "startDate": "01/12/2024",
+          "dueDate": "20/12/2024",
           "status": "IN_PROGRESS",
           "releases": [
             {
               "id": "beta",
               "version": "1.0",
               "name": "",
-              "description": "Estudo para entender as tecnologias",
-              "dueDate": "30/11/2024",
+              "description": "Implementar a versão base da infraestrutura local com dados do conecta fapes",
+              "dueDate": "20/12/2024",
               "status": "IN_DEVELOPMENT",
               "issues": [
                 {
-                  "id": ".epic1",
-                  "title": "Estudar sobre Autorização",
-                  "description": "Estudo sobre autorização de usuários a recursos de redes",
+                  "id": ".identificarobjetivo",
+                  "title": "Criar dashboard ligado a bolsas",
+                  "description": "Criar um dashboard com metricas sobre bolsas para apoiar a tomada de decisão",
                   "type": "epic",
                   "issues": [
                     {
-                      "id": ".epic1.story1",
-                      "title": "Estudar a arquitetura proposta pelo OPA",
-                      "description": "",
+                      "id": ".identificarobjetivo.identificarobjetivos",
+                      "title": "Identificar objetivos",
+                      "description": "Queremos identificar quais objetivos organizacionais estão relacionado a bolsa",
                       "type": "atomicuserstory",
                       "issues": [
                         {
-                          "id": ".epic1.story1.estudar",
-                          "title": "Estudar sobre OPA",
-                          "description": "",
+                          "id": ".identificarobjetivo.identificarobjetivos.entrevista",
+                          "title": "Entrevistar",
+                          "description": "Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa",
                           "type": "taskbacklog",
                           "depends": []
                         },
                         {
-                          "id": ".epic1.story1.apresentar",
-                          "title": "Apresentar o estudo OPA",
-                          "description": "",
+                          "id": ".identificarobjetivo.identificarobjetivos.validar",
+                          "title": "Validar dos da entrevista",
+                          "description": "Validar objetivos organizacionais",
                           "type": "taskbacklog",
                           "depends": [
                             {
-                              "id": "spike.epic1.story2.estudar"
-                            },
-                            {
-                              "id": "spike.epic1.story1.estudar"
+                              "id": "bi.identificarobjetivo.identificarobjetivos.entrevista"
                             }
                           ]
                         }
@@ -58,34 +55,74 @@
                       "depends": []
                     },
                     {
-                      "id": ".epic1.story2",
-                      "title": "Estudar a arquitetura proposta pelo OpenFGA",
-                      "description": "",
+                      "id": ".identificarobjetivo.identificarnecessidadeinformacao",
+                      "title": "Identificar as necessidades de informacao",
+                      "description": "Identificar quais informações são relevantes para responder os objetivos organizacionais",
                       "type": "atomicuserstory",
                       "issues": [
                         {
-                          "id": ".epic1.story2.estudar",
-                          "title": "Estudar sobre OpenFGA",
-                          "description": "",
-                          "type": "taskbacklog",
-                          "depends": []
-                        },
-                        {
-                          "id": ".epic1.story2.apresentar",
-                          "title": "Apresentar o estudo OpenFGA",
-                          "description": "",
+                          "id": ".identificarobjetivo.identificarnecessidadeinformacao.entrevista",
+                          "title": "Entrevistar",
+                          "description": "Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa",
                           "type": "taskbacklog",
                           "depends": [
                             {
-                              "id": "spike.epic1.story2.estudar"
-                            },
+                              "id": "bi.identificarobjetivo.identificarobjetivos.validar"
+                            }
+                          ]
+                        },
+                        {
+                          "id": ".identificarobjetivo.identificarnecessidadeinformacao.validar",
+                          "title": "Validar necessidade de informação",
+                          "description": "Validar as necessidade de informação",
+                          "type": "taskbacklog",
+                          "depends": [
                             {
-                              "id": "spike.epic1.story1.estudar"
+                              "id": "bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista"
                             }
                           ]
                         }
                       ],
-                      "depends": []
+                      "depends": [
+                        {
+                          "id": "bi.identificarobjetivo.identificarobjetivos"
+                        }
+                      ]
+                    },
+                    {
+                      "id": ".identificarobjetivo.definirmedidasindicadores",
+                      "title": "Identificar as Medidas e Indicadores",
+                      "description": "Identificar quais informações são as medidas e indicadores para as necessidades de informação",
+                      "type": "atomicuserstory",
+                      "issues": [
+                        {
+                          "id": ".identificarobjetivo.definirmedidasindicadores.pesquisar",
+                          "title": "Pesquisar sobre Medidas e Indicadores",
+                          "description": "Pesquisar sobre medidas e indicadores para atender a necessidade de informações",
+                          "type": "taskbacklog",
+                          "depends": [
+                            {
+                              "id": "bi.identificarobjetivo.identificarobjetivos.validar"
+                            }
+                          ]
+                        },
+                        {
+                          "id": ".identificarobjetivo.definirmedidasindicadores.validar",
+                          "title": "Validar as medidas e indicadores ",
+                          "description": "Validar medias e indicadores",
+                          "type": "taskbacklog",
+                          "depends": [
+                            {
+                              "id": "bi.identificarobjetivo.definirmedidasindicadores.pesquisar"
+                            }
+                          ]
+                        }
+                      ],
+                      "depends": [
+                        {
+                          "id": "bi.identificarobjetivo.identificarnecessidadeinformacao"
+                        }
+                      ]
                     }
                   ],
                   "depends": []
@@ -93,6 +130,24 @@
               ]
             }
           ]
+        },
+        {
+          "id": "dashbolsaAlpha",
+          "name": "Versão de Dashboard com Bolsas com OLAP",
+          "description": "Versão do Dashboard com a infraestrutura OLAP",
+          "startDate": "06/01/2025",
+          "dueDate": "30/01/2025",
+          "status": "PLANNED",
+          "releases": []
+        },
+        {
+          "id": "dashbolsaAlpha",
+          "name": "Versão de Dashboard com Bolsas com OLAP em Produção",
+          "description": "Versão do Dashboard com a infraestrutura OLAP em Produção",
+          "startDate": "01/02/2025",
+          "dueDate": "28/02/2025",
+          "status": "PLANNED",
+          "releases": []
         }
       ]
     }

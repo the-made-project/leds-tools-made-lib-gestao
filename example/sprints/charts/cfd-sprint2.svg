@@ -28,7 +28,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >2</text>
+              >10</text>
             
               <line 
                 x1="70" 
@@ -44,7 +44,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >2</text>
+              >9</text>
             
               <line 
                 x1="70" 
@@ -60,7 +60,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >2</text>
+              >8</text>
             
               <line 
                 x1="70" 
@@ -76,7 +76,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >1</text>
+              >7</text>
             
               <line 
                 x1="70" 
@@ -92,7 +92,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >1</text>
+              >6</text>
             
               <line 
                 x1="70" 
@@ -108,7 +108,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >1</text>
+              >5</text>
             
               <line 
                 x1="70" 
@@ -124,7 +124,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >1</text>
+              >4</text>
             
               <line 
                 x1="70" 
@@ -140,7 +140,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >1</text>
+              >3</text>
             
               <line 
                 x1="70" 
@@ -156,7 +156,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >0</text>
+              >2</text>
             
               <line 
                 x1="70" 
@@ -172,7 +172,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >0</text>
+              >1</text>
             
               <line 
                 x1="70" 
@@ -192,17 +192,17 @@
             
 
           <path 
-            d="M70,50 L168,50 L266,50 L364,50 L462,50 L560,50 L658,50 L756,50 L854,50 L952,50 L1050,50 L1050,500 L952,500 L854,500 L756,500 L658,500 L560,500 L462,500 L364,500 L266,500 L168,500 L70,500 Z" 
+            d="M70,50 L315,50 L560,50 L805,50 L1050,50 L1050,500 L805,500 L560,500 L315,500 L70,500 Z" 
             fill="#ef4444" 
             opacity="0.8"
           />
           <path 
-            d="M70,500 L168,500 L266,500 L364,500 L462,500 L560,500 L658,500 L756,500 L854,500 L952,500 L1050,500 L1050,500 L952,500 L854,500 L756,500 L658,500 L560,500 L462,500 L364,500 L266,500 L168,500 L70,500 Z" 
+            d="M70,275 L315,230 L560,140 L805,50 L1050,50 L1050,500 L805,500 L560,500 L315,500 L70,500 Z" 
             fill="#f59e0b" 
             opacity="0.8"
           />
           <path 
-            d="M70,500 L168,500 L266,500 L364,500 L462,500 L560,500 L658,500 L756,500 L854,500 L952,500 L1050,500 L1050,500 L952,500 L854,500 L756,500 L658,500 L560,500 L462,500 L364,500 L266,500 L168,500 L70,500 Z" 
+            d="M70,500 L315,500 L560,500 L805,500 L1050,500 L1050,500 L805,500 L560,500 L315,500 L70,500 Z" 
             fill="#22c55e" 
             opacity="0.8"
           />
@@ -231,39 +231,15 @@
                   y="520"
                   text-anchor="end"
                   class="axis"
-                >qua. 20/11</text>
+                >seg. 09/12</text>
               
                 <text 
-                  transform="rotate(-45 168 520)"
-                  x="168"
+                  transform="rotate(-45 315 520)"
+                  x="315"
                   y="520"
                   text-anchor="end"
                   class="axis"
-                >qui. 21/11</text>
-              
-                <text 
-                  transform="rotate(-45 266 520)"
-                  x="266"
-                  y="520"
-                  text-anchor="end"
-                  class="axis"
-                >sex. 22/11</text>
-              
-                <text 
-                  transform="rotate(-45 364 520)"
-                  x="364"
-                  y="520"
-                  text-anchor="end"
-                  class="axis"
-                >sáb. 23/11</text>
-              
-                <text 
-                  transform="rotate(-45 462 520)"
-                  x="462"
-                  y="520"
-                  text-anchor="end"
-                  class="axis"
-                >dom. 24/11</text>
+                >ter. 10/12</text>
               
                 <text 
                   transform="rotate(-45 560 520)"
@@ -271,39 +247,15 @@
                   y="520"
                   text-anchor="end"
                   class="axis"
-                >seg. 25/11</text>
+                >qua. 11/12</text>
               
                 <text 
-                  transform="rotate(-45 658 520)"
-                  x="658"
+                  transform="rotate(-45 805 520)"
+                  x="805"
                   y="520"
                   text-anchor="end"
                   class="axis"
-                >ter. 26/11</text>
-              
-                <text 
-                  transform="rotate(-45 756 520)"
-                  x="756"
-                  y="520"
-                  text-anchor="end"
-                  class="axis"
-                >qua. 27/11</text>
-              
-                <text 
-                  transform="rotate(-45 854 520)"
-                  x="854"
-                  y="520"
-                  text-anchor="end"
-                  class="axis"
-                >qui. 28/11</text>
-              
-                <text 
-                  transform="rotate(-45 952 520)"
-                  x="952"
-                  y="520"
-                  text-anchor="end"
-                  class="axis"
-                >sex. 29/11</text>
+                >qui. 12/12</text>
               
                 <text 
                   transform="rotate(-45 1050 520)"
@@ -311,7 +263,7 @@
                   y="520"
                   text-anchor="end"
                   class="axis"
-                >sáb. 30/11</text>
+                >sex. 13/12</text>
               
 
           <text 
@@ -334,7 +286,7 @@
             y="30" 
             text-anchor="middle" 
             class="title"
-          >Apresentar os estudos Autorizacao - Cumulative Flow Diagram</text>
+          >Levantar Infraestrutura de BI no LEDS - Cumulative Flow Diagram</text>
 
           <g transform="translate(1070, 50)">
             <rect width="15" height="15" fill="#ef4444" rx="2"/>
@@ -347,10 +299,10 @@
             <text x="25" y="62" class="legend">Concluído</text>
             
             <text x="0" y="90" class="value">
-              Período: 20/11/2024 - 30/11/2024
+              Período: 09/12/2024 - 13/12/2024
             </text>
             <text x="0" y="110" class="value">
-              Total de Issues: 2
+              Total de Issues: 10
             </text>
           </g>
         </svg>

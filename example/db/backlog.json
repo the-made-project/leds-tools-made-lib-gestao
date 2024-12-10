@@ -1,40 +1,51 @@
 {
   "data": [
     {
-      "id": "Spike",
-      "name": "Backlog de Estudo",
-      "description": "Backlog dedicado a estudo da equipe",
+      "id": "ideias",
+      "name": "Ideias a serem pensadas",
+      "description": "Backlog para ideias futuras e estudo",
       "issues": [
         {
-          "id": "Spike.epic1",
-          "title": "Estudar sobre Autorização",
-          "description": "Estudo sobre autorização de usuários a recursos de redes",
+          "id": "ideias.cdc",
+          "title": "Estudar CDC",
+          "description": "",
+          "type": "epic",
+          "depends": []
+        }
+      ]
+    },
+    {
+      "id": "BI",
+      "name": "Backlog do BI",
+      "description": "Backlog dedicado a equipe de BI",
+      "issues": [
+        {
+          "id": "BI.identificarobjetivo",
+          "title": "Criar dashboard ligado a bolsas",
+          "description": "Criar um dashboard com metricas sobre bolsas para apoiar a tomada de decisão",
           "type": "epic",
           "issues": [
             {
-              "id": "Spike.epic1.story1",
-              "title": "Estudar a arquitetura proposta pelo OPA",
-              "description": "",
+              "id": "BI.identificarobjetivo.identificarobjetivos",
+              "title": "Identificar objetivos",
+              "description": "Queremos identificar quais objetivos organizacionais estão relacionado a bolsa",
               "type": "atomicuserstory",
               "issues": [
                 {
-                  "id": "Spike.epic1.story1.estudar",
-                  "title": "Estudar sobre OPA",
-                  "description": "",
+                  "id": "BI.identificarobjetivo.identificarobjetivos.entrevista",
+                  "title": "Entrevistar",
+                  "description": "Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa",
                   "type": "taskbacklog",
                   "depends": []
                 },
                 {
-                  "id": "Spike.epic1.story1.apresentar",
-                  "title": "Apresentar o estudo OPA",
-                  "description": "",
+                  "id": "BI.identificarobjetivo.identificarobjetivos.validar",
+                  "title": "Validar dos da entrevista",
+                  "description": "Validar objetivos organizacionais",
                   "type": "taskbacklog",
                   "depends": [
                     {
-                      "id": "spike.epic1.story2.estudar"
-                    },
-                    {
-                      "id": "spike.epic1.story1.estudar"
+                      "id": "bi.identificarobjetivo.identificarobjetivos.entrevista"
                     }
                   ]
                 }
@@ -42,34 +53,194 @@
               "depends": []
             },
             {
-              "id": "Spike.epic1.story2",
-              "title": "Estudar a arquitetura proposta pelo OpenFGA",
-              "description": "",
+              "id": "BI.identificarobjetivo.identificarnecessidadeinformacao",
+              "title": "Identificar as necessidades de informacao",
+              "description": "Identificar quais informações são relevantes para responder os objetivos organizacionais",
               "type": "atomicuserstory",
               "issues": [
                 {
-                  "id": "Spike.epic1.story2.estudar",
-                  "title": "Estudar sobre OpenFGA",
-                  "description": "",
+                  "id": "BI.identificarobjetivo.identificarnecessidadeinformacao.entrevista",
+                  "title": "Entrevistar",
+                  "description": "Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa",
+                  "type": "taskbacklog",
+                  "depends": [
+                    {
+                      "id": "bi.identificarobjetivo.identificarobjetivos.validar"
+                    }
+                  ]
+                },
+                {
+                  "id": "BI.identificarobjetivo.identificarnecessidadeinformacao.validar",
+                  "title": "Validar necessidade de informação",
+                  "description": "Validar as necessidade de informação",
+                  "type": "taskbacklog",
+                  "depends": [
+                    {
+                      "id": "bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista"
+                    }
+                  ]
+                }
+              ],
+              "depends": [
+                {
+                  "id": "bi.identificarobjetivo.identificarobjetivos"
+                }
+              ]
+            },
+            {
+              "id": "BI.identificarobjetivo.definirmedidasindicadores",
+              "title": "Identificar as Medidas e Indicadores",
+              "description": "Identificar quais informações são as medidas e indicadores para as necessidades de informação",
+              "type": "atomicuserstory",
+              "issues": [
+                {
+                  "id": "BI.identificarobjetivo.definirmedidasindicadores.pesquisar",
+                  "title": "Pesquisar sobre Medidas e Indicadores",
+                  "description": "Pesquisar sobre medidas e indicadores para atender a necessidade de informações",
+                  "type": "taskbacklog",
+                  "depends": [
+                    {
+                      "id": "bi.identificarobjetivo.identificarobjetivos.validar"
+                    }
+                  ]
+                },
+                {
+                  "id": "BI.identificarobjetivo.definirmedidasindicadores.validar",
+                  "title": "Validar as medidas e indicadores ",
+                  "description": "Validar medias e indicadores",
+                  "type": "taskbacklog",
+                  "depends": [
+                    {
+                      "id": "bi.identificarobjetivo.definirmedidasindicadores.pesquisar"
+                    }
+                  ]
+                }
+              ],
+              "depends": [
+                {
+                  "id": "bi.identificarobjetivo.identificarnecessidadeinformacao"
+                }
+              ]
+            }
+          ],
+          "depends": []
+        },
+        {
+          "id": "BI.levantarinfraestruturaleds",
+          "title": "Levantar Infraestrutura de ETL",
+          "description": "Construir uma infraestrutura conectando o banco Conecta ao Stage Data e Power BI, com Apache Airflow.",
+          "type": "epic",
+          "issues": [
+            {
+              "id": "BI.levantarinfraestruturaleds.levantardatastage",
+              "title": "Configurar o banco Stage Data",
+              "description": "Configurar o banco de dados Stage Data para armazenar os dados extraídos do banco Conecta.",
+              "type": "atomicuserstory",
+              "issues": [
+                {
+                  "id": "BI.levantarinfraestruturaleds.levantardatastage.alinharcomdevops",
+                  "title": "Alinhar com a equipe de DevOps",
+                  "description": "Alinhar permissões e acessos do bnaco com a equipe de DevOps.",
                   "type": "taskbacklog",
                   "depends": []
                 },
                 {
-                  "id": "Spike.epic1.story2.apresentar",
-                  "title": "Apresentar o estudo OpenFGA",
-                  "description": "",
+                  "id": "BI.levantarinfraestruturaleds.levantardatastage.verificarfuncionamentodatastage",
+                  "title": "Verificar funcionamento do Stage Data",
+                  "description": "Testar a conectividade e validação do banco Stage Data",
                   "type": "taskbacklog",
                   "depends": [
                     {
-                      "id": "spike.epic1.story2.estudar"
-                    },
-                    {
-                      "id": "spike.epic1.story1.estudar"
+                      "id": "bi.levantarinfraestruturaleds.levantardatastage.alinharcomdevops"
                     }
                   ]
                 }
               ],
               "depends": []
+            },
+            {
+              "id": "BI.levantarinfraestruturaleds.configurarairflowetl",
+              "title": "Configurar o Airflow para pipelines ETL",
+              "description": "Configurar o Airflow para extrair dados do banco Conecta, transformá-los e carregá-los no banco Stage Data.",
+              "type": "atomicuserstory",
+              "issues": [
+                {
+                  "id": "BI.levantarinfraestruturaleds.configurarairflowetl.instalarconfigurarairflow",
+                  "title": "Instalar e configurar o Airflow",
+                  "description": "Instalar o Airflow e configurar conexões com os bancos Conecta e Stage Data.",
+                  "type": "taskbacklog",
+                  "depends": []
+                },
+                {
+                  "id": "BI.levantarinfraestruturaleds.configurarairflowetl.criardagsetl",
+                  "title": "Criar DAGs para pipelines ETL",
+                  "description": "Implementar DAGs básicas que realizam ETL entre os bancos Conecta e Stage Data.",
+                  "type": "taskbacklog",
+                  "depends": [
+                    {
+                      "id": "bi.levantarinfraestruturaleds.configurarairflowetl.instalarconfigurarairflow"
+                    }
+                  ]
+                },
+                {
+                  "id": "BI.levantarinfraestruturaleds.configurarairflowetl.testarpipelinesetl",
+                  "title": "Testar pipelines ETL",
+                  "description": "Executar e testar os pipelines criados.",
+                  "type": "taskbacklog",
+                  "depends": [
+                    {
+                      "id": "bi.levantarinfraestruturaleds.configurarairflowetl.criardagsetl"
+                    }
+                  ]
+                }
+              ],
+              "depends": [
+                {
+                  "id": "bi.levantarinfraestruturaleds.levantardatastage.verificarfuncionamentodatastage"
+                }
+              ]
+            },
+            {
+              "id": "BI.levantarinfraestruturaleds.conectarbancoaopowerbi",
+              "title": "Conectar banco Stage Data ao Power BI",
+              "description": "Integrar o banco Stage Data ao Power BI para criar relatórios baseados nos dados processados do Stage Data.",
+              "type": "atomicuserstory",
+              "issues": [
+                {
+                  "id": "BI.levantarinfraestruturaleds.conectarbancoaopowerbi.importardadosnopowerbi",
+                  "title": "Importar dados no Power BI",
+                  "description": "Configurar a conexão do Power BI com o banco Stage Data e importar dados.",
+                  "type": "taskbacklog",
+                  "depends": []
+                },
+                {
+                  "id": "BI.levantarinfraestruturaleds.conectarbancoaopowerbi.criarmodelopowerbi",
+                  "title": "Criar modelo de dados no Power BI",
+                  "description": "Configurar relacionamentos e transformações no Power BI para estruturar os dados para visualização.",
+                  "type": "taskbacklog",
+                  "depends": [
+                    {
+                      "id": "bi.levantarinfraestruturaleds.conectarbancoaopowerbi.importardadosnopowerbi"
+                    }
+                  ]
+                },
+                {
+                  "id": "BI.levantarinfraestruturaleds.conectarbancoaopowerbi.criarrelatoriospowerbi",
+                  "title": "Validar relatórios e gráficos no Power BI",
+                  "description": "Garantir que os relatórios e gráficos gerados no Power BI estão corretos e atendem aos requisitos do projeto.",
+                  "type": "taskbacklog",
+                  "depends": [
+                    {
+                      "id": "bi.levantarinfraestruturaleds.conectarbancoaopowerbi.criarmodelopowerbi"
+                    }
+                  ]
+                }
+              ],
+              "depends": [
+                {
+                  "id": "bi.levantarinfraestruturaleds.configurarairflowetl.testarpipelinesetl"
+                }
+              ]
             }
           ],
           "depends": []

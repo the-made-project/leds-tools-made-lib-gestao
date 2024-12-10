@@ -1,103 +1,379 @@
 {
   "data": [
     {
-      "id": "estudo",
-      "name": "Estudar Autorizacao",
-      "description": "Realizar estudos sobre autorizacao",
-      "startDate": "20/11/2024",
-      "endDate": "30/11/2024",
-      "status": "IN_PROGRESS",
+      "id": "sprin1",
+      "name": "Entender os objetivos organizacionais",
+      "description": "Entender os objetivos organizacionais da FAPES",
+      "startDate": "25/11/2024",
+      "endDate": "06/12/2024",
+      "status": "CLOSED",
       "sprintItems": [
         {
-          "id": "spike.epic1.story1.estudar",
+          "id": "bi.identificarobjetivo.identificarobjetivos.entrevista",
           "assignee": {
-            "id": "joaomarcos",
-            "name": "João Marcos ",
-            "email": "joao.marcos@blackops.com.br"
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
           },
           "issue": {
-            "id": "spike.epic1.story1.estudar",
-            "title": "Estudar sobre OPA",
-            "description": "",
+            "id": "bi.identificarobjetivo.identificarobjetivos.entrevista",
+            "title": "Entrevistar",
+            "description": "Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa",
             "type": "taskbacklog",
             "depends": []
           },
-          "dueDate": "30/11/2024",
+          "startDate": "25/11/2024",
+          "dueDate": "06/12/2024",
           "status": "TODO"
         },
         {
-          "id": "spike.epic1.story2.estudar",
+          "id": "bi.identificarobjetivo.identificarobjetivos.entrevista",
           "assignee": {
-            "id": "joaomarcos",
-            "name": "João Marcos ",
-            "email": "joao.marcos@blackops.com.br"
+            "id": "felipecostabeber",
+            "name": "Felipe Costabeber",
+            "email": "felipe.costabeber.s@gmail.com"
           },
           "issue": {
-            "id": "spike.epic1.story2.estudar",
-            "title": "Estudar sobre OpenFGA",
-            "description": "",
+            "id": "bi.identificarobjetivo.identificarobjetivos.entrevista",
+            "title": "Entrevistar",
+            "description": "Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa",
             "type": "taskbacklog",
             "depends": []
           },
-          "dueDate": "30/11/2024",
+          "startDate": "25/11/2024",
+          "dueDate": "06/12/2024",
+          "completedDate": "03/12/2024",
+          "status": "DONE"
+        },
+        {
+          "id": "bi.identificarobjetivo.identificarobjetivos.validar",
+          "assignee": {
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
+          },
+          "issue": {
+            "id": "bi.identificarobjetivo.identificarobjetivos.validar",
+            "title": "Validar dos da entrevista",
+            "description": "Validar objetivos organizacionais",
+            "type": "taskbacklog",
+            "depends": [
+              {
+                "id": "bi.identificarobjetivo.identificarobjetivos.entrevista"
+              }
+            ]
+          },
+          "startDate": "25/11/2024",
+          "dueDate": "06/12/2024",
+          "completedDate": "04/12/2024",
+          "status": "DONE"
+        },
+        {
+          "id": "bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista",
+          "assignee": {
+            "id": "felipecostabeber",
+            "name": "Felipe Costabeber",
+            "email": "felipe.costabeber.s@gmail.com"
+          },
+          "issue": {
+            "id": "bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista",
+            "title": "Entrevistar",
+            "description": "Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa",
+            "type": "taskbacklog",
+            "depends": [
+              {
+                "id": "bi.identificarobjetivo.identificarobjetivos.validar"
+              }
+            ]
+          },
+          "startDate": "25/11/2024",
+          "dueDate": "05/12/2024",
+          "completedDate": "03/12/2024",
+          "status": "DONE"
+        },
+        {
+          "id": "bi.identificarobjetivo.definirmedidasindicadores.pesquisar",
+          "assignee": {
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
+          },
+          "issue": {
+            "id": "bi.identificarobjetivo.definirmedidasindicadores.pesquisar",
+            "title": "Pesquisar sobre Medidas e Indicadores",
+            "description": "Pesquisar sobre medidas e indicadores para atender a necessidade de informações",
+            "type": "taskbacklog",
+            "depends": [
+              {
+                "id": "bi.identificarobjetivo.identificarobjetivos.validar"
+              }
+            ]
+          },
+          "startDate": "25/11/2024",
+          "dueDate": "06/12/2024",
+          "completedDate": "06/12/2024",
+          "status": "DONE"
+        },
+        {
+          "id": "bi.identificarobjetivo.identificarnecessidadeinformacao.validar",
+          "assignee": {
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
+          },
+          "issue": {
+            "id": "bi.identificarobjetivo.identificarnecessidadeinformacao.validar",
+            "title": "Validar necessidade de informação",
+            "description": "Validar as necessidade de informação",
+            "type": "taskbacklog",
+            "depends": [
+              {
+                "id": "bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista"
+              }
+            ]
+          },
+          "startDate": "25/11/2024",
+          "dueDate": "06/12/2024",
+          "status": "TODO"
+        },
+        {
+          "id": "bi.identificarobjetivo.definirmedidasindicadores.validar",
+          "assignee": {
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
+          },
+          "issue": {
+            "id": "bi.identificarobjetivo.definirmedidasindicadores.validar",
+            "title": "Validar as medidas e indicadores ",
+            "description": "Validar medias e indicadores",
+            "type": "taskbacklog",
+            "depends": [
+              {
+                "id": "bi.identificarobjetivo.definirmedidasindicadores.pesquisar"
+              }
+            ]
+          },
+          "startDate": "25/11/2024",
+          "dueDate": "06/12/2024",
           "status": "TODO"
         }
       ]
     },
     {
-      "id": "apresentar",
-      "name": "Apresentar os estudos Autorizacao",
-      "description": "Apresentar estudos sobre OPA e openFGA",
-      "startDate": "20/11/2024",
-      "endDate": "30/11/2024",
-      "status": "PLANNED",
+      "id": "sprint2",
+      "name": "Levantar Infraestrutura de BI no LEDS",
+      "description": "Levantar a infraestrutura de BI no LEDS, contendo o banco Stage Data, Apache Airflow e Power BI conectados.",
+      "startDate": "09/12/2024",
+      "endDate": "13/12/2024",
+      "status": "IN_PROGRESS",
       "sprintItems": [
         {
-          "id": "spike.epic1.story2.apresentar",
+          "id": "bi.identificarobjetivo.identificarnecessidadeinformacao.validar",
           "assignee": {
-            "id": "joaomarcos",
-            "name": "João Marcos ",
-            "email": "joao.marcos@blackops.com.br"
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
           },
           "issue": {
-            "id": "spike.epic1.story2.apresentar",
-            "title": "Apresentar o estudo OpenFGA",
-            "description": "",
+            "id": "bi.identificarobjetivo.identificarnecessidadeinformacao.validar",
+            "title": "Validar necessidade de informação",
+            "description": "Validar as necessidade de informação",
             "type": "taskbacklog",
             "depends": [
               {
-                "id": "spike.epic1.story2.estudar"
-              },
-              {
-                "id": "spike.epic1.story1.estudar"
+                "id": "bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista"
               }
             ]
           },
-          "dueDate": "30/11/2024",
+          "startDate": "09/12/2024",
+          "dueDate": "10/12/2024",
           "status": "TODO"
         },
         {
-          "id": "spike.epic1.story1.apresentar",
+          "id": "bi.identificarobjetivo.definirmedidasindicadores.validar",
           "assignee": {
-            "id": "joaomarcos",
-            "name": "João Marcos ",
-            "email": "joao.marcos@blackops.com.br"
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
           },
           "issue": {
-            "id": "spike.epic1.story1.apresentar",
-            "title": "Apresentar o estudo OPA",
-            "description": "",
+            "id": "bi.identificarobjetivo.definirmedidasindicadores.validar",
+            "title": "Validar as medidas e indicadores ",
+            "description": "Validar medias e indicadores",
             "type": "taskbacklog",
             "depends": [
               {
-                "id": "spike.epic1.story2.estudar"
-              },
-              {
-                "id": "spike.epic1.story1.estudar"
+                "id": "bi.identificarobjetivo.definirmedidasindicadores.pesquisar"
               }
             ]
           },
-          "dueDate": "30/11/2024",
+          "startDate": "09/12/2024",
+          "dueDate": "10/12/2024",
+          "status": "TODO"
+        },
+        {
+          "id": "bi.levantarinfraestruturaleds.levantardatastage.alinharcomdevops",
+          "assignee": {
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
+          },
+          "issue": {
+            "id": "bi.levantarinfraestruturaleds.levantardatastage.alinharcomdevops",
+            "title": "Alinhar com a equipe de DevOps",
+            "description": "Alinhar permissões e acessos do bnaco com a equipe de DevOps.",
+            "type": "taskbacklog",
+            "depends": []
+          },
+          "startDate": "10/12/2024",
+          "dueDate": "10/12/2024",
+          "status": "TODO"
+        },
+        {
+          "id": "bi.levantarinfraestruturaleds.levantardatastage.verificarfuncionamentodatastage",
+          "assignee": {
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
+          },
+          "issue": {
+            "id": "bi.levantarinfraestruturaleds.levantardatastage.verificarfuncionamentodatastage",
+            "title": "Verificar funcionamento do Stage Data",
+            "description": "Testar a conectividade e validação do banco Stage Data",
+            "type": "taskbacklog",
+            "depends": [
+              {
+                "id": "bi.levantarinfraestruturaleds.levantardatastage.alinharcomdevops"
+              }
+            ]
+          },
+          "startDate": "09/12/2024",
+          "dueDate": "10/12/2024",
+          "status": "TODO"
+        },
+        {
+          "id": "bi.levantarinfraestruturaleds.configurarairflowetl.instalarconfigurarairflow",
+          "assignee": {
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
+          },
+          "issue": {
+            "id": "bi.levantarinfraestruturaleds.configurarairflowetl.instalarconfigurarairflow",
+            "title": "Instalar e configurar o Airflow",
+            "description": "Instalar o Airflow e configurar conexões com os bancos Conecta e Stage Data.",
+            "type": "taskbacklog",
+            "depends": []
+          },
+          "startDate": "11/12/2024",
+          "dueDate": "11/12/2024",
+          "status": "TODO"
+        },
+        {
+          "id": "bi.levantarinfraestruturaleds.configurarairflowetl.criardagsetl",
+          "assignee": {
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
+          },
+          "issue": {
+            "id": "bi.levantarinfraestruturaleds.configurarairflowetl.criardagsetl",
+            "title": "Criar DAGs para pipelines ETL",
+            "description": "Implementar DAGs básicas que realizam ETL entre os bancos Conecta e Stage Data.",
+            "type": "taskbacklog",
+            "depends": [
+              {
+                "id": "bi.levantarinfraestruturaleds.configurarairflowetl.instalarconfigurarairflow"
+              }
+            ]
+          },
+          "startDate": "11/12/2024",
+          "dueDate": "12/12/2024",
+          "status": "TODO"
+        },
+        {
+          "id": "bi.levantarinfraestruturaleds.configurarairflowetl.testarpipelinesetl",
+          "assignee": {
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
+          },
+          "issue": {
+            "id": "bi.levantarinfraestruturaleds.configurarairflowetl.testarpipelinesetl",
+            "title": "Testar pipelines ETL",
+            "description": "Executar e testar os pipelines criados.",
+            "type": "taskbacklog",
+            "depends": [
+              {
+                "id": "bi.levantarinfraestruturaleds.configurarairflowetl.criardagsetl"
+              }
+            ]
+          },
+          "startDate": "12/12/2024",
+          "dueDate": "12/12/2024",
+          "status": "TODO"
+        },
+        {
+          "id": "bi.levantarinfraestruturaleds.conectarbancoaopowerbi.importardadosnopowerbi",
+          "assignee": {
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
+          },
+          "issue": {
+            "id": "bi.levantarinfraestruturaleds.conectarbancoaopowerbi.importardadosnopowerbi",
+            "title": "Importar dados no Power BI",
+            "description": "Configurar a conexão do Power BI com o banco Stage Data e importar dados.",
+            "type": "taskbacklog",
+            "depends": []
+          },
+          "startDate": "12/12/2024",
+          "dueDate": "12/12/2024",
+          "status": "TODO"
+        },
+        {
+          "id": "bi.levantarinfraestruturaleds.conectarbancoaopowerbi.criarmodelopowerbi",
+          "assignee": {
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
+          },
+          "issue": {
+            "id": "bi.levantarinfraestruturaleds.conectarbancoaopowerbi.criarmodelopowerbi",
+            "title": "Criar modelo de dados no Power BI",
+            "description": "Configurar relacionamentos e transformações no Power BI para estruturar os dados para visualização.",
+            "type": "taskbacklog",
+            "depends": [
+              {
+                "id": "bi.levantarinfraestruturaleds.conectarbancoaopowerbi.importardadosnopowerbi"
+              }
+            ]
+          },
+          "startDate": "09/12/2024",
+          "dueDate": "13/12/2024",
+          "status": "TODO"
+        },
+        {
+          "id": "bi.levantarinfraestruturaleds.conectarbancoaopowerbi.criarrelatoriospowerbi",
+          "assignee": {
+            "id": "mateuslannes",
+            "name": "Mateus Lannes ",
+            "email": "mateuslannes@gmail.com"
+          },
+          "issue": {
+            "id": "bi.levantarinfraestruturaleds.conectarbancoaopowerbi.criarrelatoriospowerbi",
+            "title": "Validar relatórios e gráficos no Power BI",
+            "description": "Garantir que os relatórios e gráficos gerados no Power BI estão corretos e atendem aos requisitos do projeto.",
+            "type": "taskbacklog",
+            "depends": [
+              {
+                "id": "bi.levantarinfraestruturaleds.conectarbancoaopowerbi.criarmodelopowerbi"
+              }
+            ]
+          },
+          "startDate": "09/12/2024",
+          "dueDate": "13/12/2024",
           "status": "TODO"
         }
       ]

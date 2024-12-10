@@ -1,27 +1,27 @@
 # 📊 Visão Geral do Projeto 
 
-Modulo responsável pela autenticação, autorização e rastreio do usuário no sistema
-* Data de Início: 22/11/2022
-* Data de Planejado: 30/11/2022
+Dashboard de BI do Conecta Fapes
+* Data de Início: 01/12/2024
+* Data de Planejado: 28/02/2025
 * Data de Finalização: 
 
-Modulo responsável pela autenticação, autorização e rastreio do usuário no sistema
+Dashboard de BI do Conecta Fapes
 ## Métricas Consolidadas
 
 | Sprint | Período | Duração | Total Tasks | Concluídas | Em Progresso | Pendentes | Velocidade | Eficiência |
 |--------|---------|----------|-------------|------------|--------------|-----------|------------|------------|
-| Estudar Autorizacao | 19/11 - 29/11 | 10 dias | 2 | 0 (0.0%) | 0 | 2 | 0/dia | 0.0% |
-| Apresentar os estudos Autorizacao | 19/11 - 29/11 | 10 dias | 2 | 0 (0.0%) | 0 | 2 | 0/dia | 0.0% |
+| Entender os objetivos organizacionais | 24/11 - 05/12 | 11 dias | 7 | 4 (57.1%) | 3 | 0 | 0.36/dia | 57.1% |
+| Levantar Infraestrutura de BI no LEDS | 08/12 - 12/12 | 4 dias | 10 | 0 (0.0%) | 10 | 0 | 0/dia | 0.0% |
 
 ## Análise Geral
 
 - **Total de Sprints:** 2
-- **Total de Tasks:** 4
-- **Taxa de Conclusão:** 0.0%
+- **Total de Tasks:** 17
+- **Taxa de Conclusão:** 23.5%
 
 ### Notas
-- Período Total: 19/11 - 29/11
-- Média de Duração das Sprints: 10 dias
+- Período Total: 24/11 - 12/12
+- Média de Duração das Sprints: 8 dias
 
 *Última atualização: dezembro de 2024*
 
@@ -34,41 +34,49 @@ Modulo responsável pela autenticação, autorização e rastreio do usuário no
 
 ## 🎯 Conclusão Principal
 
-### ✅ PROJETO PROVAVELMENTE SERÁ CONCLUÍDO NO PRAZO
+### ❌ ALTO RISCO DE ATRASO NO PROJETO
 
-- **Probabilidade de conclusão no prazo**: 100.0%
-- **Data mais provável de conclusão**: qua., 11/12/2024
-- **Dias em relação ao planejado**: 12 dias
+- **Probabilidade de conclusão no prazo**: 18.5%
+- **Data mais provável de conclusão**: qua., 18/12/2024
+- **Dias em relação ao planejado**: 6 dias
 - **Status**: ⚠️ Atraso Moderado
 
 ### 📊 Métricas do Projeto
 
 | Métrica | Valor | Status |
 |---------|--------|--------|
-| Velocidade Atual | 1.0 tarefas/dia | ❌ |
-| Velocidade Necessária | 4.0 tarefas/dia | - |
-| Dias Restantes | 1 dias | - |
-| Tarefas Restantes | 4 tarefas | - |
+| Velocidade Atual | 2.0 tarefas/dia | ❌ |
+| Velocidade Necessária | 4.3 tarefas/dia | - |
+| Dias Restantes | 3 dias | - |
+| Tarefas Restantes | 13 tarefas | - |
 
 ### 📅 Previsões de Data de Conclusão
 
 | Data | Probabilidade | Status | Observação |
 |------|---------------|---------|------------|
-| qua., 11/12/2024 | 100.0% | ⚠️ Atraso Moderado | 📍 Data mais provável |
+| seg., 16/12/2024 | 18.5% | ⚠️ Pequeno Atraso |  |
+| ter., 17/12/2024 | 16.2% | ⚠️ Pequeno Atraso |  |
+| qua., 18/12/2024 | 43.1% | ⚠️ Atraso Moderado | 📍 Data mais provável |
+| qui., 19/12/2024 | 7.8% | ⚠️ Atraso Moderado |  |
+| sex., 20/12/2024 | 12.4% | ⚠️ Atraso Moderado |  |
+| seg., 23/12/2024 | 0.8% | ⚠️ Atraso Moderado |  |
+| ter., 24/12/2024 | 1.1% | ⚠️ Atraso Moderado |  |
+| qua., 25/12/2024 | 0.1% | ⚠️ Atraso Moderado |  |
+| qui., 26/12/2024 | 0.0% | ⚠️ Atraso Moderado |  |
 
 ## 💡 Recomendações
 
-1. ✅ Manter o ritmo atual de 1.0 tarefas/dia
-2. ✅ Continuar monitorando impedimentos
-3. ✅ Planejar próximas sprints com antecedência
+1. ❌ Realizar reunião de emergência
+2. ❌ Reavaliar escopo do projeto
+3. ❌ Considerar adição de recursos ou redução de escopo
 
 ## ℹ️ Informações do Projeto
 
 - **Total de Sprints**: 2
-- **Início**: qua., 20/11/2024
-- **Término Planejado**: sáb., 30/11/2024
-- **Total de Tarefas**: 4
+- **Início**: seg., 25/11/2024
+- **Término Planejado**: sex., 13/12/2024
+- **Total de Tarefas**: 17
 - **Simulações Realizadas**: 10,000
 
 ---
-*Relatório gerado em 06/12/2024, 19:36:30*
+*Relatório gerado em 10/12/2024, 14:09:35*

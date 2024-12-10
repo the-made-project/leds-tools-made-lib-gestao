@@ -28,7 +28,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >4</text>
+              >17</text>
             
               <line 
                 x1="70" 
@@ -44,7 +44,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >4</text>
+              >15</text>
             
               <line 
                 x1="70" 
@@ -60,7 +60,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >3</text>
+              >14</text>
             
               <line 
                 x1="70" 
@@ -76,7 +76,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >3</text>
+              >12</text>
             
               <line 
                 x1="70" 
@@ -92,7 +92,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >2</text>
+              >10</text>
             
               <line 
                 x1="70" 
@@ -108,7 +108,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >2</text>
+              >9</text>
             
               <line 
                 x1="70" 
@@ -124,7 +124,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >2</text>
+              >7</text>
             
               <line 
                 x1="70" 
@@ -140,7 +140,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >1</text>
+              >5</text>
             
               <line 
                 x1="70" 
@@ -156,7 +156,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >1</text>
+              >3</text>
             
               <line 
                 x1="70" 
@@ -172,7 +172,7 @@
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >0</text>
+              >2</text>
             
               <line 
                 x1="70" 
@@ -211,290 +211,35 @@
           
                 <g>
                   <rect 
-                    x="78.9090909090909" 
-                    y="50" 
-                    width="50" 
-                    height="450" 
+                    x="75.15789473684211" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
+                    height="79.41176470588235" 
                     fill="#ef4444"
                     rx="4"
                   />
                   
                   <rect 
-                    x="78.9090909090909" 
-                    y="50" 
-                    width="50" 
+                    x="75.15789473684211" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
                     height="0" 
                     fill="#f59e0b"
                     rx="4"
                   />
                   
                   <rect 
-                    x="78.9090909090909" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
+                    x="75.15789473684211" 
+                    y="314.7058823529412" 
+                    width="41.26315789473685" 
+                    height="105.88235294117646" 
                     fill="#22c55e"
                     rx="4"
                   />
                   
                   <text 
-                    transform="rotate(-45 103.9090909090909 520)" 
-                    x="103.9090909090909" 
-                    y="520" 
-                    text-anchor="end" 
-                    class="axis"
-                  >qua. 20/11</text>
-                  
-                  
-                    <text 
-                      x="103.9090909090909" 
-                      y="275" 
-                      text-anchor="middle" 
-                      class="value"
-                      fill="white"
-                    >4</text>
-                  
-                  
-                  
-                  
-                  
-                </g>
-              
-                <g>
-                  <rect 
-                    x="168" 
-                    y="50" 
-                    width="50" 
-                    height="450" 
-                    fill="#ef4444"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="168" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#f59e0b"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="168" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#22c55e"
-                    rx="4"
-                  />
-                  
-                  <text 
-                    transform="rotate(-45 193 520)" 
-                    x="193" 
-                    y="520" 
-                    text-anchor="end" 
-                    class="axis"
-                  >qui. 21/11</text>
-                  
-                  
-                    <text 
-                      x="193" 
-                      y="275" 
-                      text-anchor="middle" 
-                      class="value"
-                      fill="white"
-                    >4</text>
-                  
-                  
-                  
-                  
-                  
-                </g>
-              
-                <g>
-                  <rect 
-                    x="257.0909090909091" 
-                    y="50" 
-                    width="50" 
-                    height="450" 
-                    fill="#ef4444"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="257.0909090909091" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#f59e0b"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="257.0909090909091" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#22c55e"
-                    rx="4"
-                  />
-                  
-                  <text 
-                    transform="rotate(-45 282.0909090909091 520)" 
-                    x="282.0909090909091" 
-                    y="520" 
-                    text-anchor="end" 
-                    class="axis"
-                  >sex. 22/11</text>
-                  
-                  
-                    <text 
-                      x="282.0909090909091" 
-                      y="275" 
-                      text-anchor="middle" 
-                      class="value"
-                      fill="white"
-                    >4</text>
-                  
-                  
-                  
-                  
-                  
-                </g>
-              
-                <g>
-                  <rect 
-                    x="346.1818181818182" 
-                    y="50" 
-                    width="50" 
-                    height="450" 
-                    fill="#ef4444"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="346.1818181818182" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#f59e0b"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="346.1818181818182" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#22c55e"
-                    rx="4"
-                  />
-                  
-                  <text 
-                    transform="rotate(-45 371.1818181818182 520)" 
-                    x="371.1818181818182" 
-                    y="520" 
-                    text-anchor="end" 
-                    class="axis"
-                  >sáb. 23/11</text>
-                  
-                  
-                    <text 
-                      x="371.1818181818182" 
-                      y="275" 
-                      text-anchor="middle" 
-                      class="value"
-                      fill="white"
-                    >4</text>
-                  
-                  
-                  
-                  
-                  
-                </g>
-              
-                <g>
-                  <rect 
-                    x="435.2727272727273" 
-                    y="50" 
-                    width="50" 
-                    height="450" 
-                    fill="#ef4444"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="435.2727272727273" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#f59e0b"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="435.2727272727273" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#22c55e"
-                    rx="4"
-                  />
-                  
-                  <text 
-                    transform="rotate(-45 460.2727272727273 520)" 
-                    x="460.2727272727273" 
-                    y="520" 
-                    text-anchor="end" 
-                    class="axis"
-                  >dom. 24/11</text>
-                  
-                  
-                    <text 
-                      x="460.2727272727273" 
-                      y="275" 
-                      text-anchor="middle" 
-                      class="value"
-                      fill="white"
-                    >4</text>
-                  
-                  
-                  
-                  
-                  
-                </g>
-              
-                <g>
-                  <rect 
-                    x="524.3636363636364" 
-                    y="50" 
-                    width="50" 
-                    height="450" 
-                    fill="#ef4444"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="524.3636363636364" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#f59e0b"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="524.3636363636364" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#22c55e"
-                    rx="4"
-                  />
-                  
-                  <text 
-                    transform="rotate(-45 549.3636363636364 520)" 
-                    x="549.3636363636364" 
+                    transform="rotate(-45 95.78947368421053 520)" 
+                    x="95.78947368421053" 
                     y="520" 
                     text-anchor="end" 
                     class="axis"
@@ -502,101 +247,58 @@
                   
                   
                     <text 
-                      x="549.3636363636364" 
-                      y="275" 
+                      x="95.78947368421053" 
+                      y="460.29411764705884" 
                       text-anchor="middle" 
                       class="value"
                       fill="white"
-                    >4</text>
+                    >3</text>
                   
                   
                   
-                  
-                  
-                </g>
-              
-                <g>
-                  <rect 
-                    x="613.4545454545454" 
-                    y="50" 
-                    width="50" 
-                    height="450" 
-                    fill="#ef4444"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="613.4545454545454" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#f59e0b"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="613.4545454545454" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#22c55e"
-                    rx="4"
-                  />
-                  
-                  <text 
-                    transform="rotate(-45 638.4545454545454 520)" 
-                    x="638.4545454545454" 
-                    y="520" 
-                    text-anchor="end" 
-                    class="axis"
-                  >ter. 26/11</text>
                   
                   
                     <text 
-                      x="638.4545454545454" 
-                      y="275" 
+                      x="95.78947368421053" 
+                      y="367.64705882352945" 
                       text-anchor="middle" 
                       class="value"
                       fill="white"
                     >4</text>
                   
-                  
-                  
-                  
-                  
                 </g>
               
                 <g>
                   <rect 
-                    x="702.5454545454545" 
-                    y="50" 
-                    width="50" 
-                    height="450" 
+                    x="178.31578947368422" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
+                    height="79.41176470588235" 
                     fill="#ef4444"
                     rx="4"
                   />
                   
                   <rect 
-                    x="702.5454545454545" 
-                    y="50" 
-                    width="50" 
+                    x="178.31578947368422" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
                     height="0" 
                     fill="#f59e0b"
                     rx="4"
                   />
                   
                   <rect 
-                    x="702.5454545454545" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
+                    x="178.31578947368422" 
+                    y="314.7058823529412" 
+                    width="41.26315789473685" 
+                    height="105.88235294117646" 
                     fill="#22c55e"
                     rx="4"
                   />
                   
                   <text 
-                    transform="rotate(-45 727.5454545454545 520)" 
-                    x="727.5454545454545" 
+                    transform="rotate(-45 198.94736842105266 520)" 
+                    x="198.94736842105266" 
                     y="520" 
                     text-anchor="end" 
                     class="axis"
@@ -604,101 +306,58 @@
                   
                   
                     <text 
-                      x="727.5454545454545" 
-                      y="275" 
+                      x="198.94736842105266" 
+                      y="460.29411764705884" 
                       text-anchor="middle" 
                       class="value"
                       fill="white"
-                    >4</text>
+                    >3</text>
                   
                   
                   
-                  
-                  
-                </g>
-              
-                <g>
-                  <rect 
-                    x="791.6363636363636" 
-                    y="50" 
-                    width="50" 
-                    height="450" 
-                    fill="#ef4444"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="791.6363636363636" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#f59e0b"
-                    rx="4"
-                  />
-                  
-                  <rect 
-                    x="791.6363636363636" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
-                    fill="#22c55e"
-                    rx="4"
-                  />
-                  
-                  <text 
-                    transform="rotate(-45 816.6363636363636 520)" 
-                    x="816.6363636363636" 
-                    y="520" 
-                    text-anchor="end" 
-                    class="axis"
-                  >qui. 28/11</text>
                   
                   
                     <text 
-                      x="816.6363636363636" 
-                      y="275" 
+                      x="198.94736842105266" 
+                      y="367.64705882352945" 
                       text-anchor="middle" 
                       class="value"
                       fill="white"
                     >4</text>
                   
-                  
-                  
-                  
-                  
                 </g>
               
                 <g>
                   <rect 
-                    x="880.7272727272727" 
-                    y="50" 
-                    width="50" 
-                    height="450" 
+                    x="281.4736842105263" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
+                    height="79.41176470588235" 
                     fill="#ef4444"
                     rx="4"
                   />
                   
                   <rect 
-                    x="880.7272727272727" 
-                    y="50" 
-                    width="50" 
+                    x="281.4736842105263" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
                     height="0" 
                     fill="#f59e0b"
                     rx="4"
                   />
                   
                   <rect 
-                    x="880.7272727272727" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
+                    x="281.4736842105263" 
+                    y="314.7058823529412" 
+                    width="41.26315789473685" 
+                    height="105.88235294117646" 
                     fill="#22c55e"
                     rx="4"
                   />
                   
                   <text 
-                    transform="rotate(-45 905.7272727272727 520)" 
-                    x="905.7272727272727" 
+                    transform="rotate(-45 302.10526315789474 520)" 
+                    x="302.10526315789474" 
                     y="520" 
                     text-anchor="end" 
                     class="axis"
@@ -706,67 +365,437 @@
                   
                   
                     <text 
-                      x="905.7272727272727" 
-                      y="275" 
+                      x="302.10526315789474" 
+                      y="460.29411764705884" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >3</text>
+                  
+                  
+                  
+                  
+                  
+                    <text 
+                      x="302.10526315789474" 
+                      y="367.64705882352945" 
                       text-anchor="middle" 
                       class="value"
                       fill="white"
                     >4</text>
                   
-                  
-                  
-                  
-                  
                 </g>
               
                 <g>
                   <rect 
-                    x="969.8181818181819" 
-                    y="50" 
-                    width="50" 
-                    height="450" 
+                    x="384.63157894736844" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
+                    height="79.41176470588235" 
                     fill="#ef4444"
                     rx="4"
                   />
                   
                   <rect 
-                    x="969.8181818181819" 
-                    y="50" 
-                    width="50" 
+                    x="384.63157894736844" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
                     height="0" 
                     fill="#f59e0b"
                     rx="4"
                   />
                   
                   <rect 
-                    x="969.8181818181819" 
-                    y="50" 
-                    width="50" 
-                    height="0" 
+                    x="384.63157894736844" 
+                    y="314.7058823529412" 
+                    width="41.26315789473685" 
+                    height="105.88235294117646" 
                     fill="#22c55e"
                     rx="4"
                   />
                   
                   <text 
-                    transform="rotate(-45 994.8181818181819 520)" 
-                    x="994.8181818181819" 
+                    transform="rotate(-45 405.2631578947369 520)" 
+                    x="405.2631578947369" 
                     y="520" 
                     text-anchor="end" 
                     class="axis"
-                  >sáb. 30/11</text>
+                  >dom. 01/12</text>
                   
                   
                     <text 
-                      x="994.8181818181819" 
-                      y="275" 
+                      x="405.2631578947369" 
+                      y="460.29411764705884" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >3</text>
+                  
+                  
+                  
+                  
+                  
+                    <text 
+                      x="405.2631578947369" 
+                      y="367.64705882352945" 
                       text-anchor="middle" 
                       class="value"
                       fill="white"
                     >4</text>
                   
+                </g>
+              
+                <g>
+                  <rect 
+                    x="487.7894736842105" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
+                    height="79.41176470588235" 
+                    fill="#ef4444"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="487.7894736842105" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
+                    height="0" 
+                    fill="#f59e0b"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="487.7894736842105" 
+                    y="314.7058823529412" 
+                    width="41.26315789473685" 
+                    height="105.88235294117646" 
+                    fill="#22c55e"
+                    rx="4"
+                  />
+                  
+                  <text 
+                    transform="rotate(-45 508.42105263157896 520)" 
+                    x="508.42105263157896" 
+                    y="520" 
+                    text-anchor="end" 
+                    class="axis"
+                  >ter. 03/12</text>
+                  
+                  
+                    <text 
+                      x="508.42105263157896" 
+                      y="460.29411764705884" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >3</text>
                   
                   
                   
+                  
+                  
+                    <text 
+                      x="508.42105263157896" 
+                      y="367.64705882352945" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >4</text>
+                  
+                </g>
+              
+                <g>
+                  <rect 
+                    x="590.9473684210526" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
+                    height="79.41176470588235" 
+                    fill="#ef4444"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="590.9473684210526" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
+                    height="0" 
+                    fill="#f59e0b"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="590.9473684210526" 
+                    y="314.7058823529412" 
+                    width="41.26315789473685" 
+                    height="105.88235294117646" 
+                    fill="#22c55e"
+                    rx="4"
+                  />
+                  
+                  <text 
+                    transform="rotate(-45 611.578947368421 520)" 
+                    x="611.578947368421" 
+                    y="520" 
+                    text-anchor="end" 
+                    class="axis"
+                  >qui. 05/12</text>
+                  
+                  
+                    <text 
+                      x="611.578947368421" 
+                      y="460.29411764705884" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >3</text>
+                  
+                  
+                  
+                  
+                  
+                    <text 
+                      x="611.578947368421" 
+                      y="367.64705882352945" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >4</text>
+                  
+                </g>
+              
+                <g>
+                  <rect 
+                    x="694.1052631578948" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
+                    height="79.41176470588235" 
+                    fill="#ef4444"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="694.1052631578948" 
+                    y="420.5882352941177" 
+                    width="41.26315789473685" 
+                    height="0" 
+                    fill="#f59e0b"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="694.1052631578948" 
+                    y="314.7058823529412" 
+                    width="41.26315789473685" 
+                    height="105.88235294117646" 
+                    fill="#22c55e"
+                    rx="4"
+                  />
+                  
+                  <text 
+                    transform="rotate(-45 714.7368421052632 520)" 
+                    x="714.7368421052632" 
+                    y="520" 
+                    text-anchor="end" 
+                    class="axis"
+                  >sáb. 07/12</text>
+                  
+                  
+                    <text 
+                      x="714.7368421052632" 
+                      y="460.29411764705884" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >3</text>
+                  
+                  
+                  
+                  
+                  
+                    <text 
+                      x="714.7368421052632" 
+                      y="367.64705882352945" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >4</text>
+                  
+                </g>
+              
+                <g>
+                  <rect 
+                    x="797.2631578947369" 
+                    y="288.2352941176471" 
+                    width="41.26315789473685" 
+                    height="211.76470588235293" 
+                    fill="#ef4444"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="797.2631578947369" 
+                    y="288.2352941176471" 
+                    width="41.26315789473685" 
+                    height="0" 
+                    fill="#f59e0b"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="797.2631578947369" 
+                    y="182.3529411764706" 
+                    width="41.26315789473685" 
+                    height="105.88235294117646" 
+                    fill="#22c55e"
+                    rx="4"
+                  />
+                  
+                  <text 
+                    transform="rotate(-45 817.8947368421053 520)" 
+                    x="817.8947368421053" 
+                    y="520" 
+                    text-anchor="end" 
+                    class="axis"
+                  >seg. 09/12</text>
+                  
+                  
+                    <text 
+                      x="817.8947368421053" 
+                      y="394.11764705882354" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >8</text>
+                  
+                  
+                  
+                  
+                  
+                    <text 
+                      x="817.8947368421053" 
+                      y="235.29411764705884" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >4</text>
+                  
+                </g>
+              
+                <g>
+                  <rect 
+                    x="900.421052631579" 
+                    y="208.82352941176475" 
+                    width="41.26315789473685" 
+                    height="291.17647058823525" 
+                    fill="#ef4444"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="900.421052631579" 
+                    y="208.82352941176475" 
+                    width="41.26315789473685" 
+                    height="0" 
+                    fill="#f59e0b"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="900.421052631579" 
+                    y="102.94117647058829" 
+                    width="41.26315789473685" 
+                    height="105.88235294117646" 
+                    fill="#22c55e"
+                    rx="4"
+                  />
+                  
+                  <text 
+                    transform="rotate(-45 921.0526315789474 520)" 
+                    x="921.0526315789474" 
+                    y="520" 
+                    text-anchor="end" 
+                    class="axis"
+                  >qua. 11/12</text>
+                  
+                  
+                    <text 
+                      x="921.0526315789474" 
+                      y="354.4117647058824" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >11</text>
+                  
+                  
+                  
+                  
+                  
+                    <text 
+                      x="921.0526315789474" 
+                      y="155.88235294117652" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >4</text>
+                  
+                </g>
+              
+                <g>
+                  <rect 
+                    x="1003.578947368421" 
+                    y="155.88235294117646" 
+                    width="41.26315789473685" 
+                    height="344.11764705882354" 
+                    fill="#ef4444"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="1003.578947368421" 
+                    y="155.88235294117646" 
+                    width="41.26315789473685" 
+                    height="0" 
+                    fill="#f59e0b"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="1003.578947368421" 
+                    y="50" 
+                    width="41.26315789473685" 
+                    height="105.88235294117646" 
+                    fill="#22c55e"
+                    rx="4"
+                  />
+                  
+                  <text 
+                    transform="rotate(-45 1024.2105263157894 520)" 
+                    x="1024.2105263157894" 
+                    y="520" 
+                    text-anchor="end" 
+                    class="axis"
+                  >sex. 13/12</text>
+                  
+                  
+                    <text 
+                      x="1024.2105263157894" 
+                      y="327.94117647058823" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >13</text>
+                  
+                  
+                  
+                  
+                  
+                    <text 
+                      x="1024.2105263157894" 
+                      y="102.94117647058823" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >4</text>
                   
                 </g>
               
@@ -804,11 +833,11 @@
             <text x="25" y="62" class="legend">DONE</text>
             
             <text x="0" y="90" class="value">
-              Período: 20/11/2024 - 
-              30/11/2024
+              Período: 25/11/2024 - 
+              13/12/2024
             </text>
             <text x="0" y="110" class="value">
-              Total de Tasks: 4
+              Total de Tasks: 17
             </text>
             <text x="0" y="130" class="value">
               Total de Sprints: 2

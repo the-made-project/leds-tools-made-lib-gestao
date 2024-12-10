@@ -1,24 +1,24 @@
 {
   "data": [
     {
-      "id": "blackops",
-      "name": "Team Black Ops",
-      "description": "Equipe responsável por produzir artefatos de segurança",
+      "id": "bi",
+      "name": "BI Team",
+      "description": "Equipe responsável por produzir artefatos de BI",
       "teammebers": [
         {
-          "id": "rafaelemerick",
-          "name": "Rafael Emerick",
-          "email": "rafael.emerick@blackops.com.br"
+          "id": "moisesomena",
+          "name": "Moises Omena",
+          "email": "moisesomena@gmail.com"
         },
         {
-          "id": "joaomarcos",
-          "name": "João Marcos ",
-          "email": "joao.marcos@blackops.com.br"
+          "id": "mateuslannes",
+          "name": "Mateus Lannes ",
+          "email": "mateuslannes@gmail.com"
         },
         {
-          "id": "Arthur",
-          "name": "Arthur Cremasco",
-          "email": "arthur.cremasco@blackops.com.br"
+          "id": "felipecostabeber",
+          "name": "Felipe Costabeber",
+          "email": "felipe.costabeber.s@gmail.com"
         }
       ]
     }

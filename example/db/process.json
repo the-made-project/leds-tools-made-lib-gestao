@@ -1,0 +1,120 @@
+{
+  "data": [
+    {
+      "id": "IdentificarObjetivo",
+      "name": "Criar dashboard ligado a bolsas",
+      "description": "Criar um dashboard com metricas sobre bolsas para apoiar a tomada de decisão",
+      "activities": [
+        {
+          "id": "identificarobjetivos",
+          "name": "Identificar objetivos",
+          "description": "Queremos identificar quais objetivos organizacionais estão relacionado a bolsa",
+          "tasks": [
+            {
+              "id": "entrevista",
+              "name": "Entrevistar",
+              "description": "Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa"
+            },
+            {
+              "id": "validar",
+              "name": "Validar dos da entrevista",
+              "description": "Validar objetivos organizacionais"
+            }
+          ]
+        },
+        {
+          "id": "IdentificarNecessidadeInformacao",
+          "name": "Identificar as necessidades de informacao",
+          "description": "Identificar quais informações são relevantes para responder os objetivos organizacionais",
+          "tasks": [
+            {
+              "id": "entrevista",
+              "name": "Entrevistar",
+              "description": "Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa"
+            },
+            {
+              "id": "validar",
+              "name": "Validar necessidade de informação",
+              "description": "Validar as necessidade de informação"
+            }
+          ]
+        },
+        {
+          "id": "definirmedidasIndicadores",
+          "name": "Identificar as Medidas e Indicadores",
+          "description": "Identificar quais informações são as medidas e indicadores para as necessidades de informação",
+          "tasks": [
+            {
+              "id": "pesquisar",
+              "name": "Pesquisar sobre Medidas e Indicadores",
+              "description": "Pesquisar sobre medidas e indicadores para atender a necessidade de informações"
+            },
+            {
+              "id": "validar",
+              "name": "Validar as medidas e indicadores ",
+              "description": "Validar medias e indicadores"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "processoCriacaoDashboard",
+      "name": "Processo de Criação de Dashboard",
+      "description": "Criar um dashboard com metricas para apoiar a tomada de decisão",
+      "activities": [
+        {
+          "id": "identificarobjetivos",
+          "name": "Identificar objetivos",
+          "description": "Queremos identificar quais objetivos organizacionais estão relacionados ",
+          "tasks": [
+            {
+              "id": "entrevista",
+              "name": "Entrevistar",
+              "description": "Entrevista os clientes para levantar os objetivos organizacionais relacionados"
+            },
+            {
+              "id": "validar",
+              "name": "Validar dos da entrevista",
+              "description": "Validar objetivos organizacionais"
+            }
+          ]
+        },
+        {
+          "id": "IdentificarNecessidadeInformacao",
+          "name": "Identificar as necessidades de informacao",
+          "description": "Identificar quais informações são relevantes para responder os objetivos organizacionais",
+          "tasks": [
+            {
+              "id": "entrevista",
+              "name": "Entrevistar",
+              "description": "Entrevista os clientes para levantar os objetivos organizacionais "
+            },
+            {
+              "id": "validar",
+              "name": "Validar necessidade de informação",
+              "description": "Validar as necessidade de informação"
+            }
+          ]
+        },
+        {
+          "id": "definirmedidasIndicadores",
+          "name": "Identificar as Medidas e Indicadores",
+          "description": "Identificar quais informações são as medidas e indicadores para as necessidades de informação",
+          "tasks": [
+            {
+              "id": "pesquisar",
+              "name": "Pesquisar sobre Medidas e Indicadores",
+              "description": "Pesquisar sobre medidas e indicadores para atender a necessidade de informações"
+            },
+            {
+              "id": "validar",
+              "name": "Validar as medidas e indicadores ",
+              "description": "Validar medias e indicadores"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
