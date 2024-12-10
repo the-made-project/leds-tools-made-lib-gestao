@@ -103,31 +103,30 @@ export class MarkdownTimeBoxService {
       const analyzer = new ProjectDependencyAnalyzer(timeBox);
       const dependencyAnalysis = analyzer.generateAnalysis();
 
-        return `
-        
-        # ${timeBox.name.toLocaleUpperCase()}
-        ${timeBox.description}
+        return `# ${timeBox.name.toLocaleUpperCase()}
 
-        ## Dados do Sprint
-        * **Goal**:  ${timeBox.description}
-        * **Data Início**: ${timeBox.startDate}
-        * **Data Fim**: ${timeBox.endDate}
-        * **Status**: ${timeBox.status}
-        ## Sprint Backlog
+${timeBox.description}
 
-        |ID |Nome |Resposável |Data de Inicío | Data Planejada | Status|
-        |:----    |:----|:--------  |:-------:       | :----------:  | :---: |
-        ${timeBox.sprintItems?.map(assignee => `|${assignee.issue.id.toLocaleLowerCase()}|${assignee.issue.title ?? "-"}|${assignee.assignee.name}|${assignee.startDate?? ""}|${assignee.dueDate ?? ""}|${assignee.status?.toLocaleUpperCase()}|`).join("\n")}
+## Dados do Sprint
+* **Goal**:  ${timeBox.description}
+* **Data Início**: ${timeBox.startDate}
+* **Data Fim**: ${timeBox.endDate}
+* **Status**: ${timeBox.status}
+## Sprint Backlog
+
+|Nome |Resposável |Data de Inicío | Data Planejada | Status|
+|:----|:--------  |:-------:       | :----------:  | :---: |
+${timeBox.sprintItems?.map(assignee => `|${assignee.issue.title ?? "-"}|${assignee.assignee.name}|${assignee.startDate?? ""}|${assignee.dueDate ?? ""}|${assignee.status?.toLocaleUpperCase()}|`).join("\n")}
       
-        ${dependencyAnalysis}
+${dependencyAnalysis}
         
        
-        ## Cumulative Flow
-        ![ Cumulative Flow](./charts/cfd-${timeBox.id}.svg)
+## Cumulative Flow
+![ Cumulative Flow](./charts/cfd-${timeBox.id}.svg)
         
-        ${monteCarloAnalysis}
+${monteCarloAnalysis}
         `
-    }
+}
 
     protected async retrive(database: string){
     

@@ -153,8 +153,7 @@ export class ProjectDependencyAnalyzer {
             const status = this.issueStatus.get(id)!;
             const nodeClass = status.implemented ? 'done' : 'sprint';
             
-            const label = `${id}["🔍 Identificador: ${id}<br>` +
-                         `📝 Tarefa: ${item.issue.title || 'Sem título'}<br>` +
+            const label = `${id}["📝 Tarefa: ${item.issue.title || 'Sem título'}<br>` +
                          `📊 Estado: ${status.status}<br>` +
                          `👤 Responsável: ${status.assignee?.name || 'N/A'}"]`;
                          
@@ -281,8 +280,8 @@ export class ProjectDependencyAnalyzer {
 
         // Tabela de análise em ordem de execução
         markdown += '## 📋 Sugestão de Execução das Issues\n\n';
-        markdown += '| # | Issue | Título | Status | Responsável | Dependências |\n';
-        markdown += '|---|-------|--------|--------|-------------|---------------|\n';
+        markdown += '| # | Título | Status | Responsável | Dependências |\n';
+        markdown += '|---|--------|--------|-------------|---------------|\n';
 
         const orderedIssues = this.getTopologicalSort();
         
@@ -306,7 +305,7 @@ export class ProjectDependencyAnalyzer {
                 })
                 .join(', ') || '🆓'; // Usa 🆓 para indicar que não tem dependências
 
-            markdown += `| ${index + 1} | ${id} | ${item.issue.title || 'N/A'} | ${item.status || 'TODO'} | ${item.assignee.name} | ${dependenciesStr} |\n`;
+            markdown += `| ${index + 1} | ${item.issue.title || 'N/A'} | ${item.status || 'TODO'} | ${item.assignee.name} | ${dependenciesStr} |\n`;
         });
 
         markdown += '\n**Legenda das Dependências:**\n';
