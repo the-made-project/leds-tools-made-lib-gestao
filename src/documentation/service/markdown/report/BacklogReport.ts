@@ -31,13 +31,12 @@ export class BacklogMarkdownConverter {
     }
 
     private formatIssueForTable(issue: Issue, level: number = 0): string[] {
-        const titlePrefix = '  '.repeat(level);
+        //const titlePrefix = '  '.repeat(level);
         const typeEmoji = this.getTypeEmoji(issue.type);
         const displayType = this.formatDisplayType(issue.type);
         const typeWithEmoji = typeEmoji ? `${typeEmoji} ${displayType}` : displayType;
         
-        const row = [
-            `${titlePrefix}${issue.id.toLocaleLowerCase()}`,            
+        const row = [           
             typeWithEmoji,
             issue.title || '-',
             issue.description || '-',
@@ -60,7 +59,6 @@ export class BacklogMarkdownConverter {
         let markdown = '# 📋 Backlogs\n\n';
         
         const headers = [
-            'ID',            
             'Tipo',
             'Título',
             'Descrição',

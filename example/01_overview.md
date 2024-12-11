@@ -36,9 +36,9 @@ Dashboard de BI do Conecta Fapes
 
 ### ❌ ALTO RISCO DE ATRASO NO PROJETO
 
-- **Probabilidade de conclusão no prazo**: 19.2%
-- **Data mais provável de conclusão**: qua., 18/12/2024
-- **Dias em relação ao planejado**: 6 dias
+- **Probabilidade de conclusão no prazo**: 19.4%
+- **Data mais provável de conclusão**: qui., 19/12/2024
+- **Dias em relação ao planejado**: 7 dias
 - **Status**: ⚠️ Atraso Moderado
 
 ### 📊 Métricas do Projeto
@@ -46,23 +46,23 @@ Dashboard de BI do Conecta Fapes
 | Métrica | Valor | Status |
 |---------|--------|--------|
 | Velocidade Atual | 2.0 tarefas/dia | ❌ |
-| Velocidade Necessária | 4.3 tarefas/dia | - |
-| Dias Restantes | 3 dias | - |
+| Velocidade Necessária | 6.5 tarefas/dia | - |
+| Dias Restantes | 2 dias | - |
 | Tarefas Restantes | 13 tarefas | - |
 
 ### 📅 Previsões de Data de Conclusão
 
 | Data | Probabilidade | Status | Observação |
 |------|---------------|---------|------------|
-| seg., 16/12/2024 | 19.2% | ⚠️ Pequeno Atraso |  |
-| ter., 17/12/2024 | 15.6% | ⚠️ Pequeno Atraso |  |
-| qua., 18/12/2024 | 42.6% | ⚠️ Atraso Moderado | 📍 Data mais provável |
-| qui., 19/12/2024 | 8.6% | ⚠️ Atraso Moderado |  |
-| sex., 20/12/2024 | 11.9% | ⚠️ Atraso Moderado |  |
-| seg., 23/12/2024 | 0.8% | ⚠️ Atraso Moderado |  |
-| ter., 24/12/2024 | 1.2% | ⚠️ Atraso Moderado |  |
-| qua., 25/12/2024 | 0.0% | ⚠️ Atraso Moderado |  |
+| ter., 17/12/2024 | 19.4% | ⚠️ Pequeno Atraso |  |
+| qua., 18/12/2024 | 15.8% | ⚠️ Atraso Moderado |  |
+| qui., 19/12/2024 | 42.2% | ⚠️ Atraso Moderado | 📍 Data mais provável |
+| sex., 20/12/2024 | 8.4% | ⚠️ Atraso Moderado |  |
+| seg., 23/12/2024 | 12.3% | ⚠️ Atraso Moderado |  |
+| ter., 24/12/2024 | 0.9% | ⚠️ Atraso Moderado |  |
+| qua., 25/12/2024 | 0.9% | ⚠️ Atraso Moderado |  |
 | qui., 26/12/2024 | 0.0% | ⚠️ Atraso Moderado |  |
+| sex., 27/12/2024 | 0.0% | ⚠️ Atraso Moderado |  |
 
 ## 💡 Recomendações
 
@@ -79,4 +79,4 @@ Dashboard de BI do Conecta Fapes
 - **Simulações Realizadas**: 10,000
 
 ---
-*Relatório gerado em 10/12/2024, 15:24:25*
+*Relatório gerado em 11/12/2024, 7:51:16*

@@ -24,7 +24,7 @@ Levantar a infraestrutura de BI no LEDS, contendo o banco Stage Data, Apache Air
       
 # Análise de Dependências do Sprint
 
-Análise gerada em: 10/12/2024, 15:24:25
+Análise gerada em: 11/12/2024, 7:51:16
 
 ## 🔍 Grafo de Dependências
 
@@ -91,8 +91,8 @@ graph BT
 ## ✅ SPRINT PROVAVELMENTE SERÁ CONCLUÍDA NO PRAZO
 
 - **Probabilidade de conclusão no prazo**: 100.0%
-- **Data mais provável de conclusão**: seg., 23/12/2024
-- **Dias em relação ao planejado**: 11 dias
+- **Data mais provável de conclusão**: ter., 24/12/2024
+- **Dias em relação ao planejado**: 12 dias
 - **Status**: ❌ Atraso Crítico
 
 ### 📊 Métricas Críticas
@@ -100,15 +100,15 @@ graph BT
 | Métrica | Valor | Status |
 |---------|--------|--------|
 | Velocidade Atual | 1.0 tarefas/dia | ❌ |
-| Velocidade Necessária | 3.3 tarefas/dia | - |
-| Dias Restantes | 3 dias | - |
+| Velocidade Necessária | 5.0 tarefas/dia | - |
+| Dias Restantes | 2 dias | - |
 | Tarefas Restantes | 10 tarefas | - |
 
 ### 📅 Previsões de Data de Conclusão
 
 | Data | Probabilidade | Status | Observação |
 |------|---------------|---------|------------|
-| seg., 23/12/2024 | 100.0% | ❌ Atraso Crítico | 📍 Data mais provável |
+| ter., 24/12/2024 | 100.0% | ❌ Atraso Crítico | 📍 Data mais provável |
 
 ### 📋 Status das Tarefas
 
@@ -133,5 +133,5 @@ graph BT
 - **Simulações Realizadas**: 10,000
 
 ---
-*Relatório gerado em 10/12/2024, 15:24:25*
+*Relatório gerado em 11/12/2024, 7:51:16*
         
