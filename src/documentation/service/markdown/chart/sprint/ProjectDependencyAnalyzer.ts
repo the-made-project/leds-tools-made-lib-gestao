@@ -136,18 +136,24 @@ export class ProjectDependencyAnalyzer {
                 });
             }
         });
-
+    
         // Adicionar nós externos
         externalDeps.forEach(id => {
-            const label = `${id}["🔍 ${id}<br>` +
+            const externalIssue = this.allIssues.get(id);
+            const externalStatus = this.issueStatus.get(id);
+            
+            const title = externalIssue?.title || `${id}`;
+            const status = externalStatus?.status || 'EXTERNAL';
+            
+            const label = `${id}["🔍 ${title}<br>` +
+                         `📊 Status: ${status}<br>` +
                          `⚠️ Dependência Externa"]`;
             diagram += `    ${label}:::external\n`;
         });
-
-        // Ordenar issues do sprint por nível de dependência
+    
+        // Resto do código para os nós do sprint
         const issues = this.getTopologicalSort();
         
-        // Adicionar nós do sprint
         issues.forEach(id => {
             const item = this.sprintItems.get(id)!;
             const status = this.issueStatus.get(id)!;
@@ -159,8 +165,8 @@ export class ProjectDependencyAnalyzer {
                          
             diagram += `    ${label}:::${nodeClass}\n`;
         });
-
-        // Adicionar arestas (incluindo para dependências externas)
+    
+        // Adicionar arestas
         this.sprintItems.forEach((item) => {
             if (item.issue.depends && Array.isArray(item.issue.depends)) {
                 item.issue.depends.forEach(dep => {
@@ -171,7 +177,6 @@ export class ProjectDependencyAnalyzer {
                 });
             }
         });
-
         return diagram;
     }
 
@@ -244,6 +249,68 @@ export class ProjectDependencyAnalyzer {
         result.push(...independentTasks, ...orderedDependentTasks);
         return result;
     }
+
+    /**
+ * Busca uma issue por ID em uma estrutura de árvore hierárquica
+ * @param id ID da issue a ser buscada
+ * @param data Array de issues ou estrutura de dados com array de issues
+ * @returns Issue encontrada ou undefined
+ */
+private findIssueInTree(id: string, data: any): Issue | undefined {
+    // Se recebermos um objeto com propriedade data (raiz do JSON)
+    if (data.data) {
+        return this.findIssueInTree(id, data.data);
+    }
+
+    // Se não for um array, retorna undefined
+    if (!Array.isArray(data)) {
+        return undefined;
+    }
+
+    // Função recursiva para buscar em todos os níveis
+    const searchRecursive = (issues: Issue[]): Issue | undefined => {
+        for (const issue of issues) {
+            // Verifica se é a issue que estamos procurando
+            if (issue.id === id) {
+                return issue;
+            }
+
+            // Busca nas sub-issues (propriedade issues)
+            if (issue.issues && Array.isArray(issue.issues)) {
+                const foundInIssues = searchRecursive(issue.issues);
+                if (foundInIssues) {
+                    return foundInIssues;
+                }
+            }
+
+            // Busca nas dependências (propriedade depends)
+            if (issue.depends && Array.isArray(issue.depends)) {
+                for (const dep of issue.depends) {
+                    if (dep.id === id) {
+                        return dep;
+                    }
+                }
+            }
+        }
+        return undefined;
+    };
+
+    return searchRecursive(data);
+}
+
+/**
+ * Método público para buscar uma issue por ID
+ */
+    public getIssueById(id: string): Issue | undefined {
+    // Primeiro tenta no Map por performance
+    const issueFromMap = this.allIssues.get(id);
+    if (issueFromMap) {
+        return issueFromMap;
+    }
+
+    // Se não encontrou, busca na árvore completa
+    return this.findIssueInTree(id, this.allIssues); // Assumindo que você tem o projectData armazenado
+}
     public generateAnalysis(): string {
         if (this.sprintItems.size === 0) {
             return '# Análise de Dependências do Sprint\n\nNenhuma issue encontrada no sprint.';
@@ -294,16 +361,18 @@ export class ProjectDependencyAnalyzer {
             }
             
             const dependenciesStr = Array.from(allDeps)
-                .map(depId => {
-                    if (this.sprintItems.has(depId)) {
-                        const depItem = this.sprintItems.get(depId)!;
-                        const depStatus = this.issueStatus.get(depId)!;
-                        return `${depItem.issue.title}${depStatus.implemented ? '✅' : ''}`;
-                    }
-                    return `ID: ${depId}⚠️`; // Mantém o ID para dependências externas
-                })
-                .join(', ') || '🆓'; // Usa 🆓 para indicar que não tem dependências
-        
+            .map(depId => {
+                if (this.sprintItems.has(depId)) {
+                    const depItem = this.sprintItems.get(depId)!;
+                    const depStatus = this.issueStatus.get(depId)!;
+                    return `${depItem.issue.title}${depStatus.implemented ? '✅' : ''}`;
+                }
+                // Buscar informações da dependência externa usando a busca em árvore
+                const externalIssue = this.findIssueInTree(depId, this.allIssues);
+                const externalStatus = this.issueStatus.get(depId);
+                return `${externalIssue?.title || `${depId}`}${externalStatus?.implemented ? '✅' : '⚠️'}`;
+            })
+            .join(', ') || '🆓';
             markdown += `| ${index + 1} | ${item.issue.title || 'N/A'} | ${item.status || 'TODO'} | ${item.assignee.name} | ${dependenciesStr} |\n`;
         });
         

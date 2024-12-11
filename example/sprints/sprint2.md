@@ -24,7 +24,7 @@ Levantar a infraestrutura de BI no LEDS, contendo o banco Stage Data, Apache Air
       
 # Análise de Dependências do Sprint
 
-Análise gerada em: 11/12/2024, 8:00:27
+Análise gerada em: 11/12/2024, 8:43:01
 
 ## 🔍 Grafo de Dependências
 
@@ -33,8 +33,8 @@ graph BT
     classDef sprint fill:#a8e6cf,stroke:#333,stroke-width:2px;
     classDef done fill:#98fb98,stroke:#333,stroke-width:2px;
     classDef external fill:#ffd3b6,stroke:#333,stroke-width:1px;
-    bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista["🔍 bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista<br>⚠️ Dependência Externa"]:::external
-    bi.identificarobjetivo.definirmedidasindicadores.pesquisar["🔍 bi.identificarobjetivo.definirmedidasindicadores.pesquisar<br>⚠️ Dependência Externa"]:::external
+    bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista["🔍 bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista<br>📊 Status: EXTERNAL<br>⚠️ Dependência Externa"]:::external
+    bi.identificarobjetivo.definirmedidasindicadores.pesquisar["🔍 bi.identificarobjetivo.definirmedidasindicadores.pesquisar<br>📊 Status: EXTERNAL<br>⚠️ Dependência Externa"]:::external
     bi.identificarobjetivo.identificarnecessidadeinformacao.validar["📝 Tarefa: Validar necessidade de informação<br>📊 Estado: TODO<br>👤 Responsável: Mateus Lannes "]:::sprint
     bi.identificarobjetivo.definirmedidasindicadores.validar["📝 Tarefa: Validar as medidas e indicadores <br>📊 Estado: TODO<br>👤 Responsável: Mateus Lannes "]:::sprint
     bi.levantarinfraestruturaleds.levantardatastage.alinharcomdevops["📝 Tarefa: Alinhar com a equipe de DevOps<br>📊 Estado: TODO<br>👤 Responsável: Mateus Lannes "]:::sprint
@@ -65,8 +65,8 @@ graph BT
 
 | # | Título | Status | Responsável | Dependências |
 |---|--------|--------|-------------|---------------|
-| 1 | Validar necessidade de informação | TODO | Mateus Lannes  | ID: bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista⚠️ |
-| 2 | Validar as medidas e indicadores  | TODO | Mateus Lannes  | ID: bi.identificarobjetivo.definirmedidasindicadores.pesquisar⚠️ |
+| 1 | Validar necessidade de informação | TODO | Mateus Lannes  | bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista⚠️ |
+| 2 | Validar as medidas e indicadores  | TODO | Mateus Lannes  | bi.identificarobjetivo.definirmedidasindicadores.pesquisar⚠️ |
 | 3 | Alinhar com a equipe de DevOps | TODO | Mateus Lannes  | 🆓 |
 | 4 | Instalar e configurar o Airflow | TODO | Mateus Lannes  | 🆓 |
 | 5 | Importar dados no Power BI | TODO | Mateus Lannes  | 🆓 |
@@ -133,5 +133,5 @@ graph BT
 - **Simulações Realizadas**: 10,000
 
 ---
-*Relatório gerado em 11/12/2024, 8:00:27*
+*Relatório gerado em 11/12/2024, 8:43:01*
         
