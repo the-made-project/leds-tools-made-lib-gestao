@@ -24,7 +24,7 @@ Levantar a infraestrutura de BI no LEDS, contendo o banco Stage Data, Apache Air
       
 # Análise de Dependências do Sprint
 
-Análise gerada em: 11/12/2024, 7:54:35
+Análise gerada em: 11/12/2024, 8:00:27
 
 ## 🔍 Grafo de Dependências
 
@@ -65,16 +65,16 @@ graph BT
 
 | # | Título | Status | Responsável | Dependências |
 |---|--------|--------|-------------|---------------|
-| 1 | Validar necessidade de informação | TODO | Mateus Lannes  | bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista⚠️ |
-| 2 | Validar as medidas e indicadores  | TODO | Mateus Lannes  | bi.identificarobjetivo.definirmedidasindicadores.pesquisar⚠️ |
+| 1 | Validar necessidade de informação | TODO | Mateus Lannes  | ID: bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista⚠️ |
+| 2 | Validar as medidas e indicadores  | TODO | Mateus Lannes  | ID: bi.identificarobjetivo.definirmedidasindicadores.pesquisar⚠️ |
 | 3 | Alinhar com a equipe de DevOps | TODO | Mateus Lannes  | 🆓 |
 | 4 | Instalar e configurar o Airflow | TODO | Mateus Lannes  | 🆓 |
 | 5 | Importar dados no Power BI | TODO | Mateus Lannes  | 🆓 |
-| 6 | Verificar funcionamento do Stage Data | TODO | Mateus Lannes  | bi.levantarinfraestruturaleds.levantardatastage.alinharcomdevops |
-| 7 | Testar pipelines ETL | TODO | Mateus Lannes  | bi.levantarinfraestruturaleds.configurarairflowetl.criardagsetl |
-| 8 | Validar relatórios e gráficos no Power BI | TODO | Mateus Lannes  | bi.levantarinfraestruturaleds.conectarbancoaopowerbi.criarmodelopowerbi |
-| 9 | Criar DAGs para pipelines ETL | TODO | Mateus Lannes  | bi.levantarinfraestruturaleds.configurarairflowetl.instalarconfigurarairflow |
-| 10 | Criar modelo de dados no Power BI | TODO | Mateus Lannes  | bi.levantarinfraestruturaleds.conectarbancoaopowerbi.importardadosnopowerbi |
+| 6 | Verificar funcionamento do Stage Data | TODO | Mateus Lannes  | Alinhar com a equipe de DevOps |
+| 7 | Testar pipelines ETL | TODO | Mateus Lannes  | Criar DAGs para pipelines ETL |
+| 8 | Validar relatórios e gráficos no Power BI | TODO | Mateus Lannes  | Criar modelo de dados no Power BI |
+| 9 | Criar DAGs para pipelines ETL | TODO | Mateus Lannes  | Instalar e configurar o Airflow |
+| 10 | Criar modelo de dados no Power BI | TODO | Mateus Lannes  | Importar dados no Power BI |
 
 **Legenda das Dependências:**
 - 🆓 Sem dependências
@@ -133,5 +133,5 @@ graph BT
 - **Simulações Realizadas**: 10,000
 
 ---
-*Relatório gerado em 11/12/2024, 7:54:35*
+*Relatório gerado em 11/12/2024, 8:00:27*
         

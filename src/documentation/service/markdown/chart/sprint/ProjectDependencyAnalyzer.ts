@@ -278,11 +278,9 @@ export class ProjectDependencyAnalyzer {
             });
         }
 
-        // Tabela de análise em ordem de execução
         markdown += '## 📋 Sugestão de Execução das Issues\n\n';
         markdown += '| # | Título | Status | Responsável | Dependências |\n';
         markdown += '|---|--------|--------|-------------|---------------|\n';
-
         const orderedIssues = this.getTopologicalSort();
         
         orderedIssues.forEach((id, index) => {
@@ -298,21 +296,20 @@ export class ProjectDependencyAnalyzer {
             const dependenciesStr = Array.from(allDeps)
                 .map(depId => {
                     if (this.sprintItems.has(depId)) {
+                        const depItem = this.sprintItems.get(depId)!;
                         const depStatus = this.issueStatus.get(depId)!;
-                        return `${depId}${depStatus.implemented ? '✅' : ''}`;
+                        return `${depItem.issue.title}${depStatus.implemented ? '✅' : ''}`;
                     }
-                    return `${depId}⚠️`;
+                    return `ID: ${depId}⚠️`; // Mantém o ID para dependências externas
                 })
                 .join(', ') || '🆓'; // Usa 🆓 para indicar que não tem dependências
-
+        
             markdown += `| ${index + 1} | ${item.issue.title || 'N/A'} | ${item.status || 'TODO'} | ${item.assignee.name} | ${dependenciesStr} |\n`;
         });
-
+        
         markdown += '\n**Legenda das Dependências:**\n';
         markdown += '- 🆓 Sem dependências\n';
         markdown += '- ✅ Issue concluída\n';
         markdown += '- ⚠️ Dependência externa ao sprint\n';
-
-        return markdown;
-    }
+        return markdown;    }
 }

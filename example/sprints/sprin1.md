@@ -21,7 +21,7 @@ Entender os objetivos organizacionais da FAPES
       
 # Análise de Dependências do Sprint
 
-Análise gerada em: 11/12/2024, 7:54:34
+Análise gerada em: 11/12/2024, 8:00:26
 
 ## 🔍 Grafo de Dependências
 
@@ -55,11 +55,11 @@ graph BT
 | # | Título | Status | Responsável | Dependências |
 |---|--------|--------|-------------|---------------|
 | 1 | Entrevistar | DONE | Felipe Costabeber | 🆓 |
-| 2 | Validar necessidade de informação | TODO | Mateus Lannes  | bi.identificarobjetivo.identificarnecessidadeinformacao.entrevista✅ |
-| 3 | Validar as medidas e indicadores  | TODO | Mateus Lannes  | bi.identificarobjetivo.definirmedidasindicadores.pesquisar✅ |
-| 4 | Entrevistar | DONE | Felipe Costabeber | bi.identificarobjetivo.identificarobjetivos.validar✅ |
-| 5 | Pesquisar sobre Medidas e Indicadores | DONE | Mateus Lannes  | bi.identificarobjetivo.identificarobjetivos.validar✅ |
-| 6 | Validar dos da entrevista | DONE | Mateus Lannes  | bi.identificarobjetivo.identificarobjetivos.entrevista✅ |
+| 2 | Validar necessidade de informação | TODO | Mateus Lannes  | Entrevistar✅ |
+| 3 | Validar as medidas e indicadores  | TODO | Mateus Lannes  | Pesquisar sobre Medidas e Indicadores✅ |
+| 4 | Entrevistar | DONE | Felipe Costabeber | Validar dos da entrevista✅ |
+| 5 | Pesquisar sobre Medidas e Indicadores | DONE | Mateus Lannes  | Validar dos da entrevista✅ |
+| 6 | Validar dos da entrevista | DONE | Mateus Lannes  | Entrevistar✅ |
 
 **Legenda das Dependências:**
 - 🆓 Sem dependências
