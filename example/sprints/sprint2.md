@@ -24,7 +24,7 @@ Levantar a infraestrutura de BI no LEDS, contendo o banco Stage Data, Apache Air
       
 # Análise de Dependências do Sprint
 
-Análise gerada em: 11/12/2024, 8:43:01
+Análise gerada em: 11/12/2024, 10:17:49
 
 ## 🔍 Grafo de Dependências
 
@@ -133,5 +133,5 @@ graph BT
 - **Simulações Realizadas**: 10,000
 
 ---
-*Relatório gerado em 11/12/2024, 8:43:01*
+*Relatório gerado em 11/12/2024, 10:17:49*
         

@@ -36,7 +36,7 @@ Dashboard de BI do Conecta Fapes
 
 ### ❌ ALTO RISCO DE ATRASO NO PROJETO
 
-- **Probabilidade de conclusão no prazo**: 19.1%
+- **Probabilidade de conclusão no prazo**: 18.1%
 - **Data mais provável de conclusão**: qui., 19/12/2024
 - **Dias em relação ao planejado**: 7 dias
 - **Status**: ⚠️ Atraso Moderado
@@ -54,14 +54,14 @@ Dashboard de BI do Conecta Fapes
 
 | Data | Probabilidade | Status | Observação |
 |------|---------------|---------|------------|
-| ter., 17/12/2024 | 19.1% | ⚠️ Pequeno Atraso |  |
-| qua., 18/12/2024 | 15.6% | ⚠️ Atraso Moderado |  |
-| qui., 19/12/2024 | 42.7% | ⚠️ Atraso Moderado | 📍 Data mais provável |
+| ter., 17/12/2024 | 18.1% | ⚠️ Pequeno Atraso |  |
+| qua., 18/12/2024 | 16.1% | ⚠️ Atraso Moderado |  |
+| qui., 19/12/2024 | 42.5% | ⚠️ Atraso Moderado | 📍 Data mais provável |
 | sex., 20/12/2024 | 8.1% | ⚠️ Atraso Moderado |  |
-| seg., 23/12/2024 | 12.5% | ⚠️ Atraso Moderado |  |
-| ter., 24/12/2024 | 0.9% | ⚠️ Atraso Moderado |  |
-| qua., 25/12/2024 | 1.0% | ⚠️ Atraso Moderado |  |
-| qui., 26/12/2024 | 0.0% | ⚠️ Atraso Moderado |  |
+| seg., 23/12/2024 | 13.0% | ⚠️ Atraso Moderado |  |
+| ter., 24/12/2024 | 1.0% | ⚠️ Atraso Moderado |  |
+| qua., 25/12/2024 | 1.1% | ⚠️ Atraso Moderado |  |
+| qui., 26/12/2024 | 0.1% | ⚠️ Atraso Moderado |  |
 | sex., 27/12/2024 | 0.0% | ⚠️ Atraso Moderado |  |
 
 ## 💡 Recomendações
@@ -79,4 +79,4 @@ Dashboard de BI do Conecta Fapes
 - **Simulações Realizadas**: 10,000
 
 ---
-*Relatório gerado em 11/12/2024, 8:43:01*
+*Relatório gerado em 11/12/2024, 10:17:49*

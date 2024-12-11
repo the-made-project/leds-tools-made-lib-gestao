@@ -20,6 +20,6 @@ test("greet3 function", async () => {
   const report = new ReportManager ()
   const dbpath = "./example"
   const value = await report.createSprintSummaryReport(dbpath)
-  console.log (JSON.stringify(value))
+  console.log (value)
   expect("World").toBe("World");
 });

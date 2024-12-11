@@ -170,7 +170,8 @@ ${monteCarloAnalysis}
         const sprints = await this.retrive_status_in_progress(this.jsonFile)
         const generator = new SprintSummaryGenerator(sprints);
         let summary: SprintSummary[] = await generator.generateSprintsSummary();
-        return await generator.createSprintDiscordMarkdown(summary)
+        return await generator.createSprintCompleteMarkdown(summary);           
+        
     }
    
 
