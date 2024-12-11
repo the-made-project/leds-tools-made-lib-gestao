@@ -9,22 +9,22 @@ Levantar a infraestrutura de BI no LEDS, contendo o banco Stage Data, Apache Air
 * **Status**: IN_PROGRESS
 ## Sprint Backlog
 
-|Nome |Resposável |Data de Inicío | Data Planejada | Status|
-|:----|:--------  |:-------:       | :----------:  | :---: |
-|Validar necessidade de informação|Mateus Lannes |09/12/2024|10/12/2024|TODO|
-|Validar as medidas e indicadores |Mateus Lannes |09/12/2024|10/12/2024|TODO|
-|Alinhar com a equipe de DevOps|Mateus Lannes |10/12/2024|10/12/2024|TODO|
-|Verificar funcionamento do Stage Data|Mateus Lannes |09/12/2024|10/12/2024|TODO|
-|Instalar e configurar o Airflow|Mateus Lannes |11/12/2024|11/12/2024|TODO|
-|Criar DAGs para pipelines ETL|Mateus Lannes |11/12/2024|12/12/2024|TODO|
-|Testar pipelines ETL|Mateus Lannes |12/12/2024|12/12/2024|TODO|
-|Importar dados no Power BI|Mateus Lannes |12/12/2024|12/12/2024|TODO|
-|Criar modelo de dados no Power BI|Mateus Lannes |09/12/2024|13/12/2024|TODO|
-|Validar relatórios e gráficos no Power BI|Mateus Lannes |09/12/2024|13/12/2024|TODO|
+|Nome |Descrição|Resposável |Data de Inicío | Data Planejada | Status|
+|:----|:---------|:--------  |:-------:       | :----------:  | :---: |
+|Validar necessidade de informação|Validar as necessidade de informação|Mateus Lannes |09/12/2024|10/12/2024|TODO|
+|Validar as medidas e indicadores |Validar medias e indicadores|Mateus Lannes |09/12/2024|10/12/2024|TODO|
+|Alinhar com a equipe de DevOps|Alinhar permissões e acessos do bnaco com a equipe de DevOps.|Mateus Lannes |10/12/2024|10/12/2024|TODO|
+|Verificar funcionamento do Stage Data|Testar a conectividade e validação do banco Stage Data|Mateus Lannes |09/12/2024|10/12/2024|TODO|
+|Instalar e configurar o Airflow|Instalar o Airflow e configurar conexões com os bancos Conecta e Stage Data.|Mateus Lannes |11/12/2024|11/12/2024|TODO|
+|Criar DAGs para pipelines ETL|Implementar DAGs básicas que realizam ETL entre os bancos Conecta e Stage Data.|Mateus Lannes |11/12/2024|12/12/2024|TODO|
+|Testar pipelines ETL|Executar e testar os pipelines criados.|Mateus Lannes |12/12/2024|12/12/2024|TODO|
+|Importar dados no Power BI|Configurar a conexão do Power BI com o banco Stage Data e importar dados.|Mateus Lannes |12/12/2024|12/12/2024|TODO|
+|Criar modelo de dados no Power BI|Configurar relacionamentos e transformações no Power BI para estruturar os dados para visualização.|Mateus Lannes |09/12/2024|13/12/2024|TODO|
+|Validar relatórios e gráficos no Power BI|Garantir que os relatórios e gráficos gerados no Power BI estão corretos e atendem aos requisitos do projeto.|Mateus Lannes |09/12/2024|13/12/2024|TODO|
       
 # Análise de Dependências do Sprint
 
-Análise gerada em: 11/12/2024, 7:51:16
+Análise gerada em: 11/12/2024, 7:54:35
 
 ## 🔍 Grafo de Dependências
 
@@ -133,5 +133,5 @@ graph BT
 - **Simulações Realizadas**: 10,000
 
 ---
-*Relatório gerado em 11/12/2024, 7:51:16*
+*Relatório gerado em 11/12/2024, 7:54:35*
         

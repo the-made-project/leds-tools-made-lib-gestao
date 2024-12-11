@@ -22,7 +22,6 @@ export class MarkdownTimeBoxService {
     constructor ( target_folder:string, db_path:string){
      
         this.target_folder = target_folder
-        //this.MANAGEMENT_PATH = createPath(this.target_folder,'management')
         this.TIMEBOX_PATH = createPath(this.target_folder,'sprints')
         this.TIMEBOX_CHARTS_PATH = createPath(this.TIMEBOX_PATH,'charts')
         this.jsonFile = "timebox.json"
@@ -114,9 +113,9 @@ ${timeBox.description}
 * **Status**: ${timeBox.status}
 ## Sprint Backlog
 
-|Nome |Resposável |Data de Inicío | Data Planejada | Status|
-|:----|:--------  |:-------:       | :----------:  | :---: |
-${timeBox.sprintItems?.map(assignee => `|${assignee.issue.title ?? "-"}|${assignee.assignee.name}|${assignee.startDate?? ""}|${assignee.dueDate ?? ""}|${assignee.status?.toLocaleUpperCase()}|`).join("\n")}
+|Nome |Descrição|Resposável |Data de Inicío | Data Planejada | Status|
+|:----|:---------|:--------  |:-------:       | :----------:  | :---: |
+${timeBox.sprintItems?.map(assignee => `|${assignee.issue.title ?? "-"}|${assignee.issue.description ?? "-"}|${assignee.assignee.name}|${assignee.startDate?? ""}|${assignee.dueDate ?? ""}|${assignee.status?.toLocaleUpperCase()}|`).join("\n")}
       
 ${dependencyAnalysis}
         
