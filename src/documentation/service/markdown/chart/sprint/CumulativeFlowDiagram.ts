@@ -34,6 +34,30 @@ export class CumulativeFlowDiagram {
     return `${dia}/${mes}`;
   }
 
+  private getIssueStatus(issue: any, currentDate: Date): string {
+    if (!issue.startDate) {
+      return 'todo';
+    }
+
+    const startDate = this.parseBrazilianDate(issue.startDate);
+    
+    // Se a data atual é anterior à data de início, está em TODO
+    if (currentDate < startDate) {
+      return 'todo';
+    }
+
+    // Se tem startDate e dueDate, está DONE
+    if (issue.startDate && issue.dueDate) {
+      const dueDate = this.parseBrazilianDate(issue.dueDate);
+      if (currentDate >= dueDate) {
+        return 'done';
+      }
+    }
+
+    // Se tem startDate mas não tem dueDate ou ainda não chegou na dueDate, está em DOING
+    return 'inProgress';
+  }
+
   private processData() {
     try {
       const startDate = this.parseBrazilianDate(this.data.startDate);
@@ -51,27 +75,9 @@ export class CumulativeFlowDiagram {
         const formattedDate = this.formatDate(currentDate);
 
         // Calcula as issues em cada estado para o dia atual
-        const issueStates = this.data.sprintItems.map(issue => {
-          // Se não tem data de início, está em TODO
-          if (!issue.startDate) return 'todo';
-
-          const startDate = this.parseBrazilianDate(issue.startDate);
-          
-          // Se a data de início é futura em relação à data atual, está em TODO
-          if (startDate > currentDate) return 'todo';
-          
-          // Se tem data de conclusão e já foi concluída até a data atual, está DONE
-          if (issue.completedDate) {
-            const completedDate = this.parseBrazilianDate(issue.completedDate);
-            if (completedDate <= currentDate) return 'done';
-          }
-          
-          // Se já começou mas não foi concluída ou a conclusão é futura, está IN_PROGRESS
-          if (startDate <= currentDate) return 'inProgress';
-          
-          // Caso padrão (não deveria ocorrer com a lógica acima)
-          return 'todo';
-        });
+        const issueStates = this.data.sprintItems.map(issue => 
+          this.getIssueStatus(issue, currentDate)
+        );
 
         // Conta o número de issues em cada estado
         const statusCounts = {

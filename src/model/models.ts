@@ -74,6 +74,8 @@ export type SprintItem = {
   issue: Issue;  
   startDate?: string;
   dueDate?: string;
+  plannedStartDate?:string;
+  planneddueDate?:string;
   completedDate?:string;
   status?: string;  
 }

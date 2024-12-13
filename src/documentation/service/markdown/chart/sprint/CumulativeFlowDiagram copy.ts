@@ -1,11 +1,11 @@
 import * as fs from 'fs';
 import { TimeBox } from '../../../../../model/models.js';
 
-export class ThroughputGenerator {
+export class CumulativeFlowDiagram {
   private data: TimeBox;
   private readonly outputPath: string;
 
-  constructor(sprintData: TimeBox, outputPath: string = './throughput.svg') {
+  constructor(sprintData: TimeBox, outputPath: string = './cfd.svg') {
     if (!sprintData) {
       throw new Error('Dados da sprint não fornecidos');
     }
@@ -34,44 +34,56 @@ export class ThroughputGenerator {
     return `${dia}/${mes}`;
   }
 
-  private getIssueStatus(issue: any): string {
-    // Nova lógica para determinar o status baseado nas datas
-    if (!issue.startDate) {
-      return "TODO";
-    } else if (issue.startDate && !issue.dueDate) {
-      return "DOING";
-    } else if (issue.startDate && issue.dueDate) {
-      return "DONE";
-    }
-    return "TODO"; // Default fallback
-  }
-
   private processData() {
     try {
       const startDate = this.parseBrazilianDate(this.data.startDate);
       const endDate = this.parseBrazilianDate(this.data.endDate);
-      const days = [];
       
       if (endDate < startDate) {
         throw new Error('Data de fim é anterior à data de início');
       }
 
+      const days = [];
       let currentDate = new Date(startDate);
+      
       while (currentDate <= endDate) {
         const weekDay = currentDate.toLocaleDateString('pt-BR', { weekday: 'short' });
         const formattedDate = this.formatDate(currentDate);
-        const issuesUntilDay = this.data.sprintItems.filter(issue => {
-          if (!issue.startDate) return false;
-          const issueStartDate = this.parseBrazilianDate(issue.startDate);
-          return issueStartDate <= currentDate;
+
+        // Calcula as issues em cada estado para o dia atual
+        const issueStates = this.data.sprintItems.map(issue => {
+          // Se não tem data de início, está em TODO
+          if (!issue.startDate) return 'todo';
+
+          const startDate = this.parseBrazilianDate(issue.startDate);
+          
+          // Se a data de início é futura em relação à data atual, está em TODO
+          if (startDate > currentDate) return 'todo';
+          
+          // Se tem data de conclusão e já foi concluída até a data atual, está DONE
+          if (issue.completedDate) {
+            const completedDate = this.parseBrazilianDate(issue.completedDate);
+            if (completedDate <= currentDate) return 'done';
+          }
+          
+          // Se já começou mas não foi concluída ou a conclusão é futura, está IN_PROGRESS
+          if (startDate <= currentDate) return 'inProgress';
+          
+          // Caso padrão (não deveria ocorrer com a lógica acima)
+          return 'todo';
         });
+
+        // Conta o número de issues em cada estado
+        const statusCounts = {
+          todo: issueStates.filter(state => state === 'todo').length,
+          inProgress: issueStates.filter(state => state === 'inProgress').length,
+          done: issueStates.filter(state => state === 'done').length
+        };
 
         days.push({
           day: `${weekDay} ${formattedDate}`,
           date: new Date(currentDate),
-          todo: issuesUntilDay.filter(issue => this.getIssueStatus(issue) === "TODO").length,
-          inProgress: issuesUntilDay.filter(issue => this.getIssueStatus(issue) === "DOING").length,
-          done: issuesUntilDay.filter(issue => this.getIssueStatus(issue) === "DONE").length
+          ...statusCounts
         });
 
         currentDate.setDate(currentDate.getDate() + 1);
@@ -107,24 +119,50 @@ export class ThroughputGenerator {
 
       const chartWidth = width - margin.left - margin.right;
       const chartHeight = height - margin.top - margin.bottom;
-      const barWidth = Math.min((chartWidth / dailyData.length) * 0.8, 50);
-      const barSpacing = Math.max((chartWidth / dailyData.length) * 0.2, 10);
 
-      let svg = `
+      const xScale = (date: Date) => {
+        const startDate = this.parseBrazilianDate(this.data.startDate);
+        const totalDays = Math.max(1, dailyData.length - 1);
+        const dayIndex = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        return margin.left + (dayIndex * (chartWidth / totalDays));
+      };
+
+      const yScale = (value: number) => {
+        return height - margin.bottom - (value * (chartHeight / Math.max(1, totalIssues)));
+      };
+
+      const generateArea = (data: any[], getValue: (d: any) => number) => {
+        if (data.length === 0) return '';
+
+        const points = data.map(d => {
+          const x = xScale(d.date);
+          const y = yScale(getValue(d));
+          return `${x},${y}`;
+        });
+
+        const bottomPoints = data.map(d => {
+          const x = xScale(d.date);
+          return `${x},${height - margin.bottom}`;
+        }).reverse();
+
+        return `M${points.join(' L')} L${bottomPoints.join(' L')} Z`;
+      };
+
+      const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">
           <defs>
             <style>
               text { font-family: Arial, sans-serif; }
               .title { font-size: 24px; font-weight: bold; }
               .label { font-size: 14px; }
-              .value { font-size: 12px; fill: white; }
+              .value { font-size: 12px; fill: ${colors.lightText}; }
               .axis { font-size: 12px; }
               .legend { font-size: 14px; }
             </style>
           </defs>
-          
+
           <rect width="${width}" height="${height}" fill="white"/>
-          
+
           ${Array.from({ length: 11 }, (_, i) => {
             const y = margin.top + (i * (chartHeight / 10));
             return `
@@ -145,7 +183,23 @@ export class ThroughputGenerator {
               >${Math.round(totalIssues - (i * (totalIssues / 10)))}</text>
             `;
           }).join('')}
-          
+
+          <path 
+            d="${generateArea(dailyData, d => d.todo + d.inProgress + d.done)}" 
+            fill="${colors.todo}" 
+            opacity="0.8"
+          />
+          <path 
+            d="${generateArea(dailyData, d => d.inProgress + d.done)}" 
+            fill="${colors.inProgress}" 
+            opacity="0.8"
+          />
+          <path 
+            d="${generateArea(dailyData, d => d.done)}" 
+            fill="${colors.done}" 
+            opacity="0.8"
+          />
+
           <line 
             x1="${margin.left}" 
             y1="${margin.top}" 
@@ -162,82 +216,23 @@ export class ThroughputGenerator {
             stroke="black" 
             stroke-width="2"
           />
-          
-          ${dailyData.map((day, i) => {
-            const x = margin.left + (i * (chartWidth / dailyData.length)) + barSpacing/2;
-            const barHeight = chartHeight / Math.max(1, totalIssues);
-            
-            const todoHeight = day.todo * barHeight;
-            const inProgressHeight = day.inProgress * barHeight;
-            const doneHeight = day.done * barHeight;
-            
-            return `
-              <g>
-                <rect 
-                  x="${x}" 
-                  y="${height - margin.bottom - todoHeight}" 
-                  width="${barWidth}" 
-                  height="${todoHeight}" 
-                  fill="${colors.todo}"
-                  rx="4"
-                />
-                
-                <rect 
-                  x="${x}" 
-                  y="${height - margin.bottom - todoHeight - inProgressHeight}" 
-                  width="${barWidth}" 
-                  height="${inProgressHeight}" 
-                  fill="${colors.inProgress}"
-                  rx="4"
-                />
-                
-                <rect 
-                  x="${x}" 
-                  y="${height - margin.bottom - todoHeight - inProgressHeight - doneHeight}" 
-                  width="${barWidth}" 
-                  height="${doneHeight}" 
-                  fill="${colors.done}"
-                  rx="4"
-                />
-                
+
+          ${dailyData.map((d, i) => {
+            if (dailyData.length <= 14 || i % 2 === 0) {
+              const x = xScale(d.date);
+              return `
                 <text 
-                  transform="rotate(-45 ${x + barWidth/2} ${height - margin.bottom + 20})" 
-                  x="${x + barWidth/2}" 
-                  y="${height - margin.bottom + 20}" 
-                  text-anchor="end" 
+                  transform="rotate(-45 ${x} ${height - margin.bottom + 20})"
+                  x="${x}"
+                  y="${height - margin.bottom + 20}"
+                  text-anchor="end"
                   class="axis"
-                >${day.day}</text>
-                
-                ${day.todo > 0 ? `
-                  <text 
-                    x="${x + barWidth/2}" 
-                    y="${height - margin.bottom - todoHeight/2}" 
-                    text-anchor="middle" 
-                    class="value"
-                  >${day.todo}</text>
-                ` : ''}
-                
-                ${day.inProgress > 0 ? `
-                  <text 
-                    x="${x + barWidth/2}" 
-                    y="${height - margin.bottom - todoHeight - inProgressHeight/2}" 
-                    text-anchor="middle" 
-                    class="value"
-                  >${day.inProgress}</text>
-                ` : ''}
-                
-                ${day.done > 0 ? `
-                  <text 
-                    x="${x + barWidth/2}" 
-                    y="${height - margin.bottom - todoHeight - inProgressHeight - doneHeight/2}" 
-                    text-anchor="middle" 
-                    class="value"
-                  >${day.done}</text>
-                ` : ''}
-              </g>
-            `;
+                >${d.day}</text>
+              `;
+            }
+            return '';
           }).join('')}
-          
+
           <text 
             transform="rotate(-90 ${margin.left - 40} ${height/2})" 
             x="${margin.left - 40}" 
@@ -245,35 +240,35 @@ export class ThroughputGenerator {
             text-anchor="middle" 
             class="label"
           >Número de Tarefas</text>
-          
+
           <text 
             x="${width/2}" 
             y="${height - 20}" 
             text-anchor="middle" 
             class="label"
           >Dias da Sprint</text>
-          
+
           <text 
             x="${width/2}" 
             y="30" 
             text-anchor="middle" 
             class="title"
-          >${this.data.name} - Throughput</text>
-          
+          >${this.data.name} - Cumulative Flow Diagram</text>
+
           <g transform="translate(${width - margin.right + 20}, ${margin.top})">
             <rect width="15" height="15" fill="${colors.todo}" rx="2"/>
-            <text x="25" y="12" class="legend">TODO</text>
+            <text x="25" y="12" class="legend">A Fazer</text>
             
             <rect y="25" width="15" height="15" fill="${colors.inProgress}" rx="2"/>
-            <text x="25" y="37" class="legend">DOING</text>
+            <text x="25" y="37" class="legend">Em Andamento</text>
             
             <rect y="50" width="15" height="15" fill="${colors.done}" rx="2"/>
-            <text x="25" y="62" class="legend">DONE</text>
+            <text x="25" y="62" class="legend">Concluído</text>
             
-            <text x="0" y="90" class="value" fill="${colors.lightText}">
+            <text x="0" y="90" class="value">
               Período: ${this.data.startDate} - ${this.data.endDate}
             </text>
-            <text x="0" y="110" class="value" fill="${colors.lightText}">
+            <text x="0" y="110" class="value">
               Total de Issues: ${totalIssues}
             </text>
           </g>
@@ -291,9 +286,9 @@ export class ThroughputGenerator {
     try {
       const svg = this.generateSVG();
       fs.writeFileSync(this.outputPath, svg);
-      console.log(`Throughput gerado com sucesso em: ${this.outputPath}`);
+      console.log(`CFD gerado com sucesso em: ${this.outputPath}`);
     } catch (error) {
-      console.error('Erro ao gerar throughput:', error);
+      console.error('Erro ao gerar CFD:', error);
       throw error;
     }
   }

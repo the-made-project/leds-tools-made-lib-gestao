@@ -118,9 +118,9 @@ ${timeBox.description}
 * **Status**: ${timeBox.status}
 ## Sprint Backlog
 
-|Nome |Descrição|Resposável |Data de Inicío | Data Planejada | Status|
-|:----|:---------|:--------  |:-------:       | :----------:  | :---: |
-${timeBox.sprintItems?.map(assignee => `|${assignee.issue.title ?? "-"}|${assignee.issue.description ?? "-"}|${assignee.assignee.name}|${assignee.startDate?? ""}|${assignee.dueDate ?? ""}|${assignee.status?.toLocaleUpperCase()}|`).join("\n")}
+|Nome |Descrição|Resposável |Data de Inicio Planejada| Data de Entrega Planejada| Data de Inicío | Data Entrega | Status|
+|:----|:---------|:-------- |:----------------------:| :-----------------------:| :------------: |:------------:|:-----:|
+${timeBox.sprintItems?.map(assignee => `|${assignee.issue.title ?? "-"}|${assignee.issue.description ?? "-"}|${assignee.assignee.name}|${assignee.startDate?? ""}|${assignee.startDate?? ""}|${assignee.startDate?? ""}|${assignee.dueDate ?? ""}|${assignee.status?.toLocaleUpperCase()}|`).join("\n")}
       
 ${dependencyAnalysis}
         

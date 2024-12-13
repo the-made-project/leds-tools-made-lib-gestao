@@ -34,18 +34,6 @@ export class ThroughputGenerator {
     return `${dia}/${mes}`;
   }
 
-  private getIssueStatus(issue: any): string {
-    // Nova lógica para determinar o status baseado nas datas
-    if (!issue.startDate) {
-      return "TODO";
-    } else if (issue.startDate && !issue.dueDate) {
-      return "DOING";
-    } else if (issue.startDate && issue.dueDate) {
-      return "DONE";
-    }
-    return "TODO"; // Default fallback
-  }
-
   private processData() {
     try {
       const startDate = this.parseBrazilianDate(this.data.startDate);
@@ -69,9 +57,11 @@ export class ThroughputGenerator {
         days.push({
           day: `${weekDay} ${formattedDate}`,
           date: new Date(currentDate),
-          todo: issuesUntilDay.filter(issue => this.getIssueStatus(issue) === "TODO").length,
-          inProgress: issuesUntilDay.filter(issue => this.getIssueStatus(issue) === "DOING").length,
-          done: issuesUntilDay.filter(issue => this.getIssueStatus(issue) === "DONE").length
+          todo: issuesUntilDay.filter(issue => issue.status === "TODO").length,
+          inProgress: issuesUntilDay.filter(issue => 
+            issue.status === "IN_PROGRESS" || issue.status === "DOING"
+          ).length,
+          done: issuesUntilDay.filter(issue => issue.status === "DONE").length
         });
 
         currentDate.setDate(currentDate.getDate() + 1);
@@ -107,8 +97,8 @@ export class ThroughputGenerator {
 
       const chartWidth = width - margin.left - margin.right;
       const chartHeight = height - margin.top - margin.bottom;
-      const barWidth = Math.min((chartWidth / dailyData.length) * 0.8, 50);
-      const barSpacing = Math.max((chartWidth / dailyData.length) * 0.2, 10);
+      const barWidth = Math.min((chartWidth / dailyData.length) * 0.8, 50); // Limita largura máxima
+      const barSpacing = Math.max((chartWidth / dailyData.length) * 0.2, 10); // Garante espaçamento mínimo
 
       let svg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">

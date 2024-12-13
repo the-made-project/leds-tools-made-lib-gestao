@@ -9,19 +9,19 @@ Entender os objetivos organizacionais da FAPES
 * **Status**: CLOSED
 ## Sprint Backlog
 
-|Nome |Descrição|Resposável |Data de Inicío | Data Planejada | Status|
-|:----|:---------|:--------  |:-------:       | :----------:  | :---: |
-|Entrevistar|Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa|Mateus Lannes |25/11/2024|06/12/2024|TODO|
-|Entrevistar|Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa|Felipe Costabeber|25/11/2024|06/12/2024|DONE|
-|Validar dos da entrevista|Validar objetivos organizacionais|Mateus Lannes |25/11/2024|06/12/2024|DONE|
-|Entrevistar|Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa|Felipe Costabeber|25/11/2024|05/12/2024|DONE|
-|Pesquisar sobre Medidas e Indicadores|Pesquisar sobre medidas e indicadores para atender a necessidade de informações|Mateus Lannes |25/11/2024|06/12/2024|DONE|
-|Validar necessidade de informação|Validar as necessidade de informação|Mateus Lannes |25/11/2024|06/12/2024|TODO|
-|Validar as medidas e indicadores |Validar medias e indicadores|Mateus Lannes |25/11/2024|06/12/2024|TODO|
+|Nome |Descrição|Resposável |Data de Inicio Planejada| Data de Entrega Planejada| Data de Inicío | Data Entrega | Status|
+|:----|:---------|:-------- |:----------------------:| :-----------------------:| :------------: |:------------:|:-----:|
+|Entrevistar|Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa|Mateus Lannes |25/11/2024|25/11/2024|25/11/2024|06/12/2024|TODO|
+|Entrevistar|Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa|Felipe Costabeber|25/11/2024|25/11/2024|25/11/2024|06/12/2024|DONE|
+|Validar dos da entrevista|Validar objetivos organizacionais|Mateus Lannes |25/11/2024|25/11/2024|25/11/2024|06/12/2024|DONE|
+|Entrevistar|Entrevista os clientes para levantar os objetivos organizacionais relacionados bolsa|Felipe Costabeber|25/11/2024|25/11/2024|25/11/2024|05/12/2024|DONE|
+|Pesquisar sobre Medidas e Indicadores|Pesquisar sobre medidas e indicadores para atender a necessidade de informações|Mateus Lannes |25/11/2024|25/11/2024|25/11/2024|06/12/2024|DONE|
+|Validar necessidade de informação|Validar as necessidade de informação|Mateus Lannes |25/11/2024|25/11/2024|25/11/2024|06/12/2024|TODO|
+|Validar as medidas e indicadores |Validar medias e indicadores|Mateus Lannes |25/11/2024|25/11/2024|25/11/2024|06/12/2024|TODO|
       
 # Análise de Dependências do Sprint
 
-Análise gerada em: 13/12/2024, 18:58:42
+Análise gerada em: 13/12/2024, 19:30:03
 
 ## 🔍 Grafo de Dependências
 

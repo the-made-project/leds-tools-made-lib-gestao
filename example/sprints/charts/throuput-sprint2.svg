@@ -212,16 +212,16 @@
               <g>
                 <rect 
                   x="89.6" 
-                  y="275" 
+                  y="500" 
                   width="50" 
-                  height="225" 
+                  height="0" 
                   fill="#ef4444"
                   rx="4"
                 />
                 
                 <rect 
                   x="89.6" 
-                  y="275" 
+                  y="500" 
                   width="50" 
                   height="0" 
                   fill="#f59e0b"
@@ -232,7 +232,7 @@
                   x="89.6" 
                   y="275" 
                   width="50" 
-                  height="0" 
+                  height="225" 
                   fill="#22c55e"
                   rx="4"
                 />
@@ -246,6 +246,10 @@
                 >seg. 09/12</text>
                 
                 
+                
+                
+                
+                
                   <text 
                     x="114.6" 
                     y="387.5" 
@@ -253,25 +257,21 @@
                     class="value"
                   >5</text>
                 
-                
-                
-                
-                
               </g>
             
               <g>
                 <rect 
                   x="285.6" 
-                  y="230" 
+                  y="500" 
                   width="50" 
-                  height="270" 
+                  height="0" 
                   fill="#ef4444"
                   rx="4"
                 />
                 
                 <rect 
                   x="285.6" 
-                  y="230" 
+                  y="500" 
                   width="50" 
                   height="0" 
                   fill="#f59e0b"
@@ -282,7 +282,7 @@
                   x="285.6" 
                   y="230" 
                   width="50" 
-                  height="0" 
+                  height="270" 
                   fill="#22c55e"
                   rx="4"
                 />
@@ -296,6 +296,10 @@
                 >ter. 10/12</text>
                 
                 
+                
+                
+                
+                
                   <text 
                     x="310.6" 
                     y="365" 
@@ -303,25 +307,21 @@
                     class="value"
                   >6</text>
                 
-                
-                
-                
-                
               </g>
             
               <g>
                 <rect 
                   x="481.6" 
-                  y="140" 
+                  y="500" 
                   width="50" 
-                  height="360" 
+                  height="0" 
                   fill="#ef4444"
                   rx="4"
                 />
                 
                 <rect 
                   x="481.6" 
-                  y="140" 
+                  y="500" 
                   width="50" 
                   height="0" 
                   fill="#f59e0b"
@@ -332,7 +332,7 @@
                   x="481.6" 
                   y="140" 
                   width="50" 
-                  height="0" 
+                  height="360" 
                   fill="#22c55e"
                   rx="4"
                 />
@@ -346,6 +346,10 @@
                 >qua. 11/12</text>
                 
                 
+                
+                
+                
+                
                   <text 
                     x="506.6" 
                     y="320" 
@@ -353,25 +357,21 @@
                     class="value"
                   >8</text>
                 
-                
-                
-                
-                
               </g>
             
               <g>
                 <rect 
                   x="677.6" 
-                  y="50" 
+                  y="500" 
                   width="50" 
-                  height="450" 
+                  height="0" 
                   fill="#ef4444"
                   rx="4"
                 />
                 
                 <rect 
                   x="677.6" 
-                  y="50" 
+                  y="500" 
                   width="50" 
                   height="0" 
                   fill="#f59e0b"
@@ -382,7 +382,7 @@
                   x="677.6" 
                   y="50" 
                   width="50" 
-                  height="0" 
+                  height="450" 
                   fill="#22c55e"
                   rx="4"
                 />
@@ -396,6 +396,10 @@
                 >qui. 12/12</text>
                 
                 
+                
+                
+                
+                
                   <text 
                     x="702.6" 
                     y="275" 
@@ -403,25 +407,21 @@
                     class="value"
                   >10</text>
                 
-                
-                
-                
-                
               </g>
             
               <g>
                 <rect 
                   x="873.6" 
-                  y="50" 
+                  y="500" 
                   width="50" 
-                  height="450" 
+                  height="0" 
                   fill="#ef4444"
                   rx="4"
                 />
                 
                 <rect 
                   x="873.6" 
-                  y="50" 
+                  y="500" 
                   width="50" 
                   height="0" 
                   fill="#f59e0b"
@@ -432,7 +432,7 @@
                   x="873.6" 
                   y="50" 
                   width="50" 
-                  height="0" 
+                  height="450" 
                   fill="#22c55e"
                   rx="4"
                 />
@@ -446,16 +446,16 @@
                 >sex. 13/12</text>
                 
                 
+                
+                
+                
+                
                   <text 
                     x="898.6" 
                     y="275" 
                     text-anchor="middle" 
                     class="value"
                   >10</text>
-                
-                
-                
-                
                 
               </g>
             
