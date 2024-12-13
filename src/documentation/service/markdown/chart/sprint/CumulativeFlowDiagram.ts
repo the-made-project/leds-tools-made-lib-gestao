@@ -34,30 +34,6 @@ export class CumulativeFlowDiagram {
     return `${dia}/${mes}`;
   }
 
-  private getIssueStatus(issue: any, currentDate: Date): string {
-    if (!issue.startDate) {
-      return 'todo';
-    }
-
-    const startDate = this.parseBrazilianDate(issue.startDate);
-    
-    // Se a data atual é anterior à data de início, está em TODO
-    if (currentDate < startDate) {
-      return 'todo';
-    }
-
-    // Se tem startDate e dueDate, está DONE
-    if (issue.startDate && issue.dueDate) {
-      const dueDate = this.parseBrazilianDate(issue.dueDate);
-      if (currentDate >= dueDate) {
-        return 'done';
-      }
-    }
-
-    // Se tem startDate mas não tem dueDate ou ainda não chegou na dueDate, está em DOING
-    return 'inProgress';
-  }
-
   private processData() {
     try {
       const startDate = this.parseBrazilianDate(this.data.startDate);
@@ -74,10 +50,21 @@ export class CumulativeFlowDiagram {
         const weekDay = currentDate.toLocaleDateString('pt-BR', { weekday: 'short' });
         const formattedDate = this.formatDate(currentDate);
 
-        // Calcula as issues em cada estado para o dia atual
-        const issueStates = this.data.sprintItems.map(issue => 
-          this.getIssueStatus(issue, currentDate)
-        );
+        // Calcula o estado de cada issue para o dia atual
+        const issueStates = this.data.sprintItems.map(issue => {
+          if (!issue.startDate) return 'todo';
+          
+          const startDate = this.parseBrazilianDate(issue.startDate);
+          const dueDate = issue.dueDate ? this.parseBrazilianDate(issue.dueDate) : null;
+
+          if (dueDate && currentDate >= dueDate) {
+            return 'done';
+          }
+          if (currentDate >= startDate) {
+            return 'inProgress';
+          }
+          return 'todo';
+        });
 
         // Conta o número de issues em cada estado
         const statusCounts = {

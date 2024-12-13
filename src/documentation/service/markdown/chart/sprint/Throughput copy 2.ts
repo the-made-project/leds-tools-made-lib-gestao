@@ -60,12 +60,10 @@ export class ThroughputGenerator {
       while (currentDate <= endDate) {
         const weekDay = currentDate.toLocaleDateString('pt-BR', { weekday: 'short' });
         const formattedDate = this.formatDate(currentDate);
-        
-        // Alterado para usar dueDate ao invés de startDate
         const issuesUntilDay = this.data.sprintItems.filter(issue => {
-          if (!issue.dueDate) return false;
-          const issueDueDate = this.parseBrazilianDate(issue.dueDate);
-          return issueDueDate <= currentDate;
+          if (!issue.startDate) return false;
+          const issueStartDate = this.parseBrazilianDate(issue.startDate);
+          return issueStartDate <= currentDate;
         });
 
         days.push({
