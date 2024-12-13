@@ -79,3 +79,29 @@ Dashboard de BI do Conecta Fapes
 
 ---
 *Relatório gerado em 13/12/2024, 19:39:54*
+
+```mermaid
+gantt
+    title Sprints e Tarefas - Gráfico Gantt
+    dateFormat YYYY-MM-DD
+    axisFormat %d/%m
+
+    section Sprint 1
+    Sprint Inicial      :crit, timeBox_sprint1, 2024-01-01, 2024-01-15
+    Implementar Login (Planejado)    :plan_DEV-001, 2024-01-01, 2024-01-10
+    Implementar Login (Real)         :done, act_DEV-001, 2024-01-03, 2024-01-15
+
+    section Sprint 2
+    Sprint de Desenvolvimento    :crit, timeBox_sprint2, 2024-01-16, 2024-01-30
+    Desenvolver API (Planejado)  :plan_DEV-002, 2024-01-16, 2024-01-25
+    Desenvolver API (Real)       :active, act_DEV-002, 2024-01-17, 2024-01-28
+    
+    section Dependências
+    Dependência DEV-001 -> DEV-002    :milestone, dep1, 2024-01-16, 2024-01-16
+
+    section Legenda
+    Sprint           :crit, sprint_legend, 2024-01-01, 2024-01-02
+    Tarefa Planejada :plan_legend, 2024-01-01, 2024-01-02
+    Tarefa Ativa    :active, task_active_legend, 2024-01-01, 2024-01-02
+    Tarefa Concluída :done, task_done_legend, 2024-01-01, 2024-01-02
+```

@@ -68,17 +68,7 @@ export type Person = {
   name : string;  
 }
 
-export type SprintItem = {
-  id: string;
-  assignee:Person;
-  issue: Issue;  
-  startDate?: string;
-  dueDate?: string;
-  plannedStartDate?:string;
-  planneddueDate?:string;
-  completedDate?:string;
-  status?: string;  
-}
+
 
 
  export type TimeBox = {
@@ -92,6 +82,17 @@ export type SprintItem = {
   sprintItems:SprintItem[];
 };
 
+export type SprintItem = {
+  id: string;
+  assignee:Person;
+  issue: Issue;  
+  startDate?: string;
+  dueDate?: string;
+  plannedStartDate?:string;
+  planneddueDate?:string;
+  completedDate?:string;
+  status?: string;  
+}
 
 export type Issue = {
   id: string;
