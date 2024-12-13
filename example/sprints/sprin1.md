@@ -21,7 +21,7 @@ Entender os objetivos organizacionais da FAPES
       
 # Análise de Dependências do Sprint
 
-Análise gerada em: 11/12/2024, 10:17:49
+Análise gerada em: 13/12/2024, 18:42:15
 
 ## 🔍 Grafo de Dependências
 

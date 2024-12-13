@@ -73,8 +73,7 @@ export class BacklogMarkdownConverter {
                 markdown += `${backlog.description}\n\n`;
             }
             
-            if (backlog.issues && backlog.issues.length > 0) {
-                markdown += '### Issues\n\n';
+            if (backlog.issues && backlog.issues.length > 0) {                
                 
                 markdown += `| ${headers.join(' | ')} |\n`;
                 markdown += `| ${headers.map(() => '---').join(' | ')} |\n`;

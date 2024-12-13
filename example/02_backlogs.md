@@ -4,8 +4,6 @@
 
 Backlog para ideias futuras e estudo
 
-### Issues
-
 | Tipo | Título | Descrição | Status | Dependências |
 | --- | --- | --- | --- | --- |
 | 🌟 Epic | Estudar CDC | - | - | - |
@@ -15,8 +13,6 @@ Backlog para ideias futuras e estudo
 ## Backlog do BI
 
 Backlog dedicado a equipe de BI
-
-### Issues
 
 | Tipo | Título | Descrição | Status | Dependências |
 | --- | --- | --- | --- | --- |
