@@ -10,6 +10,7 @@ import { CumulativeFlowDiagram } from './chart/sprint/CumulativeFlowDiagram.js';
 import { SprintMonteCarlo } from "./chart/sprint/MonteCarlo.js";
 import { ProjectDependencyAnalyzer } from "./chart/sprint/ProjectDependencyAnalyzer.js";
 import { SprintSummary, SprintSummaryGenerator } from './sprint/SprintSummaryGenerator.js';
+import { ThroughputGenerator } from './chart/sprint/Throughput.js';
 
 export class MarkdownTimeBoxService {
 
@@ -69,14 +70,16 @@ export class MarkdownTimeBoxService {
             const exist = this.fileContainsName(this.TIMEBOX_PATH, fileName)
             // Gerar o CFD
             let generatorx = new CumulativeFlowDiagram(timebox,this.TIMEBOX_CHARTS_PATH+`/cfd-${timebox.id}.svg`);
+            let generatorThroput = new ThroughputGenerator(timebox, this.TIMEBOX_CHARTS_PATH+`/throuput-${timebox.id}.svg`)
             
             if (!exist){
                 fs.writeFileSync(filePath, this.createTimeBoxExport(timebox))
-                generatorx.generate();            
+                generatorx.generate();    
+                generatorThroput.generate()        
             }
             if (exist && timebox.status != 'CLOSED'){
                 fs.writeFileSync(filePath, this.createTimeBoxExport(timebox))                        
-                generatorx.generate();   
+                generatorThroput.generate()        
             }
             
         } );
@@ -98,11 +101,13 @@ export class MarkdownTimeBoxService {
           const monteCarlo = new SprintMonteCarlo(timeBox,10000);
           monteCarloAnalysis = monteCarlo.generateMarkdownReport();
        }
+
+      
       
       const analyzer = new ProjectDependencyAnalyzer(timeBox);
       const dependencyAnalysis = analyzer.generateAnalysis();
 
-        return `# ${timeBox.name.toLocaleUpperCase()}
+    return `# ${timeBox.name.toLocaleUpperCase()}
 
 ${timeBox.description}
 
@@ -122,6 +127,9 @@ ${dependencyAnalysis}
        
 ## Cumulative Flow
 ![ Cumulative Flow](./charts/cfd-${timeBox.id}.svg)
+
+## Throughput
+![ Throughput](./charts/throuput-${timeBox.id}.svg)
         
 ${monteCarloAnalysis}
         `

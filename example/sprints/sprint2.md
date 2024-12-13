@@ -24,7 +24,7 @@ Levantar a infraestrutura de BI no LEDS, contendo o banco Stage Data, Apache Air
       
 # Análise de Dependências do Sprint
 
-Análise gerada em: 13/12/2024, 18:42:15
+Análise gerada em: 13/12/2024, 18:58:42
 
 ## 🔍 Grafo de Dependências
 
@@ -85,6 +85,9 @@ graph BT
        
 ## Cumulative Flow
 ![ Cumulative Flow](./charts/cfd-sprint2.svg)
+
+## Throughput
+![ Throughput](./charts/throuput-sprint2.svg)
         
 # Previsão da Sprint
 
@@ -133,5 +136,5 @@ graph BT
 - **Simulações Realizadas**: 10,000
 
 ---
-*Relatório gerado em 13/12/2024, 18:42:15*
+*Relatório gerado em 13/12/2024, 18:58:42*
         

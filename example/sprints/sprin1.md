@@ -21,7 +21,7 @@ Entender os objetivos organizacionais da FAPES
       
 # Análise de Dependências do Sprint
 
-Análise gerada em: 13/12/2024, 18:42:15
+Análise gerada em: 13/12/2024, 18:58:42
 
 ## 🔍 Grafo de Dependências
 
@@ -70,6 +70,9 @@ graph BT
        
 ## Cumulative Flow
 ![ Cumulative Flow](./charts/cfd-sprin1.svg)
+
+## Throughput
+![ Throughput](./charts/throuput-sprin1.svg)
         
 
         

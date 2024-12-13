@@ -68,9 +68,6 @@ export type Person = {
   name : string;  
 }
 
-
-
-
 export type SprintItem = {
   id: string;
   assignee:Person;
