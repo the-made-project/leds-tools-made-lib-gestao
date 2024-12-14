@@ -47,8 +47,6 @@ export type Release = {
   issues?: Issue[];
 }
 
-
-
  
 export type IssuesDTO = {
     data: any[];
@@ -66,18 +64,8 @@ export type Person = {
   id:string;  
   email: string;
   name : string;  
+  discod:string;
 }
-
-export type SprintItem = {
-  id: string;
-  assignee:Person;
-  issue: Issue;  
-  startDate?: string;
-  dueDate?: string;
-  completedDate?:string;
-  status?: string;  
-}
-
 
  export type TimeBox = {
   id?: string;  
@@ -90,6 +78,16 @@ export type SprintItem = {
   sprintItems:SprintItem[];
 };
 
+export type SprintItem = {
+  id: string;
+  assignee:Person;
+  issue: Issue;  
+  startDate?: string;
+  dueDate?: string;
+  plannedStartDate?:string;
+  planneddueDate?:string;
+  status?: string;  
+}
 
 export type Issue = {
   id: string;
@@ -97,6 +95,7 @@ export type Issue = {
   key?: string;
   self?: string;
   type: string;
+  subtype:string;
   title?: string;
   description?:string;
   status?:string;

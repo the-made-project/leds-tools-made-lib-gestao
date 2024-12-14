@@ -50,26 +50,19 @@ export class CumulativeFlowDiagram {
         const weekDay = currentDate.toLocaleDateString('pt-BR', { weekday: 'short' });
         const formattedDate = this.formatDate(currentDate);
 
-        // Calcula as issues em cada estado para o dia atual
+        // Calcula o estado de cada issue para o dia atual
         const issueStates = this.data.sprintItems.map(issue => {
-          // Se não tem data de início, está em TODO
           if (!issue.startDate) return 'todo';
-
+          
           const startDate = this.parseBrazilianDate(issue.startDate);
-          
-          // Se a data de início é futura em relação à data atual, está em TODO
-          if (startDate > currentDate) return 'todo';
-          
-          // Se tem data de conclusão e já foi concluída até a data atual, está DONE
-          if (issue.completedDate) {
-            const completedDate = this.parseBrazilianDate(issue.completedDate);
-            if (completedDate <= currentDate) return 'done';
+          const dueDate = issue.dueDate ? this.parseBrazilianDate(issue.dueDate) : null;
+
+          if (dueDate && currentDate >= dueDate) {
+            return 'done';
           }
-          
-          // Se já começou mas não foi concluída ou a conclusão é futura, está IN_PROGRESS
-          if (startDate <= currentDate) return 'inProgress';
-          
-          // Caso padrão (não deveria ocorrer com a lógica acima)
+          if (currentDate >= startDate) {
+            return 'inProgress';
+          }
           return 'todo';
         });
 

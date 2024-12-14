@@ -12,6 +12,17 @@ export class ProjectMonteCarlo {
     this.simulations = simulations;
   }
 
+  private determineTaskStatus(task: { startDate?: string; dueDate?: string }): string {
+    if (!task.startDate) {
+      return "TODO";
+    } else if (task.startDate && !task.dueDate) {
+      return "DOING";
+    } else if (task.startDate && task.dueDate) {
+      return "DONE";
+    }
+    return "TODO"; // Default fallback
+  }
+
   private parseBrazilianDate(dateString: string): Date {
     const [day, month, year] = dateString.split('/').map(Number);
     return new Date(year, month - 1, day);
@@ -27,7 +38,7 @@ export class ProjectMonteCarlo {
   private calculateDailyVelocity(): number[] {
     const velocities: number[] = [];
     const completedTasks = this.sprints.flatMap(sprint => 
-      sprint.sprintItems.filter(task => task.status === "DONE")
+      sprint.sprintItems.filter(task => this.determineTaskStatus(task) === "DONE")
     );
     
     if (completedTasks.length > 0) {
@@ -51,7 +62,7 @@ export class ProjectMonteCarlo {
   private getProjectMetrics() {
     const totalTasks = this.sprints.reduce((sum, sprint) => sum + sprint.sprintItems.length, 0);
     const completedTasks = this.sprints.reduce((sum, sprint) => 
-      sum + sprint.sprintItems.filter(t => t.status === "DONE").length, 0
+      sum + sprint.sprintItems.filter(t => this.determineTaskStatus(t) === "DONE").length, 0
     );
     const remainingTasks = totalTasks - completedTasks;
     

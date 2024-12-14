@@ -9,22 +9,43 @@ Levantar a infraestrutura de BI no LEDS, contendo o banco Stage Data, Apache Air
 * **Status**: IN_PROGRESS
 ## Sprint Backlog
 
-|Nome |Descrição|Resposável |Data de Inicío | Data Planejada | Status|
-|:----|:---------|:--------  |:-------:       | :----------:  | :---: |
-|Validar necessidade de informação|Validar as necessidade de informação|Mateus Lannes |09/12/2024|10/12/2024|TODO|
-|Validar as medidas e indicadores |Validar medias e indicadores|Mateus Lannes |09/12/2024|10/12/2024|TODO|
-|Alinhar com a equipe de DevOps|Alinhar permissões e acessos do bnaco com a equipe de DevOps.|Mateus Lannes |10/12/2024|10/12/2024|TODO|
-|Verificar funcionamento do Stage Data|Testar a conectividade e validação do banco Stage Data|Mateus Lannes |09/12/2024|10/12/2024|TODO|
-|Instalar e configurar o Airflow|Instalar o Airflow e configurar conexões com os bancos Conecta e Stage Data.|Mateus Lannes |11/12/2024|11/12/2024|TODO|
-|Criar DAGs para pipelines ETL|Implementar DAGs básicas que realizam ETL entre os bancos Conecta e Stage Data.|Mateus Lannes |11/12/2024|12/12/2024|TODO|
-|Testar pipelines ETL|Executar e testar os pipelines criados.|Mateus Lannes |12/12/2024|12/12/2024|TODO|
-|Importar dados no Power BI|Configurar a conexão do Power BI com o banco Stage Data e importar dados.|Mateus Lannes |12/12/2024|12/12/2024|TODO|
-|Criar modelo de dados no Power BI|Configurar relacionamentos e transformações no Power BI para estruturar os dados para visualização.|Mateus Lannes |09/12/2024|13/12/2024|TODO|
-|Validar relatórios e gráficos no Power BI|Garantir que os relatórios e gráficos gerados no Power BI estão corretos e atendem aos requisitos do projeto.|Mateus Lannes |09/12/2024|13/12/2024|TODO|
-      
+|Nome |Descrição|Resposável |Data de Inicio Planejada| Data de Entrega Planejada| Data de Inicío | Data Entrega | Status|
+|:----|:---------|:-------- |:----------------------:| :-----------------------:| :------------: |:------------:|:-----:|
+|Validar necessidade de informação|Validar as necessidade de informação|Mateus Lannes |09/12/2024|09/12/2024|09/12/2024|10/12/2024|TODO|
+|Validar as medidas e indicadores |Validar medias e indicadores|Mateus Lannes |09/12/2024|09/12/2024|09/12/2024|10/12/2024|TODO|
+|Alinhar com a equipe de DevOps|Alinhar permissões e acessos do bnaco com a equipe de DevOps.|Mateus Lannes |10/12/2024|10/12/2024|10/12/2024|10/12/2024|TODO|
+|Verificar funcionamento do Stage Data|Testar a conectividade e validação do banco Stage Data|Mateus Lannes |09/12/2024|09/12/2024|09/12/2024|10/12/2024|TODO|
+|Instalar e configurar o Airflow|Instalar o Airflow e configurar conexões com os bancos Conecta e Stage Data.|Mateus Lannes |11/12/2024|11/12/2024|11/12/2024|11/12/2024|TODO|
+|Criar DAGs para pipelines ETL|Implementar DAGs básicas que realizam ETL entre os bancos Conecta e Stage Data.|Mateus Lannes |11/12/2024|11/12/2024|11/12/2024|12/12/2024|TODO|
+|Testar pipelines ETL|Executar e testar os pipelines criados.|Mateus Lannes |12/12/2024|12/12/2024|12/12/2024|12/12/2024|TODO|
+|Importar dados no Power BI|Configurar a conexão do Power BI com o banco Stage Data e importar dados.|Mateus Lannes |12/12/2024|12/12/2024|12/12/2024|12/12/2024|TODO|
+|Criar modelo de dados no Power BI|Configurar relacionamentos e transformações no Power BI para estruturar os dados para visualização.|Mateus Lannes |09/12/2024|09/12/2024|09/12/2024|13/12/2024|TODO|
+|Validar relatórios e gráficos no Power BI|Garantir que os relatórios e gráficos gerados no Power BI estão corretos e atendem aos requisitos do projeto.|Mateus Lannes |09/12/2024|09/12/2024|09/12/2024|13/12/2024|TODO|
+     
+## Gantt 
+
+```mermaid
+gantt
+    dateFormat YYYY-MM-DD
+    axisFormat %d/%m
+
+
+    section Sprint - Levantar Infraestrutura de BI no LEDS
+    Validar necessidade de informação (Real) :done, Validar necessidade de informação_actual, 2024-12-09, 2024-12-10
+    Validar as medidas e indicadores  (Real) :done, Validar as medidas e indicadores _actual, 2024-12-09, 2024-12-10
+    Alinhar com a equipe de DevOps (Real) :done, Alinhar com a equipe de DevOps_actual, 2024-12-10, 2024-12-10
+    Verificar funcionamento do Stage Data (Real) :done, Verificar funcionamento do Stage Data_actual, 2024-12-09, 2024-12-10
+    Instalar e configurar o Airflow (Real) :done, Instalar e configurar o Airflow_actual, 2024-12-11, 2024-12-11
+    Criar DAGs para pipelines ETL (Real) :done, Criar DAGs para pipelines ETL_actual, 2024-12-11, 2024-12-12
+    Testar pipelines ETL (Real) :done, Testar pipelines ETL_actual, 2024-12-12, 2024-12-12
+    Importar dados no Power BI (Real) :done, Importar dados no Power BI_actual, 2024-12-12, 2024-12-12
+    Criar modelo de dados no Power BI (Real) :done, Criar modelo de dados no Power BI_actual, 2024-12-09, 2024-12-13
+    Validar relatórios e gráficos no Power BI (Real) :done, Validar relatórios e gráficos no Power BI_actual, 2024-12-09, 2024-12-13
+```
+
 # Análise de Dependências do Sprint
 
-Análise gerada em: 13/12/2024, 18:58:42
+Análise gerada em: 14/12/2024, 16:59:53
 
 ## 🔍 Grafo de Dependências
 
@@ -81,8 +102,7 @@ graph BT
 - ✅ Issue concluída
 - ⚠️ Dependência externa ao sprint
 
-        
-       
+            
 ## Cumulative Flow
 ![ Cumulative Flow](./charts/cfd-sprint2.svg)
 
@@ -94,8 +114,8 @@ graph BT
 ## ✅ SPRINT PROVAVELMENTE SERÁ CONCLUÍDA NO PRAZO
 
 - **Probabilidade de conclusão no prazo**: 100.0%
-- **Data mais provável de conclusão**: qui., 26/12/2024
-- **Dias em relação ao planejado**: 14 dias
+- **Data mais provável de conclusão**: sex., 27/12/2024
+- **Dias em relação ao planejado**: 15 dias
 - **Status**: ❌ Atraso Crítico
 
 ### 📊 Métricas Críticas
@@ -111,7 +131,7 @@ graph BT
 
 | Data | Probabilidade | Status | Observação |
 |------|---------------|---------|------------|
-| qui., 26/12/2024 | 100.0% | ❌ Atraso Crítico | 📍 Data mais provável |
+| sex., 27/12/2024 | 100.0% | ❌ Atraso Crítico | 📍 Data mais provável |
 
 ### 📋 Status das Tarefas
 
@@ -136,5 +156,5 @@ graph BT
 - **Simulações Realizadas**: 10,000
 
 ---
-*Relatório gerado em 13/12/2024, 18:58:42*
+*Relatório gerado em 14/12/2024, 16:59:53*
         

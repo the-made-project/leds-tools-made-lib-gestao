@@ -18,6 +18,17 @@ export class ProjectMetricsGenerator {
     this.sprints = sprints;
   }
 
+  private determineTaskStatus(task: SprintItem): string {
+    if (!task.startDate) {
+      return "TODO";
+    } else if (task.startDate && !task.dueDate) {
+      return "DOING";
+    } else if (task.startDate && task.dueDate) {
+      return "DONE";
+    }
+    return "TODO"; // Default fallback
+  }
+
   private parseBrazilianDate(dateStr: string): Date {
     if (!dateStr) {
       throw new Error('Data não fornecida');
@@ -53,6 +64,7 @@ export class ProjectMetricsGenerator {
       return date;
     }
   }
+
   private calculateDuration(startDate: string, endDate: string): number {
     try {
       const start = this.parseBrazilianDate(startDate);
@@ -73,32 +85,28 @@ export class ProjectMetricsGenerator {
   }
   
   private getErrorMessage(error: unknown): string {
-      if (error instanceof Error) {
-        return error.message;
-      }
-      if (typeof error === 'string') {
-        return error;
-      }
-      if (error && typeof error === 'object' && 'toString' in error) {
-        return error.toString();
-      }
-      return 'Erro desconhecido';
+    if (error instanceof Error) {
+      return error.message;
     }
+    if (typeof error === 'string') {
+      return error;
+    }
+    if (error && typeof error === 'object' && 'toString' in error) {
+      return error.toString();
+    }
+    return 'Erro desconhecido';
+  }
 
   private analyzeTaskStatus(tasks: SprintItem[]): SprintStatus {
     return {
-      completed: tasks.filter(task => task.status === "DONE").length,
-      inProgress: tasks.filter(task => 
-        task.status !== "DONE" && task.startDate
-      ).length,
-      pending: tasks.filter(task => 
-        task.status !== "DONE" && !task.startDate
-      ).length
+      completed: tasks.filter(task => this.determineTaskStatus(task) === "DONE").length,
+      inProgress: tasks.filter(task => this.determineTaskStatus(task) === "DOING").length,
+      pending: tasks.filter(task => this.determineTaskStatus(task) === "TODO").length
     };
   }
 
   private calculateVelocity(tasks: SprintItem[], duration: number): number {
-    const completedTasks = tasks.filter(task => task.status === "DONE").length;
+    const completedTasks = tasks.filter(task => this.determineTaskStatus(task) === "DONE").length;
     return Number((completedTasks / duration).toFixed(2));
   }
 
@@ -110,7 +118,7 @@ export class ProjectMetricsGenerator {
     const graphHeight = height - margin.top - margin.bottom;
 
     const getCompletedTasks = (tasks: SprintItem[]) => 
-        tasks.filter(t => t.status === "Concluído").length;
+        tasks.filter(t => this.determineTaskStatus(t) === "DONE").length;
 
     const maxTasks = Math.max(...sprints.map(s => s.sprintItems.length));
     const barWidth = graphWidth / (sprints.length * 2);
@@ -181,7 +189,6 @@ export class ProjectMetricsGenerator {
   }
 
   private generateMarkdownReport(project: Project): string {
-
     let markdown = '# 📊 Visão Geral do Projeto \n\n' 
     markdown += `${project.description?? "-"}` + '\n';
     
@@ -214,14 +221,12 @@ export class ProjectMetricsGenerator {
       year: 'numeric' 
     })}*`;
 
-    
     markdown += '\n\n## Cumulative Flow \n'
     markdown +='![ Cumulative Flow](./project-cfd.svg)\n\n'
  
     const projectAnalysis = new ProjectMonteCarlo(this.sprints);
     const report = projectAnalysis.generateMarkdownReport();
-    markdown += report
-
+    markdown += report;
     
     return markdown;
   }
@@ -234,24 +239,21 @@ export class ProjectMetricsGenerator {
       }
 
       // Gerar e salvar SVG primeiro
-      
       const svgPath = path.join(outputDir, 'project-cfd.svg');
-      const projectCFD = new ProjectCFD(this.sprints,svgPath )
+      const projectCFD = new ProjectCFD(this.sprints, svgPath);
       projectCFD.generate();
-      const svgPathTP = path.join(outputDir, 'project-throughput.svg')
-      const throughput = new ProjectThroughputGenerator(this.sprints,svgPathTP);
+      
+      const svgPathTP = path.join(outputDir, 'project-throughput.svg');
+      const throughput = new ProjectThroughputGenerator(this.sprints, svgPathTP);
       throughput.generate();
 
       // Gerar markdown com referência ao SVG
       const markdown = this.generateMarkdownReport(project);
       const markdownPath = path.join(outputDir, '01_overview.md');
       await fs.promises.writeFile(markdownPath, markdown, 'utf-8');
-
-      
     } catch (error) {
       console.error('Erro ao gerar arquivos:', error);
       throw error;
     }
   }
 }
-
