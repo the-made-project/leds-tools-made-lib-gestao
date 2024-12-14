@@ -11,6 +11,7 @@ import { SprintMonteCarlo } from "./chart/sprint/MonteCarlo.js";
 import { ProjectDependencyAnalyzer } from "./chart/sprint/ProjectDependencyAnalyzer.js";
 import { SprintSummary, SprintSummaryGenerator } from './sprint/SprintSummaryGenerator.js';
 import { ThroughputGenerator } from './chart/sprint/Throughput.js';
+import { TimeBoxGanttGenerator } from './chart/sprint/TimeBoxGanttGenerator.js';
 
 export class MarkdownTimeBoxService {
 
@@ -104,8 +105,10 @@ export class MarkdownTimeBoxService {
 
       
       
-      const analyzer = new ProjectDependencyAnalyzer(timeBox);
-      const dependencyAnalysis = analyzer.generateAnalysis();
+    const analyzer = new ProjectDependencyAnalyzer(timeBox);
+    const dependencyAnalysis = analyzer.generateAnalysis();
+    const generator = new TimeBoxGanttGenerator();
+    const ganttChart = generator.generateMermaidGantt(timeBox);
 
     return `# ${timeBox.name.toLocaleUpperCase()}
 
@@ -121,10 +124,13 @@ ${timeBox.description}
 |Nome |Descrição|Resposável |Data de Inicio Planejada| Data de Entrega Planejada| Data de Inicío | Data Entrega | Status|
 |:----|:---------|:-------- |:----------------------:| :-----------------------:| :------------: |:------------:|:-----:|
 ${timeBox.sprintItems?.map(assignee => `|${assignee.issue.title ?? "-"}|${assignee.issue.description ?? "-"}|${assignee.assignee.name}|${assignee.startDate?? ""}|${assignee.startDate?? ""}|${assignee.startDate?? ""}|${assignee.dueDate ?? ""}|${assignee.status?.toLocaleUpperCase()}|`).join("\n")}
-      
+     
+## Gantt 
+
+${ganttChart}
+
 ${dependencyAnalysis}
-        
-       
+            
 ## Cumulative Flow
 ![ Cumulative Flow](./charts/cfd-${timeBox.id}.svg)
 

@@ -36,9 +36,9 @@ Dashboard de BI do Conecta Fapes
 
 ### ❌ ALTO RISCO DE ATRASO NO PROJETO
 
-- **Probabilidade de conclusão no prazo**: 18.4%
-- **Data mais provável de conclusão**: seg., 23/12/2024
-- **Dias em relação ao planejado**: 11 dias
+- **Probabilidade de conclusão no prazo**: 18.7%
+- **Data mais provável de conclusão**: ter., 24/12/2024
+- **Dias em relação ao planejado**: 12 dias
 - **Status**: ⚠️ Atraso Moderado
 
 ### 📊 Métricas do Projeto
@@ -54,14 +54,15 @@ Dashboard de BI do Conecta Fapes
 
 | Data | Probabilidade | Status | Observação |
 |------|---------------|---------|------------|
-| qui., 19/12/2024 | 18.4% | ⚠️ Atraso Moderado |  |
-| sex., 20/12/2024 | 15.5% | ⚠️ Atraso Moderado |  |
-| seg., 23/12/2024 | 43.1% | ⚠️ Atraso Moderado | 📍 Data mais provável |
-| ter., 24/12/2024 | 8.8% | ⚠️ Atraso Moderado |  |
-| qua., 25/12/2024 | 12.3% | ⚠️ Atraso Moderado |  |
-| qui., 26/12/2024 | 0.8% | ⚠️ Atraso Moderado |  |
-| sex., 27/12/2024 | 1.1% | ⚠️ Atraso Moderado |  |
+| sex., 20/12/2024 | 18.7% | ⚠️ Atraso Moderado |  |
+| seg., 23/12/2024 | 15.7% | ⚠️ Atraso Moderado |  |
+| ter., 24/12/2024 | 42.6% | ⚠️ Atraso Moderado | 📍 Data mais provável |
+| qua., 25/12/2024 | 8.1% | ⚠️ Atraso Moderado |  |
+| qui., 26/12/2024 | 12.8% | ⚠️ Atraso Moderado |  |
+| sex., 27/12/2024 | 0.9% | ⚠️ Atraso Moderado |  |
+| seg., 30/12/2024 | 1.2% | ❌ Atraso Crítico |  |
 | ter., 31/12/2024 | 0.0% | ❌ Atraso Crítico |  |
+| qua., 01/01/2025 | 0.0% | ❌ Atraso Crítico |  |
 
 ## 💡 Recomendações
 
@@ -78,30 +79,4 @@ Dashboard de BI do Conecta Fapes
 - **Simulações Realizadas**: 10,000
 
 ---
-*Relatório gerado em 13/12/2024, 19:39:54*
-
-```mermaid
-gantt
-    title Sprints e Tarefas - Gráfico Gantt
-    dateFormat YYYY-MM-DD
-    axisFormat %d/%m
-
-    section Sprint 1
-    Sprint Inicial      :crit, timeBox_sprint1, 2024-01-01, 2024-01-15
-    Implementar Login (Planejado)    :plan_DEV-001, 2024-01-01, 2024-01-10
-    Implementar Login (Real)         :done, act_DEV-001, 2024-01-03, 2024-01-15
-
-    section Sprint 2
-    Sprint de Desenvolvimento    :crit, timeBox_sprint2, 2024-01-16, 2024-01-30
-    Desenvolver API (Planejado)  :plan_DEV-002, 2024-01-16, 2024-01-25
-    Desenvolver API (Real)       :active, act_DEV-002, 2024-01-17, 2024-01-28
-    
-    section Dependências
-    Dependência DEV-001 -> DEV-002    :milestone, dep1, 2024-01-16, 2024-01-16
-
-    section Legenda
-    Sprint           :crit, sprint_legend, 2024-01-01, 2024-01-02
-    Tarefa Planejada :plan_legend, 2024-01-01, 2024-01-02
-    Tarefa Ativa    :active, task_active_legend, 2024-01-01, 2024-01-02
-    Tarefa Concluída :done, task_done_legend, 2024-01-01, 2024-01-02
-```
+*Relatório gerado em 14/12/2024, 13:03:20*
