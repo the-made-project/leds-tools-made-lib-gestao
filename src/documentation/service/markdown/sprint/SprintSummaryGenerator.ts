@@ -6,7 +6,6 @@ interface PersonTaskItem {
   status: string;
   startDate?: string;
   dueDate?: string;
-  completedDate?: string;
 }
 
 interface PersonSummary {
@@ -17,7 +16,6 @@ interface PersonSummary {
   statusPercentage: Record<string, string>;
   items: PersonTaskItem[];
 }
-
 
 interface SprintSummaryStats {
   total: number;
@@ -42,7 +40,6 @@ interface PersonSummary {
       status: string;
       startDate?: string;
       dueDate?: string;
-      completedDate?: string;
   }>;
 }
 
@@ -68,17 +65,20 @@ export class SprintSummaryGenerator {
       const statusEmojis: Record<string, string> = {
           'TODO': '🔵',
           'IN_PROGRESS': '🟡',
-          'DONE': '🟢',
-          'BLOCKED': '🔴',
-          'CANCELLED': '⚫',
-          'PLANNED': '⚪',
-          'CLOSED': '🟣'
+          'DONE': '🟢'
       };
-      return statusEmojis[status] || '⚪';
+      return statusEmojis[status] || '🔵';
+  }
+
+  private determineStatus(item: { startDate?: string, dueDate?: string }): string {
+    if (!item.startDate && !item.dueDate) return 'TODO';
+    if (item.startDate && !item.dueDate) return 'IN_PROGRESS';
+    if (item.startDate && item.dueDate) return 'DONE';
+    return 'TODO';
   }
 
   private isOverdue(item: PersonSummary['items'][0]): boolean {
-      if (!item.dueDate || item.status === 'DONE') return false;
+      if (!item.dueDate) return false;
       const today = new Date();
       const dueDate = new Date(item.dueDate);
       return dueDate < today;
@@ -98,7 +98,10 @@ export class SprintSummaryGenerator {
   private calculateStats(items: SprintItem[]): SprintSummaryStats {
       const total = items.length;
       const statusCount = items.reduce((acc: Record<string, number>, item) => {
-          const status = item.status || 'NO_STATUS';
+          const status = this.determineStatus({
+              startDate: item.startDate,
+              dueDate: item.dueDate
+          });
           acc[status] = (acc[status] || 0) + 1;
           return acc;
       }, {});
@@ -126,16 +129,17 @@ export class SprintSummaryGenerator {
         statusCount: stats.statusCount,
         statusPercentage: stats.statusPercentage,
         items: personItems.map(item => {
-            // Determina o título com fallback para casos undefined
             const itemTitle = item.issue.title || item.issue.key || `Task ${item.id}`;
             
             return {
                 id: item.id,
                 title: itemTitle,
-                status: item.status || 'NO_STATUS',
+                status: this.determineStatus({
+                    startDate: item.startDate,
+                    dueDate: item.dueDate
+                }),
                 startDate: item.startDate,
-                dueDate: item.dueDate,
-                completedDate: item.completedDate
+                dueDate: item.dueDate
             };
         })
     };
@@ -145,9 +149,9 @@ export class SprintSummaryGenerator {
     const tasksByDate = new Map<string, number>();
     
     items
-        .filter(item => item.status === 'DONE' && item.completedDate)
+        .filter(item => this.determineStatus(item) === 'DONE' && item.dueDate)
         .forEach(item => {
-            const date = item.completedDate!.split('T')[0];
+            const date = item.dueDate!.split('T')[0];
             tasksByDate.set(date, (tasksByDate.get(date) || 0) + 1);
         });
 
@@ -184,16 +188,15 @@ export class SprintSummaryGenerator {
     if (items.length === 0) return '';
     
     let table = `### ${title}\n\n`;
-    table += `| Status | Título | Data Início | Vencimento | Conclusão |\n`;
+    table += `| Status | Título | Data Início | Vencimento |\n`;
     table += `|:------:|:-------|:------------|:-----------|:----------|\n`;
     
     items.forEach(task => {
         const statusEmoji = this.getStatusEmoji(task.status);
         const startDate = task.startDate || '-';
         const dueDate = task.dueDate || '-';
-        const completedDate = task.completedDate || '-';
         
-        table += `| ${statusEmoji} | ${task.title} | ${startDate} | ${dueDate} | ${completedDate} |\n`;
+        table += `| ${statusEmoji} | ${task.title} | ${startDate} | ${dueDate} |\n`;
     });
     
     return table + '\n';
@@ -224,7 +227,10 @@ export class SprintSummaryGenerator {
                   description: sprint.description,
                   startDate: sprint.startDate,
                   endDate: sprint.endDate,
-                  status: sprint.status || 'NO_STATUS',
+                  status: this.determineStatus({
+                      startDate: sprint.startDate,
+                      dueDate: sprint.endDate
+                  }),
                   stats,
                   peopleStats
               };
@@ -280,16 +286,15 @@ export class SprintSummaryGenerator {
 
           // Visão Geral das Tarefas
           markdown += `## 📋 Visão Geral das Tarefas\n\n`;
-          markdown += `| Status | Responsável | Título | Data Início | Vencimento | Conclusão |\n`;
+          markdown += `| Status | Responsável | Título | Data Início | Vencimento |\n`;
           markdown += `|:------:|:------------|:-------|:------------|:-----------|:----------|\n`;
           sprint.peopleStats.forEach(person => {
               person.items.forEach(task => {
                   const statusEmoji = this.getStatusEmoji(task.status);
                   const startDate = task.startDate || '-';
                   const dueDate = task.dueDate || '-';
-                  const completedDate = task.completedDate || '-';
                   
-                  markdown += `| ${statusEmoji} | ${person.name} | ${task.title} | ${startDate} | ${dueDate} | ${completedDate} |\n`;
+                  markdown += `| ${statusEmoji} | ${person.name} | ${task.title} | ${startDate} | ${dueDate} |\n`;
               });
           });
           markdown += '\n';

@@ -22,17 +22,6 @@ export class ProjectCFD {
     );
   }
 
-  private determineTaskStatus(task: SprintItem): string {
-    if (!task.startDate) {
-      return "TODO";
-    } else if (task.startDate && !task.dueDate) {
-      return "DOING";
-    } else if (task.startDate && task.dueDate) {
-      return "DONE";
-    }
-    return "TODO"; // Default fallback
-  }
-
   private processData() {
     const formatDate = (date: Date) => {
       const dia = date.getDate().toString().padStart(2, '0');
@@ -59,9 +48,11 @@ export class ProjectCFD {
       days.push({
         day: `${weekDay} ${formattedDate}`,
         date: new Date(currentDate),
-        todo: allTasksUntilDay.filter(task => this.determineTaskStatus(task) === "TODO").length,
-        inProgress: allTasksUntilDay.filter(task => this.determineTaskStatus(task) === "DOING").length,
-        done: allTasksUntilDay.filter(task => this.determineTaskStatus(task) === "DONE").length
+        todo: allTasksUntilDay.filter(task => task.status === "TODO").length,
+        inProgress: allTasksUntilDay.filter(task => 
+          task.status === "IN_PROGRESS" || task.status === "DOING"
+        ).length,
+        done: allTasksUntilDay.filter(task => task.status === "DONE").length
       });
 
       currentDate.setDate(currentDate.getDate() + 1);
@@ -95,7 +86,7 @@ export class ProjectCFD {
 
     const xScale = (date: Date) => {
       const startDate = this.parseBrazilianDate(this.sprints[0].startDate);
-      const totalDays = Math.max(1, dailyData.length - 1);
+      const totalDays = Math.max(1, dailyData.length - 1);  // Evita divisão por zero
       const dayIndex = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
       return margin.left + (dayIndex * (chartWidth / totalDays));
     };
@@ -191,7 +182,7 @@ export class ProjectCFD {
         />
 
         ${dailyData.map((d, i) => {
-          if (i % 2 === 0) {
+          if (i % 2 === 0) {  // Mostra mais labels para períodos curtos
             const x = xScale(d.date);
             return `
               <text 

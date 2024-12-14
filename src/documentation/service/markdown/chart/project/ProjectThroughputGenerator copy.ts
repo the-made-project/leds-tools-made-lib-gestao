@@ -1,3 +1,4 @@
+
 import * as fs from 'fs';
 import { TimeBox } from '../../../../../model/models.js';
 
@@ -8,17 +9,6 @@ export class ProjectThroughputGenerator {
     constructor(sprints: TimeBox[], outputPath: string = './project-throughput.svg') {
       this.sprints = this.sortSprints(sprints);
       this.outputPath = outputPath;
-    }
-
-    private determineTaskStatus(task: { startDate?: string; dueDate?: string }): string {
-      if (!task.startDate) {
-        return "TODO";
-      } else if (task.startDate && !task.dueDate) {
-        return "DOING";
-      } else if (task.startDate && task.dueDate) {
-        return "DONE";
-      }
-      return "TODO"; // Default fallback
     }
 
     private parseBrazilianDate(dateString: string): Date {
@@ -51,15 +41,19 @@ export class ProjectThroughputGenerator {
         
         const allTasksUntilDay = this.sprints.flatMap(sprint => {
           return sprint.sprintItems.filter(task => {
-            const taskDueDate = task.dueDate ? this.parseBrazilianDate(task.dueDate) : null;
-            return taskDueDate ? taskDueDate.toDateString() === currentDate.toDateString() : false;
+            const taskStartDate = task.startDate ? this.parseBrazilianDate(task.startDate) : null;
+            return taskStartDate ? taskStartDate <= currentDate : true;
           });
         });
   
         days.push({
           day: `${weekDay} ${formattedDate}`,
           date: new Date(currentDate),
-          done: allTasksUntilDay.filter(task => this.determineTaskStatus(task) === "DONE").length
+          todo: allTasksUntilDay.filter(task => task.status === "TODO").length,
+          inProgress: allTasksUntilDay.filter(task => 
+            task.status === "IN_PROGRESS" || task.status === "DOING"
+          ).length,
+          done: allTasksUntilDay.filter(task => task.status === "DONE").length
         });
   
         currentDate.setDate(currentDate.getDate() + 1);
@@ -73,6 +67,8 @@ export class ProjectThroughputGenerator {
       const height = 600;
       const margin = { top: 50, right: 150, bottom: 100, left: 70 };
       const colors = {
+        todo: '#ef4444',
+        inProgress: '#f59e0b',
         done: '#22c55e',
         grid: '#e5e7eb',
         text: '#000000',
@@ -81,7 +77,6 @@ export class ProjectThroughputGenerator {
   
       const dailyData = this.processData();
       const totalTasks = this.sprints.reduce((sum, sprint) => sum + sprint.sprintItems.length, 0);
-      const maxDailyDone = Math.max(...dailyData.map(d => d.done));
 
       if (totalTasks === 0) {
         throw new Error('Não há tarefas para gerar o gráfico');
@@ -89,8 +84,8 @@ export class ProjectThroughputGenerator {
 
       const chartWidth = width - margin.left - margin.right;
       const chartHeight = height - margin.top - margin.bottom;
-      const barWidth = Math.min((chartWidth / dailyData.length) * 0.8, 50);
-      const barSpacing = Math.max((chartWidth / dailyData.length) * 0.2, 10);
+      const barWidth = Math.min((chartWidth / dailyData.length) * 0.8, 50); // Limita a largura máxima da barra
+      const barSpacing = Math.max((chartWidth / dailyData.length) * 0.2, 10); // Garante um espaçamento mínimo
   
       let svg = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">
@@ -109,7 +104,6 @@ export class ProjectThroughputGenerator {
           
           ${Array.from({ length: 11 }, (_, i) => {
             const y = margin.top + (i * (chartHeight / 10));
-            const value = Math.round(maxDailyDone - (i * (maxDailyDone / 10)));
             return `
               <line 
                 x1="${margin.left}" 
@@ -125,7 +119,7 @@ export class ProjectThroughputGenerator {
                 text-anchor="end" 
                 class="axis" 
                 dominant-baseline="middle"
-              >${value}</text>
+              >${Math.round(totalTasks - (i * (totalTasks / 10)))}</text>
             `;
           }).join('')}
           
@@ -147,29 +141,43 @@ export class ProjectThroughputGenerator {
           />
           
           ${dailyData.map((day, i) => {
+            // Para períodos curtos, mostramos mais labels
             if (dailyData.length <= 14 || i % 2 === 0) {
               const x = margin.left + (i * (chartWidth / dailyData.length)) + barSpacing/2;
-              const barHeight = (day.done / maxDailyDone) * chartHeight;
+              const barHeight = chartHeight / Math.max(1, totalTasks);
+              
+              const todoHeight = day.todo * barHeight;
+              const inProgressHeight = day.inProgress * barHeight;
+              const doneHeight = day.done * barHeight;
               
               return `
                 <g>
-                  ${day.done > 0 ? `
-                    <rect 
-                      x="${x}" 
-                      y="${height - margin.bottom - barHeight}" 
-                      width="${barWidth}" 
-                      height="${barHeight}" 
-                      fill="${colors.done}"
-                      rx="4"
-                    />
-                    <text 
-                      x="${x + barWidth/2}" 
-                      y="${height - margin.bottom - barHeight/2}" 
-                      text-anchor="middle" 
-                      class="value"
-                      fill="white"
-                    >${day.done}</text>
-                  ` : ''}
+                  <rect 
+                    x="${x}" 
+                    y="${height - margin.bottom - todoHeight}" 
+                    width="${barWidth}" 
+                    height="${todoHeight}" 
+                    fill="${colors.todo}"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="${x}" 
+                    y="${height - margin.bottom - todoHeight - inProgressHeight}" 
+                    width="${barWidth}" 
+                    height="${inProgressHeight}" 
+                    fill="${colors.inProgress}"
+                    rx="4"
+                  />
+                  
+                  <rect 
+                    x="${x}" 
+                    y="${height - margin.bottom - todoHeight - inProgressHeight - doneHeight}" 
+                    width="${barWidth}" 
+                    height="${doneHeight}" 
+                    fill="${colors.done}"
+                    rx="4"
+                  />
                   
                   <text 
                     transform="rotate(-45 ${x + barWidth/2} ${height - margin.bottom + 20})" 
@@ -178,6 +186,36 @@ export class ProjectThroughputGenerator {
                     text-anchor="end" 
                     class="axis"
                   >${day.day}</text>
+                  
+                  ${day.todo > 0 ? `
+                    <text 
+                      x="${x + barWidth/2}" 
+                      y="${height - margin.bottom - todoHeight/2}" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >${day.todo}</text>
+                  ` : ''}
+                  
+                  ${day.inProgress > 0 ? `
+                    <text 
+                      x="${x + barWidth/2}" 
+                      y="${height - margin.bottom - todoHeight - inProgressHeight/2}" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >${day.inProgress}</text>
+                  ` : ''}
+                  
+                  ${day.done > 0 ? `
+                    <text 
+                      x="${x + barWidth/2}" 
+                      y="${height - margin.bottom - todoHeight - inProgressHeight - doneHeight/2}" 
+                      text-anchor="middle" 
+                      class="value"
+                      fill="white"
+                    >${day.done}</text>
+                  ` : ''}
                 </g>
               `;
             }
@@ -190,7 +228,7 @@ export class ProjectThroughputGenerator {
             y="${height/2}" 
             text-anchor="middle" 
             class="label"
-          >Tarefas Concluídas</text>
+          >Número de Tarefas</text>
           
           <text 
             x="${width/2}" 
@@ -204,11 +242,17 @@ export class ProjectThroughputGenerator {
             y="30" 
             text-anchor="middle" 
             class="title"
-          >Throughput Diário (Tarefas Concluídas)</text>
+          >Throughput do Projeto</text>
           
           <g transform="translate(${width - margin.right + 20}, ${margin.top})">
-            <rect width="15" height="15" fill="${colors.done}" rx="2"/>
-            <text x="25" y="12" class="legend">Concluídas</text>
+            <rect width="15" height="15" fill="${colors.todo}" rx="2"/>
+            <text x="25" y="12" class="legend">TODO</text>
+            
+            <rect y="25" width="15" height="15" fill="${colors.inProgress}" rx="2"/>
+            <text x="25" y="37" class="legend">DOING</text>
+            
+            <rect y="50" width="15" height="15" fill="${colors.done}" rx="2"/>
+            <text x="25" y="62" class="legend">DONE</text>
             
             <text x="0" y="90" class="value">
               Período: ${this.sprints[0].startDate} - 
