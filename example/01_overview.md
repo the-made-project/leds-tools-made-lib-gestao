@@ -23,7 +23,7 @@ Dashboard de BI do Conecta Fapes
 - Período Total: 24/11 - 12/12
 - Média de Duração das Sprints: 8 dias
 
-*Última atualização: dezembro de 2024*
+*Última atualização: janeiro de 2025*
 
 ## Cumulative Flow 
 ![ Cumulative Flow](./project-cfd.svg)
@@ -37,9 +37,9 @@ Dashboard de BI do Conecta Fapes
 ### ✅ PROJETO PROVAVELMENTE SERÁ CONCLUÍDO NO PRAZO
 
 - **Probabilidade de conclusão no prazo**: 100.0%
-- **Data mais provável de conclusão**: sex., 13/12/2024
-- **Dias em relação ao planejado**: 1 dias
-- **Status**: ⚠️ Pequeno Atraso
+- **Data mais provável de conclusão**: seg., 06/01/2025
+- **Dias em relação ao planejado**: 25 dias
+- **Status**: ❌ Atraso Crítico
 
 ### 📊 Métricas do Projeto
 
@@ -54,7 +54,7 @@ Dashboard de BI do Conecta Fapes
 
 | Data | Probabilidade | Status | Observação |
 |------|---------------|---------|------------|
-| sex., 13/12/2024 | 100.0% | ⚠️ Pequeno Atraso | 📍 Data mais provável |
+| seg., 06/01/2025 | 100.0% | ❌ Atraso Crítico | 📍 Data mais provável |
 
 ## 💡 Recomendações
 
@@ -71,4 +71,4 @@ Dashboard de BI do Conecta Fapes
 - **Simulações Realizadas**: 10,000
 
 ---
-*Relatório gerado em 14/12/2024, 16:59:53*
+*Relatório gerado em 07/01/2025, 13:06:34*
