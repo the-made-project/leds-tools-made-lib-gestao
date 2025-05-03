@@ -1,5 +1,4 @@
 import { MarkdownService } from "./documentation/service/markdown/MarkdownService";
-
 export * from './model/models';
 
 export class ReportManager {
@@ -16,5 +15,7 @@ export class ReportManager {
         const markdownService = new MarkdownService(dbPath);
         return markdownService.createSprintSumaryReport()
     }
+
+   
 }
   

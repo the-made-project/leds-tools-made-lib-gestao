@@ -39,7 +39,7 @@ gantt
 
 # Análise de Dependências do Sprint
 
-Análise gerada em: 10/01/2025, 8:16:55
+Análise gerada em: 02/05/2025, 20:16:19
 
 ## 🔍 Grafo de Dependências
 
