@@ -26,7 +26,7 @@ export interface GitHubIssue {
   }[]; // Issues que dependem desta issue
   customFields: Record<string, string>;
 }
-
+import { Issue } from "../../model/models";
 export class IssueService {
   constructor(private token: string) {}
 
@@ -750,4 +750,25 @@ export class IssueService {
       percentComplete
     };
   }
+  /**
+ * Maps a GitHubIssue object to the Issue format
+ * @param githubIssue The GitHub issue to convert
+ * @returns An Issue object with mapped properties
+ */
+async  mapGitHubIssueToIssue(githubIssue: GitHubIssue): Promise<Issue> {
+  return {
+    id: githubIssue.number.toString(),
+    externalId: `${githubIssue.repositoryOwner}/${githubIssue.repository}#${githubIssue.number}`,
+    key: `${githubIssue.repository}-${githubIssue.number}`,
+    self: githubIssue.url,
+    type: 'github',
+    subtype: githubIssue.type || 'issue',
+    title: githubIssue.title,
+    description: githubIssue.customFields.description || '',
+    status: githubIssue.state === 'OPEN' ? 'open' : 'closed',
+    createdDate: githubIssue.createdAt,
+    labels: githubIssue.labels
+  };
+}
+
 }

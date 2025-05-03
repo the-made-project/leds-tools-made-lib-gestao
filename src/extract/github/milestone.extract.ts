@@ -4,7 +4,7 @@
  * Interface para representar um milestone do GitHub
  */
 
-import { Milestone } from '../model/models';
+import { Milestone } from '../../model/models';
 
 export interface GitHubMilestone {
   id: number;
@@ -218,7 +218,7 @@ export class MilestoneService {
    */
   async mapGitHubMilestoneToMilestone(
     githubMilestone: GitHubMilestone
-  ): Milestone {
+  ): Promise<Milestone> {
     // Determina o status com base no estado e datas
     let status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'DELAYED' = 'PLANNED';
     

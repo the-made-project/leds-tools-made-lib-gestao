@@ -22,15 +22,15 @@ export class MarkdownService {
         fs.mkdirSync(this.target_folder, {recursive:true})
         
         this.markdownBacklogService = new MarkdownBacklogService(this.target_folder,this.DB_PATH)
-        this.markdownTimeBoxService = new MarkdownTimeBoxService(this.target_folder, this.DB_PATH)
-        this.markdownRoadmapService = new MardownRoadmapService(this.target_folder, this.DB_PATH)
+        //this.markdownTimeBoxService = new MarkdownTimeBoxService(this.target_folder, this.DB_PATH)
+        //this.markdownRoadmapService = new MardownRoadmapService(this.target_folder, this.DB_PATH)
         
     }
 
     public createManagementDocumenation(){
-        this.markdownTimeBoxService.create()
+        //this.markdownTimeBoxService.create()
         this.markdownBacklogService.create()
-        this.markdownRoadmapService.create()
+        //this.markdownRoadmapService.create()
     }
 
     public createSprintSummary(){

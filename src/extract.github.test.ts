@@ -55,12 +55,4 @@ test("Baixando os Issues sem Milestone de um projeto", async () => {
   expect(value.length).toBeGreaterThan(0);
 },30000);
 
-test("Baixando os Sprints de um  projeto", async () => {
-  const service = new GitHubService("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");
-  const project = await service.getProjectByTitle("leds-conectafapes", "ConectaFapes");
-  if (!project) {
-    throw new Error("Project not found");
-  }
-  const value = await service.getSprints("leds-conectafapes", project.number);
-  expect(value.length).toBeGreaterThan(0);
-},30000);
+

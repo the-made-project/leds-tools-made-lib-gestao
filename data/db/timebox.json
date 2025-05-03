@@ -1,0 +1,31 @@
+{
+  "data": [
+    {
+      "id": "f719229a",
+      "description": "Sprint 8",
+      "startDate": "2025-04-22",
+      "endDate": "2025-05-06",
+      "name": "Sprint 8",
+      "status": "IN_PROGRESS",
+      "sprintItems": []
+    },
+    {
+      "id": "9a76b603",
+      "description": "Sprint 9",
+      "startDate": "2025-05-06",
+      "endDate": "2025-05-20",
+      "name": "Sprint 9",
+      "status": "PLANNED",
+      "sprintItems": []
+    },
+    {
+      "id": "9f279b22",
+      "description": "Sprint 10",
+      "startDate": "2025-05-20",
+      "endDate": "2025-06-03",
+      "name": "Sprint 10",
+      "status": "PLANNED",
+      "sprintItems": []
+    }
+  ]
+}

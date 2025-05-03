@@ -1,9 +1,9 @@
 // github.service.ts
-import { GitHubIssue, IssueService } from './issue.service';
-import { GitHubMilestone, MilestoneService } from './milestone.service';
-import { GitHubProject,GitHubProjectService } from './project.service';
-import {GitHubSprintService, GitHubSprint} from './sprints.service';
-import { Project } from '../../model/models';
+import { GitHubIssue, IssueService } from './issue.extract';
+import { GitHubMilestone, MilestoneService } from './milestone.extract';
+import { GitHubProject,GitHubProjectService } from './project.extract';
+import {GitHubSprintService, GitHubSprint} from './sprints.extract';
+import { Project, Milestone, Issue, TimeBox } from '../../model/models';
 /**
  * Serviço principal que coordena as operações do GitHub
  */
@@ -71,6 +71,27 @@ export class GitHubService {
     githubProject: GitHubProject
   ): Promise<Project> { 
     return await this.projectService.mapGitHubProjectToProject(githubProject);
+  }
+  
+  async mapGitHubMilestoneToMilestone(
+      githubMilestone: GitHubMilestone
+    ): Promise<Milestone> {
+    return await this.milestoneService.mapGitHubMilestoneToMilestone(githubMilestone);
+  }
+
+  async mapGitHubIssueToIssue(
+    githubIssue: GitHubIssue
+  ): Promise<Issue> {
+    return await this.issueService.mapGitHubIssueToIssue(githubIssue);
+  }
+  async mapGitHubSprintToTimeBox(githubSprint: GitHubSprint): Promise<TimeBox> {
+    return await this.sprintService.mapGitHubSprintToTimeBox(githubSprint);
+  }
+  async getAllIssuesFromProject(
+    org: string,
+    projectNumber: number
+  ): Promise<GitHubIssue[]> {
+   return await this.issueService.getAllIssuesFromProject(org, projectNumber);
   }
   
   

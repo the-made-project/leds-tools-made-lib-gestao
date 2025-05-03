@@ -1,7 +1,9 @@
+import { TimeBox } from "../../model/models";
+
 /**
  * Interface para sprints/iterações do GitHub
  */
-interface GitHubSprint {
+export interface GitHubSprint {
   id: string;
   title: string;
   startDate: string;
@@ -13,7 +15,7 @@ interface GitHubSprint {
 /**
  * Interface para itens dentro de um sprint
  */
-interface GitHubSprintItem {
+export interface GitHubSprintItem {
   id: string;
   contentType: string;
   number: number;
@@ -157,342 +159,7 @@ export class GitHubSprintService {
     return sprints;
   }
 
-  /**
-   * Busca um sprint específico pelo título
-   * @param org Nome da organização
-   * @param projectNumber Número do projeto
-   * @param sprintTitle Título do sprint
-   * @param includeItems Se deve incluir os itens associados ao sprint
-   * @returns O sprint encontrado ou null se não existir
-   */
-  async getSprintByTitle(
-    org: string,
-    projectNumber: number,
-    sprintTitle: string,
-    includeItems: boolean = true
-  ): Promise<GitHubSprint | null> {
-    const sprints = await this.getSprintsInProject(org, projectNumber, includeItems);
-    return sprints.find(sprint => sprint.title === sprintTitle) || null;
-  }
-
-  /**
-   * Busca o sprint atual (ativo)
-   * @param org Nome da organização
-   * @param projectNumber Número do projeto
-   * @param includeItems Se deve incluir os itens associados ao sprint
-   * @returns O sprint atual ou null se não houver nenhum ativo
-   */
-  async getCurrentSprint(
-    org: string,
-    projectNumber: number,
-    includeItems: boolean = true
-  ): Promise<GitHubSprint | null> {
-    const sprints = await this.getSprintsInProject(org, projectNumber, includeItems);
-    
-    // Calcula a data atual em formato ISO
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Encontra o sprint que inclui a data atual
-    for (const sprint of sprints) {
-      if (sprint.startDate <= today && today <= sprint.endDate) {
-        return sprint;
-      }
-    }
-    
-    return null;
-  }
   
-  /**
-   * Busca todos os sprints completados (já finalizados)
-   * @param org Nome da organização
-   * @param projectNumber Número do projeto
-   * @param includeItems Se deve incluir os itens associados aos sprints
-   * @returns Lista de sprints finalizados
-   */
-  async getCompletedSprints(
-    org: string,
-    projectNumber: number,
-    includeItems: boolean = true
-  ): Promise<GitHubSprint[]> {
-    const sprints = await this.getSprintsInProject(org, projectNumber, includeItems);
-    const today = new Date();
-    
-    return sprints.filter(sprint => {
-      const endDate = new Date(sprint.endDate);
-      return endDate < today;
-    });
-  }
-  
-  /**
-   * Busca o próximo sprint (que ainda não começou)
-   * @param org Nome da organização
-   * @param projectNumber Número do projeto
-   * @param includeItems Se deve incluir os itens associados ao sprint
-   * @returns O próximo sprint ou null se não houver nenhum planejado
-   */
-  async getNextSprint(
-    org: string,
-    projectNumber: number,
-    includeItems: boolean = true
-  ): Promise<GitHubSprint | null> {
-    const sprints = await this.getSprintsInProject(org, projectNumber, includeItems);
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Ordena os sprints por data de início
-    const upcomingSprints = sprints
-      .filter(sprint => sprint.startDate > today)
-      .sort((a, b) => a.startDate.localeCompare(b.startDate));
-    
-    return upcomingSprints.length > 0 ? upcomingSprints[0] : null;
-  }
-
-  /**
-   * Obtém estatísticas do sprint
-   * @param sprint O sprint para analisar
-   * @returns Estatísticas do sprint
-   */
-  getSprintStats(sprint: GitHubSprint): {
-    total: number;
-    open: number;
-    closed: number;
-    blocked: number;
-    ready: number;
-    percentComplete: number;
-    isCompleted: boolean;
-    daysRemaining: number;
-  } {
-    if (!sprint.items || sprint.items.length === 0) {
-      return { 
-        total: 0, 
-        open: 0, 
-        closed: 0,
-        blocked: 0,
-        ready: 0,
-        percentComplete: 0,
-        isCompleted: this.isSprintCompleted(sprint),
-        daysRemaining: this.getSprintDaysRemaining(sprint)
-      };
-    }
-    
-    let blocked = 0;
-    let ready = 0;
-    
-    const total = sprint.items.length;
-    const closed = sprint.items.filter(item => item.state === "CLOSED").length;
-    const open = total - closed;
-    
-    // Conta items bloqueados e prontos
-    for (const item of sprint.items) {
-      if (item.state !== "CLOSED") {
-        if (this.canStartItem(item)) {
-          ready++;
-        } else {
-          blocked++;
-        }
-      }
-    }
-    
-    const percentComplete = Math.round((closed / total) * 100);
-    const isCompleted = this.isSprintCompleted(sprint);
-    const daysRemaining = this.getSprintDaysRemaining(sprint);
-    
-    return { 
-      total, 
-      open, 
-      closed,
-      blocked,
-      ready,
-      percentComplete,
-      isCompleted,
-      daysRemaining
-    };
-  }
-
-  /**
-   * Obtém estatísticas do sprint agrupadas por tipo de item
-   * @param sprint O sprint para analisar
-   * @returns Estatísticas detalhadas por tipo
-   */
-  getSprintStatsByType(sprint: GitHubSprint): {
-    total: number;
-    byType: Record<string, {
-      total: number;
-      open: number;
-      closed: number;
-      blocked: number;
-      ready: number;
-      percentComplete: number;
-    }>;
-    percentComplete: number;
-    isCompleted: boolean;
-    daysRemaining: number;
-  } {
-    if (!sprint.items || sprint.items.length === 0) {
-      return { 
-        total: 0,
-        byType: {},
-        percentComplete: 0,
-        isCompleted: this.isSprintCompleted(sprint),
-        daysRemaining: this.getSprintDaysRemaining(sprint)
-      };
-    }
-    
-    const total = sprint.items.length;
-    const isCompleted = this.isSprintCompleted(sprint);
-    const daysRemaining = this.getSprintDaysRemaining(sprint);
-    
-    // Agrupa itens por tipo
-    const byType: Record<string, {
-      total: number;
-      open: number;
-      closed: number;
-      blocked: number;
-      ready: number;
-      percentComplete: number;
-    }> = {};
-    
-    // Inicializa estatísticas para cada tipo encontrado
-    for (const item of sprint.items) {
-      if (!byType[item.type]) {
-        byType[item.type] = {
-          total: 0,
-          open: 0,
-          closed: 0,
-          blocked: 0,
-          ready: 0,
-          percentComplete: 0
-        };
-      }
-    }
-    
-    // Conta itens por tipo e estado
-    for (const item of sprint.items) {
-      byType[item.type].total += 1;
-      
-      if (item.state === "CLOSED") {
-        byType[item.type].closed += 1;
-      } else {
-        byType[item.type].open += 1;
-        
-        // Verifica se item está bloqueado ou pronto
-        if (this.canStartItem(item)) {
-          byType[item.type].ready += 1;
-        } else {
-          byType[item.type].blocked += 1;
-        }
-      }
-    }
-    
-    // Calcula percentuais de conclusão por tipo
-    for (const type in byType) {
-      if (byType[type].total > 0) {
-        byType[type].percentComplete = Math.round(
-          (byType[type].closed / byType[type].total) * 100
-        );
-      }
-    }
-    
-    // Calcula percentual de conclusão geral
-    const closed = sprint.items.filter(item => item.state === "CLOSED").length;
-    const percentComplete = Math.round((closed / total) * 100);
-    
-    return {
-      total,
-      byType,
-      percentComplete,
-      isCompleted,
-      daysRemaining
-    };
-  }
-
-  /**
-   * Verifica se um item pode ser iniciado (todas suas dependências estão resolvidas)
-   * @param item O item a verificar
-   * @returns true se o item pode ser iniciado, false caso contrário
-   */
-  canStartItem(item: GitHubSprintItem): boolean {
-    // Se já está fechado, não precisa ser iniciado
-    if (item.state === "CLOSED") {
-      return false;
-    }
-    
-    // Verifica se há dependências e se todas estão fechadas
-    if (item.dependencies && item.dependencies.length > 0) {
-      return item.dependencies.every(dep => dep.state === "CLOSED");
-    }
-    
-    // Se não há dependências, pode iniciar
-    return true;
-  }
-
-  /**
-   * Obtém itens bloqueados em um sprint
-   * @param sprint O sprint a analisar
-   * @returns Lista de itens bloqueados com suas dependências
-   */
-  getBlockedItems(sprint: GitHubSprint): Array<{
-    item: GitHubSprintItem,
-    blockedBy: Array<{
-      number: number;
-      title: string;
-      state: string;
-      url: string;
-    }>
-  }> {
-    if (!sprint.items || sprint.items.length === 0) {
-      return [];
-    }
-
-    const blockedItems = [];
-
-    for (const item of sprint.items) {
-      // Pular itens fechados
-      if (item.state === "CLOSED") {
-        continue;
-      }
-      
-      // Encontrar dependências não-resolvidas
-      const blockedBy = item.dependencies.filter(dep => dep.state !== "CLOSED");
-      
-      // Se há dependências não-resolvidas, o item está bloqueado
-      if (blockedBy.length > 0) {
-        blockedItems.push({
-          item,
-          blockedBy
-        });
-      }
-    }
-
-    return blockedItems;
-  }
-
-  /**
-   * Verifica se um sprint já foi finalizado (sua data de término já passou)
-   * @param sprint O sprint a ser verificado
-   * @returns true se o sprint já foi finalizado, false caso contrário
-   */
-  private isSprintCompleted(sprint: GitHubSprint): boolean {
-    const today = new Date();
-    const endDate = new Date(sprint.endDate);
-    return today > endDate;
-  }
-
-  /**
-   * Calcula quantos dias restam para o fim do sprint
-   * @param sprint O sprint a ser analisado
-   * @returns Número de dias restantes (negativo se já terminou)
-   */
-  private getSprintDaysRemaining(sprint: GitHubSprint): number {
-    const today = new Date();
-    const endDate = new Date(sprint.endDate);
-    
-    // Diferença em milissegundos
-    const diffTime = endDate.getTime() - today.getTime();
-    
-    // Diferença em dias (arredondada para o inteiro mais próximo)
-    return Math.round(diffTime / (1000 * 60 * 60 * 24));
-  }
-
   /**
    * Determina o tipo da issue com base nas suas labels
    * @param labels Array de labels da issue
@@ -923,6 +590,35 @@ export class GitHubSprintService {
       }
     }
   }
+  /**
+ * Mapeia um GitHubSprint para o formato TimeBox, sem processar os items
+ * @param githubSprint O sprint do GitHub para converter
+ * @returns Um objeto TimeBox com propriedades mapeadas
+ */
+async mapGitHubSprintToTimeBox(githubSprint: GitHubSprint): Promise<TimeBox> {
+  // Determina o status baseado nas datas
+  const currentDate = new Date();
+  const startDate = new Date(githubSprint.startDate);
+  const endDate = new Date(githubSprint.endDate);
+  
+  let status: 'PLANNED' | 'IN_PROGRESS' | 'CLOSED' = 'PLANNED';
+  if (currentDate > endDate) {
+    status = 'CLOSED';
+  } else if (currentDate >= startDate && currentDate <= endDate) {
+    status = 'IN_PROGRESS';
+  }
+  
+  return {
+    id: githubSprint.id,
+    description: githubSprint.title,
+    startDate: githubSprint.startDate,
+    endDate: githubSprint.endDate,
+    name: githubSprint.title,
+    status: status,
+    completeDate: status === 'CLOSED' ? githubSprint.endDate : undefined,
+    sprintItems: [] // Array vazio, já que não estamos mapeando os itens
+  };
 }
+  }
 
-export { GitHubSprint, GitHubSprintItem };
+
