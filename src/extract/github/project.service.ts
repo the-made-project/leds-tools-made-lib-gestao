@@ -1,7 +1,8 @@
+import {Project} from "../../model/models";
 
 export interface GitHubProject {
   id: string;
-  number: number;
+  number: number;1
   title: string;
   shortDescription: string | null;
   createdAt: string;
@@ -62,7 +63,7 @@ export class GitHubProjectService {
           shortDescription: p.shortDescription,
           createdAt: p.createdAt,
           updatedAt: p.updatedAt,
-          closed: p.closed,
+          closed: p.closed
         });
       }
 
@@ -83,5 +84,30 @@ export class GitHubProjectService {
     const projects = await this.getAll(org);
     const project = projects.find((p) => p.title.toLowerCase() === projectTitle.toLowerCase());
     return project ?? null;
+  }
+
+  
+  /**
+   * Mapeia um projeto do GitHub para o formato Project
+   * @param githubProject Projeto do GitHub a ser convertido
+   * @returns Projeto no formato padronizado
+   */
+  async mapGitHubProjectToProject(githubProject: GitHubProject): Promise<Project> {
+    // Criamos uma data de vencimento estimada (3 meses após a criação)
+    const createdDate = new Date(githubProject.createdAt);
+    const estimatedDueDate = new Date(createdDate);
+    estimatedDueDate.setMonth(createdDate.getMonth() + 3);
+    
+    // Se o projeto estiver fechado, usamos a data de atualização como data de conclusão
+    const completedDate = githubProject.closed ? githubProject.updatedAt : undefined;
+    
+    return {
+      id: githubProject.id,
+      name: githubProject.title,
+      description: githubProject.shortDescription || undefined,
+      startDate: githubProject.createdAt,
+      dueDate: estimatedDueDate.toISOString().split('T')[0], // Formato YYYY-MM-DD
+      completedDate: completedDate
+    };
   }
 }

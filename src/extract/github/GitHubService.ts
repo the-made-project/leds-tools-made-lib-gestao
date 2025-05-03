@@ -3,6 +3,7 @@ import { GitHubIssue, IssueService } from './issue.service';
 import { GitHubMilestone, MilestoneService } from './milestone.service';
 import { GitHubProject,GitHubProjectService } from './project.service';
 import {GitHubSprintService, GitHubSprint} from './sprints.service';
+import { Project } from '../../model/models';
 /**
  * Serviço principal que coordena as operações do GitHub
  */
@@ -66,6 +67,11 @@ export class GitHubService {
     return this.projectService.getByTitle(org, projectTitle);
   }
   
+  async mapGitHubProjectToProject(
+    githubProject: GitHubProject
+  ): Promise<Project> { 
+    return await this.projectService.mapGitHubProjectToProject(githubProject);
+  }
   
   
   

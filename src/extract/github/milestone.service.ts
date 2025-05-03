@@ -3,6 +3,9 @@
 /**
  * Interface para representar um milestone do GitHub
  */
+
+import { Milestone } from '../model/models';
+
 export interface GitHubMilestone {
   id: number;
   number: number;
@@ -16,16 +19,6 @@ export interface GitHubMilestone {
   html_url: string;
 }
 
-
-/**
- * Interface para informações de limite de requisições
- */
-interface RateLimitInfo {
-  limit: number;      // Limite total de requisições
-  remaining: number;  // Requisições restantes
-  reset: number;      // Timestamp para resetar o limite
-  used: number;       // Requisições já utilizadas
-}
 
 /**
  * Serviço responsável por interagir com milestones do GitHub
@@ -218,6 +211,39 @@ export class MilestoneService {
   }
   
   
+  /**
+   * Mapeia um milestone do GitHub para o formato Milestone
+   * @param githubMilestone Milestone do GitHub a ser convertido
+   * @returns Milestone no formato padronizado
+   */
+  async mapGitHubMilestoneToMilestone(
+    githubMilestone: GitHubMilestone
+  ): Milestone {
+    // Determina o status com base no estado e datas
+    let status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'DELAYED' = 'PLANNED';
+    
+    if (githubMilestone.state === 'closed') {
+      status = 'COMPLETED';
+    } else if (githubMilestone.state === 'open') {
+      const now = new Date();
+      const dueDate = githubMilestone.due_on ? new Date(githubMilestone.due_on) : null;
+      
+      if (dueDate && dueDate < now) {
+        status = 'DELAYED';
+      } else {
+        status = 'IN_PROGRESS';
+      }
+    }
+    
+    return {
+      id: githubMilestone.id.toString(),
+      name: githubMilestone.title,
+      description: githubMilestone.description || '',
+      startDate: githubMilestone.created_at,
+      dueDate: githubMilestone.due_on || githubMilestone.updated_at,
+      status
+    };
+  }
 
   
 }
