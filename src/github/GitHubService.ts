@@ -2,7 +2,7 @@
 import { GitHubIssue, IssueService } from './issue.service';
 import { GitHubMilestone, MilestoneService } from './milestone.service';
 import { GitHubProject,GitHubProjectService } from './project.service';
-
+import {GitHubSprintService, GitHubSprint} from './sprints.service';
 /**
  * Serviço principal que coordena as operações do GitHub
  */
@@ -10,6 +10,7 @@ export class GitHubService {
   private milestoneService: MilestoneService;
   private issueService: IssueService;
   private projectService: GitHubProjectService;
+  private sprintService: GitHubSprintService;
   /**
    * Construtor da classe
    * @param token Token de autenticação GitHub (opcional)
@@ -18,8 +19,16 @@ export class GitHubService {
     this.milestoneService = new MilestoneService(token);
     this.issueService = new IssueService(token);
     this.projectService = new GitHubProjectService(token);
+    this.sprintService = new GitHubSprintService(token);
   }
   
+  async getSprints(
+    org: string,
+    projectNumber: number
+  ): Promise<GitHubSprint[]> {
+    return this.sprintService.getSprintsInProject(org, projectNumber);
+  }
+
   async getMilestonesFromProjectNumber(org: string, projectNumber: number): Promise<GitHubMilestone[]> {
     return this.milestoneService.getFromProject(org, projectNumber);
   }
