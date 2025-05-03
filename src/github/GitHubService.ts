@@ -35,6 +35,14 @@ export class GitHubService {
       milestoneNumber
     );
   }
+
+  async getIssesWithoutMilestoneInProject(
+    org: string,
+    projectNumber: number
+  ): Promise<GitHubIssue[]> {
+    return this.issueService.getWithoutMilestonesInProject(org, projectNumber);
+  }
+
  
   async getProjects(
     owner: string

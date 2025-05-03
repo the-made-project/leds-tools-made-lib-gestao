@@ -24,7 +24,7 @@ test("Baixando os Milestones de um projeto", async () => {
     throw new Error("Project not found");
   }
   const value = await service.getMilestonesFromProjectNumber("leds-conectafapes",project.number);
-  console.log(value);
+  
   expect(value.length).toBeGreaterThan(0);
 });
 
@@ -40,7 +40,17 @@ test("Baixando os Issues de um Milestone de um projeto", async () => {
     throw new Error("Milestone not found");
   }
   const value = await service.getIssuesFromMilestoneInProject("leds-conectafapes", project.number, milestone[0].number);
-  console.log(value);
+  
+  expect(value.length).toBeGreaterThan(0);
+});
 
+test("Baixando os Issues sem Milestone de um projeto", async () => {
+  const service = new GitHubService("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");
+  const project = await service.getProjectByTitle("leds-conectafapes", "ConectaFapes");
+  if (!project) {
+    throw new Error("Project not found");
+  }
+  const value = await service.getIssesWithoutMilestoneInProject("leds-conectafapes", project.number);
+  console.log(value);
   expect(value.length).toBeGreaterThan(0);
 });
