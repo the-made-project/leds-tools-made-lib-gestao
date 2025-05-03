@@ -1,28 +1,19 @@
 import { expect, test } from "vitest";
 import { GitHubService } from "./extract/github/GitHubService";
-import { ProjectRepository } from "./repository/project.repository";
-import { IssueRepository } from "./repository/issue.repository"; 
-import { BacklogRepository } from "./repository/backlog.repository"; 
-import { Backlog } from "./model/models";
-import { TimeBoxRepository } from "./repository/timebox.repository"; 
+import { GenericRepository } from "./repository/generic.repository"; 
+import { Backlog, Issue, Project, TimeBox } from "./model/models";
 
 
 test("Create Projetct", async () => {
   const service = new GitHubService("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");
   const projects = await service.getProjects("leds-conectafapes");
   const mapped = await service.mapGitHubProjectToProject(projects[0]);
-  const projectRepository = new ProjectRepository('./data/db');
+  const repository = new GenericRepository<Project>('./data/db','project.json');	
   
-  projectRepository.clear();
+  repository.clear();  
+  repository.add(mapped);
   
-  projectRepository.add(mapped);
-  
-  const all = projectRepository.getAll();
-  
-  const project = all[0];
 
-  expect(project).toBeDefined;
-  
   expect(mapped).toBeDefined;
 });
 
@@ -65,11 +56,10 @@ test("Create Issues", async () => {
       issues.push(issue);
     });
   });
-
-  
-  const issueRepository = new IssueRepository('./data/db');
-  issueRepository.clear();
-  await issueRepository.add(issues);
+  const repository = new GenericRepository<Issue>('./data/db','issue.json');	
+ 
+  repository.clear();
+  await repository.add(issues);
 
 
   expect(issues.length).toBeGreaterThan(0);
@@ -115,20 +105,16 @@ test("Create Backlog", async () => {
       issues.push(issue);
     });
   });
-
-  const backlogRepository = new BacklogRepository('./data/db');
-  //limpar o backlog
-  backlogRepository.clear();
-
-  
-
+  const repository = new GenericRepository<Backlog>('./data/db','backlog.json');	
+ 
+ 
   const backlog: Backlog = {
     id: project.id,
     name: project.name,
     description: project.description,
     issues: issues
   };
-  await backlogRepository.add(backlog);
+  await repository.add(backlog);
 
 
   expect(issues.length).toBeGreaterThan(0);
@@ -144,9 +130,12 @@ test("Create Sprint", async () => {
   }
   const value = await service.getSprints("leds-conectafapes", project.number);
   const sprints = await Promise.all (value.map(sprint => service.mapGitHubSprintToTimeBox(sprint)));
-  const timeBoxRepository = new TimeBoxRepository('./data/db');
-  timeBoxRepository.clear();
-  timeBoxRepository.add(sprints);
+  
+  const repository = new GenericRepository<TimeBox>('./data/db','timebox.json');	
+ 
+  
+  repository.clear();
+  repository.add(sprints);
   
 
   expect(sprints.length).toBeGreaterThan(0);
