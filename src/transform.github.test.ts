@@ -1,8 +1,18 @@
 import { expect, test } from "vitest";
-import { GitHubService } from "./extract/github/GitHubService";
+import { GitHubService } from "./service/GitHubService";
+
+
+import dotenv from 'dotenv';
+dotenv.config(); // carrega o .env para process.env
+
+
+let service: GitHubService;
+
+const token = process.env.GITHUB_TOKEN;
+  if (!token) throw new Error('GITHUB_TOKEN not set');
+  service = new GitHubService(token);
 
 test("Map GithuProject to Project", async () => {
-  const service = new GitHubService("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");
   const projects = await service.getProjects("leds-conectafapes");
   const mapped = await service.mapGitHubProjectToProject(projects[0]);
   
@@ -10,7 +20,6 @@ test("Map GithuProject to Project", async () => {
 });
 
 test("Map GithuMileStone to MileStone", async () => {
-  const service = new GitHubService("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");
   const project = await service.getProjectByTitle("leds-conectafapes", "ConectaFapes");
   if (!project) {
     throw new Error("Project not found");
@@ -22,7 +31,6 @@ test("Map GithuMileStone to MileStone", async () => {
 });
 
 test("Mapeando uma issue de um Milestone de um projeto", async () => {
-  const service = new GitHubService("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");
   const project = await service.getProjectByTitle("leds-conectafapes", "ConectaFapes");
   if (!project) {
     throw new Error("Project not found");
@@ -38,7 +46,6 @@ test("Mapeando uma issue de um Milestone de um projeto", async () => {
 },30000);
 
 test("Mapeando uma issue sem Milestone de um projeto", async () => {
-  const service = new GitHubService("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");
   const project = await service.getProjectByTitle("leds-conectafapes", "ConectaFapes");
   if (!project) {
     throw new Error("Project not found");
@@ -50,7 +57,6 @@ test("Mapeando uma issue sem Milestone de um projeto", async () => {
 
 
 test("Mapeando os Sprints de um  projeto", async () => {
-  const service = new GitHubService("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");
   const project = await service.getProjectByTitle("leds-conectafapes", "ConectaFapes");
   if (!project) {
     throw new Error("Project not found");

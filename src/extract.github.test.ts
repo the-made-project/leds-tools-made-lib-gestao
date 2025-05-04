@@ -1,8 +1,18 @@
 import { expect, test } from "vitest";
-import { GitHubService } from "./extract/github/GitHubService";
+import { GitHubService } from "./service/GitHubService";
+
+
+import dotenv from 'dotenv';
+dotenv.config(); // carrega o .env para process.env
+
+
+let service: GitHubService;
+
+const token = process.env.GITHUB_TOKEN;
+  if (!token) throw new Error('GITHUB_TOKEN not set');
+  service = new GitHubService(token);
 
 test("Baixando os Projetos", async () => {
-  const service = new GitHubService("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");
   const value = await service.getProjects("leds-conectafapes");
 
   expect(value.length).toBeGreaterThan(0);
@@ -10,7 +20,6 @@ test("Baixando os Projetos", async () => {
 
 
 test("Baixando um projeto específico", async () => {
-  const service = new GitHubService("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");
   const value = await service.getProjectByTitle("leds-conectafapes", "ConectaFapes");
 
   expect(value).not.toBeNull();
@@ -18,7 +27,6 @@ test("Baixando um projeto específico", async () => {
 });
 
 test("Baixando os Milestones de um projeto", async () => {
-  const service = new GitHubService("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");
   const project = await service.getProjectByTitle("leds-conectafapes", "ConectaFapes");
   if (!project) {
     throw new Error("Project not found");
@@ -29,7 +37,6 @@ test("Baixando os Milestones de um projeto", async () => {
 });
 
 test("Baixando os Issues de um Milestone de um projeto", async () => {
-  const service = new GitHubService("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");
   const project = await service.getProjectByTitle("leds-conectafapes", "ConectaFapes");
   if (!project) {
     throw new Error("Project not found");
@@ -45,7 +52,6 @@ test("Baixando os Issues de um Milestone de um projeto", async () => {
 },30000);
 
 test("Baixando os Issues sem Milestone de um projeto", async () => {
-  const service = new GitHubService("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");
   const project = await service.getProjectByTitle("leds-conectafapes", "ConectaFapes");
   if (!project) {
     throw new Error("Project not found");
@@ -54,5 +60,3 @@ test("Baixando os Issues sem Milestone de um projeto", async () => {
   
   expect(value.length).toBeGreaterThan(0);
 },30000);
-
-
