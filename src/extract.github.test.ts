@@ -1,11 +1,7 @@
 import { expect, test } from "vitest";
 import { GitHubService } from "./service/GitHubService";
-
-
 import dotenv from 'dotenv';
 dotenv.config(); // carrega o .env para process.env
-
-
 let service: GitHubService;
 
 const token = process.env.GITHUB_TOKEN;
