@@ -105,8 +105,6 @@ export type Issue = {
   labels?: string[];
 };
 
-
-
 export type Task  = {
   id?: string;  
   name: string;

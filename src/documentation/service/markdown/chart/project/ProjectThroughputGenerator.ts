@@ -42,7 +42,7 @@ export class ProjectThroughputGenerator {
   
       const startDate = this.parseBrazilianDate(this.sprints[0].startDate);
       const endDate = this.parseBrazilianDate(this.sprints[this.sprints.length - 1].endDate);
-      const days = [];
+      const days: { day: string; date: Date; done: number }[] = [];
       
       let currentDate = new Date(startDate);
       while (currentDate <= endDate) {
