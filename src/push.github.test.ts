@@ -23,41 +23,48 @@ beforeEach(() => {
 
   // Mock para obter o ID do repositório (mais específico que 'organization')
   nock('https://api.github.com')
-  .post('/graphql', (body) => body.query.includes('repository('))
+  .post('/graphql', (body) => {
+    if (body.query.includes('repository(name: $repositoryName)')) {
+      console.log('Consulta de repositório recebida:', body.query); // Log da consulta
+      return true; // Se a consulta for sobre o repositório, continuar a mockar
+    }
+    console.log('Não é uma consulta de repositório:', body.query); // Log da consulta
+    return false;
+  })
   .reply(200, {
     data: {
       organization: {
         repository: {
-          id: 'fake-repo-id'
-        }
-      }
-    }
-  });
+          id: 'fake-repo-id', // Aqui você simula o ID do repositório
+        },
+      },
+    },
+  })
+  .persist();
+
+
+  // Mock para obter labels do repositório
+  nock('https://api.github.com')
+    .post('/graphql', body => typeof body.query === 'string' && body.query.includes('labels'))
+    .reply(200, {
+      data: {
+        repository: {
+          labels: {
+            nodes: [
+              { id: 'fake-label-id-1', name: 'test' },
+              { id: 'fake-label-id-2', name: 'bug' },
+            ],
+          },
+        },
+      },
+    })
+    .persist();
 
   // Mock para obter o ID da organização
   nock('https://api.github.com')
     .post('/graphql', body => typeof body.query === 'string' && body.query.includes('organization'))
     .reply(200, {
       data: { organization: { id: 'fake-org-id' } }
-    })
-    .persist();
-
-  // Mock para obter labels do repositório
-  nock('https://api.github.com')
-    .post('/graphql', body =>
-      typeof body.query === 'string' && body.query.includes('labels')
-    )
-    .reply(200, {
-      data: {
-        repository: {
-          labels: {
-            nodes: [
-              { name: 'test', id: 'label-id-test' },
-              { name: 'bug', id: 'label-id-bug' }
-            ]
-          }
-        }
-      }
     })
     .persist();
 
@@ -93,6 +100,22 @@ beforeEach(() => {
     .post('/graphql', body => typeof body.query === 'string' && body.query.includes('addProjectV2ItemById'))
     .reply(200, {
       data: { addProjectV2ItemById: { item: { id: 'fake-project-item-id' } } }
+    })
+    .persist();
+
+  // Mock para adicionar labels a uma issue
+  nock('https://api.github.com')
+    .post('/graphql', body =>
+      typeof body.query === 'string' && body.query.includes('addLabelsToLabelable')
+    )
+    .reply(200, {
+      data: {
+        addLabelsToLabelable: {
+          labelable: {
+            __typename: 'Issue',
+          },
+        },
+      },
     })
     .persist();
 });

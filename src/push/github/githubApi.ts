@@ -69,7 +69,10 @@ export async function getLabelIds(organizationName: string, repositoryName: stri
       query($repositoryName: String!, $organization: String!) {
         repository(name: $repositoryName, owner: $organization) {
           labels(first: 100) {
-            nodes { id name }
+            nodes { 
+            id 
+            name 
+            }
           }
         }
       }
