@@ -21,16 +21,9 @@ beforeEach(() => {
     })
     .persist();
 
-  // Mock para obter o ID do repositório (mais específico que 'organization')
+  // Mock para obter o ID do repositório
   nock('https://api.github.com')
-  .post('/graphql', (body) => {
-    if (body.query.includes('repository(name: $repositoryName)')) {
-      console.log('Consulta de repositório recebida:', body.query); // Log da consulta
-      return true; // Se a consulta for sobre o repositório, continuar a mockar
-    }
-    console.log('Não é uma consulta de repositório:', body.query); // Log da consulta
-    return false;
-  })
+  .post('/graphql', body => typeof body.query === 'string' && body.query.includes('repository(name: $repositoryName)'))
   .reply(200, {
     data: {
       organization: {
