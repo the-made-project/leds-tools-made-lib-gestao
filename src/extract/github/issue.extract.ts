@@ -15,13 +15,13 @@ export interface GitHubIssue {
   dependencies: {
     number: number;
     title: string;
-    state: 'OPEN' | 'CLOSED';
+    state?: 'OPEN' | 'CLOSED'; // agora opcional
     url: string;
   }[]; // Issues das quais esta issue depende
   dependents: {
     number: number;
     title: string;
-    state: 'OPEN' | 'CLOSED';
+    state?: 'OPEN' | 'CLOSED'; // agora opcional
     url: string;
   }[]; // Issues que dependem desta issue
   customFields: Record<string, string>;
@@ -29,6 +29,126 @@ export interface GitHubIssue {
 import { Issue } from "../../model/models";
 export class IssueService {
   constructor(private token: string) {}
+
+  /**
+   * Fetches all issues from a specific project
+   * @param org The organization name
+   * @param projectNumber The project number
+   * @returns A list of GitHub issues
+   */
+  async getAllIssuesFromProject(org: string, projectNumber: number): Promise<GitHubIssue[]> {
+    const query = `
+      query($org: String!, $projectNumber: Int!, $after: String) {
+        organization(login: $org) {
+          projectV2(number: $projectNumber) {
+            items(first: 100, after: $after) {
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+              nodes {
+                content {
+                  ... on Issue {
+                    number
+                    title
+                    url
+                    state
+                    createdAt
+                    updatedAt
+                    repository {
+                      name
+                      owner {
+                        login
+                      }
+                    }
+                    author {
+                      login
+                    }
+                    assignees(first: 10) {
+                      nodes {
+                        login
+                      }
+                    }
+                    milestone {
+                      number
+                    }
+                    labels(first: 10) {
+                      nodes {
+                        name
+                      }
+                    }
+                    bodyText
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const issues: GitHubIssue[] = [];
+    let hasNextPage = true;
+    let after: string | null = null;
+
+    while (hasNextPage) {
+      const response = await fetch("https://api.github.com/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.token}`,
+        },
+        body: JSON.stringify({
+          query,
+          variables: { org, projectNumber, after },
+        }),
+      });
+
+      const json = await response.json();
+
+      if (json.errors) {
+        console.error("GraphQL error:", JSON.stringify(json.errors, null, 2));
+        throw new Error(`Error fetching issues from project: ${json.errors[0].message}`);
+      }
+
+      const items = json.data?.organization?.projectV2?.items;
+      if (!items) {
+        throw new Error(`❌ Project #${projectNumber} not found in ${org}`);
+      }
+
+      for (const node of items.nodes) {
+        const issue = node.content;
+        if (!issue) continue;
+
+        const labels = (issue.labels?.nodes || []).map((label: any) => label.name);
+        const type = this.determineIssueType(issue.labels?.nodes || []);
+
+        issues.push({
+          number: issue.number,
+          title: issue.title,
+          url: issue.url,
+          state: issue.state,
+          createdAt: issue.createdAt,
+          updatedAt: issue.updatedAt,
+          repository: issue.repository.name,
+          repositoryOwner: issue.repository.owner.login,
+          author: issue.author?.login || "unknown",
+          assignees: issue.assignees.nodes.map((a: any) => a.login),
+          milestoneNumber: issue.milestone?.number || -1,
+          type,
+          labels,
+          dependencies: [],
+          dependents: [],
+          customFields: {},
+        });
+      }
+
+      hasNextPage = items.pageInfo.hasNextPage;
+      after = items.pageInfo.endCursor;
+    }
+
+    return issues;
+  }
 
   async getFromMilestoneInProject(
     org: string,
@@ -542,8 +662,8 @@ export class IssueService {
    * @param issue Issue do GitHub
    * @returns Array de issues das quais esta issue depende
    */
-  private extractDependencies(issue: any): Array<{number: number, title: string, state: string, url: string}> {
-    const dependencies: Array<{number: number, title: string, state: string, url: string}> = [];
+  private extractDependencies(issue: any): Array<{number: number, title: string, state?: 'OPEN' | 'CLOSED', url: string}> {
+    const dependencies: Array<{number: number, title: string, state?: 'OPEN' | 'CLOSED', url: string}> = [];
     
     // 1. Verificar cross-references na timeline
     if (issue.timelineItems?.nodes) {
@@ -552,11 +672,10 @@ export class IssueService {
           const source = item.source;
           
           if (source && source.number && source.title) {
-            // Verificar se é uma dependência válida (por convenção, se a issue mencionou outra issue)
             dependencies.push({
               number: source.number,
               title: source.title,
-              state: source.state,
+              state: source.state, // já vem preenchido se disponível
               url: source.url
             });
           }
@@ -566,7 +685,6 @@ export class IssueService {
     
     // 2. Verificar textos explícitos de dependência no corpo da issue
     if (issue.bodyText) {
-      // Padrões comuns para indicar dependências
       const patterns = [
         /depends on #(\d+)/i,
         /blocked by #(\d+)/i,
@@ -588,7 +706,7 @@ export class IssueService {
                 dependencies.push({
                   number: issueNumber,
                   title: `Issue #${issueNumber}`,
-                  state: 'UNKNOWN', // Estado desconhecido, será atualizado se encontrarmos a issue posteriormente
+                  // state não é definido aqui, pois ainda não é conhecido
                   url: `https://github.com/${issue.repository.owner.login}/${issue.repository.name}/issues/${issueNumber}`
                 });
               }
@@ -621,10 +739,10 @@ export class IssueService {
       }
     }
     
-    // Atualizar estados das dependências que foram inicialmente marcadas como UNKNOWN
+    // Atualizar estados das dependências que ainda não têm state definido
     for (const issue of issues) {
       for (const dependency of issue.dependencies) {
-        if (dependency.state === 'UNKNOWN') {
+        if (dependency.state === undefined) {
           const foundIssue = issues.find(i => i.number === dependency.number);
           if (foundIssue) {
             dependency.state = foundIssue.state;
@@ -750,25 +868,26 @@ export class IssueService {
       percentComplete
     };
   }
+  
   /**
- * Maps a GitHubIssue object to the Issue format
- * @param githubIssue The GitHub issue to convert
- * @returns An Issue object with mapped properties
- */
-async  mapGitHubIssueToIssue(githubIssue: GitHubIssue): Promise<Issue> {
-  return {
-    id: githubIssue.number.toString(),
-    externalId: `${githubIssue.repositoryOwner}/${githubIssue.repository}#${githubIssue.number}`,
-    key: `${githubIssue.repository}-${githubIssue.number}`,
-    self: githubIssue.url,
-    type: 'github',
-    subtype: githubIssue.type || 'issue',
-    title: githubIssue.title,
-    description: githubIssue.customFields.description || '',
-    status: githubIssue.state === 'OPEN' ? 'open' : 'closed',
-    createdDate: githubIssue.createdAt,
-    labels: githubIssue.labels
-  };
-}
+   * Maps a GitHubIssue object to the Issue format
+   * @param githubIssue The GitHub issue to convert
+   * @returns An Issue object with mapped properties
+   */
+  async  mapGitHubIssueToIssue(githubIssue: GitHubIssue): Promise<Issue> {
+    return {
+      id: githubIssue.number.toString(),
+      externalId: `${githubIssue.repositoryOwner}/${githubIssue.repository}#${githubIssue.number}`,
+      key: `${githubIssue.repository}-${githubIssue.number}`,
+      self: githubIssue.url,
+      type: 'github',
+      subtype: githubIssue.type || 'issue',
+      title: githubIssue.title,
+      description: githubIssue.customFields.description || '',
+      status: githubIssue.state === 'OPEN' ? 'open' : 'closed',
+      createdDate: githubIssue.createdAt,
+      labels: githubIssue.labels
+    };
+  }
 
 }

@@ -2,8 +2,8 @@
 import { GitHubIssue, IssueService } from '../extract/github/issue.extract';
 import { GitHubMilestone, MilestoneService } from '../extract/github/milestone.extract';
 import { GitHubProject,GitHubProjectService } from '../extract/github/project.extract';
-import {GitHubSprintService, GitHubSprint} from '../extract/github/sprints.extract';
-import { Project, Milestone, Issue, TimeBox } from '../model/models';
+import { GitHubSprintService, GitHubSprint } from '../extract/github/sprints.extract';
+import { Backlog, Project, Milestone, Issue, TimeBox } from '../model/models';
 
 import { GenericRepository } from "../repository/generic.repository";
 /**
@@ -176,7 +176,7 @@ async ETLTimeBox (
 async ETLBacklog (
   org: string,  
   projectTitle: string
-): Promise<Project | null> {
+): Promise<Backlog | null> {
   const project = await this.getProjectByTitle(org, projectTitle);
   if (!project) {
     throw new Error(`Project ${projectTitle} not found`);
@@ -216,14 +216,14 @@ async ETLBacklog (
       issues.push(issue);
     });
   });
-  const repository = new GenericRepository<Project>('./data/db','backlog.json');	
+  const repository = new GenericRepository<Backlog>('./data/db','backlog.json');	
  
   repository.clear();
   
-  const backlog: Project = {
+  const backlog: Backlog = {
     id: project.id,
-    name: project.name,
-    description: project.description,
+    name: project.title,
+    description: project.shortDescription ?? '',
     issues: issues
   };
   

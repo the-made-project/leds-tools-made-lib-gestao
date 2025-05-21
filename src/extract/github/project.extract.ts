@@ -2,7 +2,7 @@ import {Project} from "../../model/models";
 
 export interface GitHubProject {
   id: string;
-  number: number;1
+  number: number;
   title: string;
   shortDescription: string | null;
   createdAt: string;

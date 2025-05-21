@@ -50,7 +50,7 @@ export class ThroughputGenerator {
     try {
       const startDate = this.parseBrazilianDate(this.data.startDate);
       const endDate = this.parseBrazilianDate(this.data.endDate);
-      const days = [];
+      const days: { day: string; date: Date; todo: number; inProgress: number; done: number }[] = [];
       
       if (endDate < startDate) {
         throw new Error('Data de fim é anterior à data de início');
