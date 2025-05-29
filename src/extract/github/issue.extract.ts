@@ -150,15 +150,57 @@ export class IssueService {
     return issues;
   }
 
+  async getProjectId(org: string, projectNumber: number): Promise<string | null> {
+    const query = `
+      query($org: String!) {
+        organization(login: $org) {
+          projectsV2(first: 100) {
+            nodes {
+              id
+              title
+              number
+            }
+          }
+        }
+      }
+    `;
+
+    const variables = { org, projectNumber };
+    const response = await fetch("https://api.github.com/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.token}`,
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+      }),
+    });
+
+    const json = await response.json();
+    console.log("Response from getProjectId:", JSON.stringify(json, null, 2));
+    console.log("Variables used:", JSON.stringify(variables, null, 2));
+    const projects = json.data.organization.projectsV2.nodes;
+    const project = projects.find((p: any) => Number(p.number) === Number(projectNumber));
+    console.log("Found project:", project);
+    return project?.id || null;
+  }
+
   async getFromMilestoneInProject(
     org: string,
     projectNumber: number,
     milestoneNumber: number
   ): Promise<GitHubIssue[]> {
+    const projectId = await this.getProjectId(org, projectNumber);
+    if (!projectId) {
+      throw new Error(`Projeto ${projectId} não encontrado.`);
+    }
+
     const query = `
-      query($org: String!, $projectNumber: Int!, $after: String) {
-        organization(login: $org) {
-          projectV2(number: $projectNumber) {
+      query($projectId: ID!, $after: String) {
+        node(id: $projectId) {
+          ... on ProjectV2 {
             items(first: 100, after: $after) {
               pageInfo {
                 hasNextPage
@@ -300,7 +342,7 @@ export class IssueService {
         },
         body: JSON.stringify({
           query,
-          variables: { org, projectNumber, after },
+          variables: { projectId, after },
         }),
       });
   
@@ -310,8 +352,9 @@ export class IssueService {
         console.error("GraphQL error:", JSON.stringify(json.errors, null, 2));
         throw new Error(`Erro ao buscar issues do projeto: ${json.errors[0].message}`);
       }
-  
-      const items = json.data?.organization?.projectV2?.items;
+
+      // Corrija aqui:
+      const items = json.data?.node?.items;
       if (!items) {
         throw new Error(`❌ Projeto #${projectNumber} não encontrado em ${org}`);
       }
