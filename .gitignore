@@ -24,7 +24,7 @@ lerna-debug.log*
 error.log
 
 # Diretórios de dependências
-/node_modules
+/node_modules/
 jspm_packages/
 
 # Diretórios e arquivos temporários do sistema

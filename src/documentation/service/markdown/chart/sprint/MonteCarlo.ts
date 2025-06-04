@@ -128,7 +128,7 @@ export class SprintMonteCarlo {
       let currentDate = new Date();
       let daysAdded = 0;
 
-      while (simulatedCompleted < metrics.totalTasks) {
+      while (simulatedCompleted < metrics.totalTasks || daysAdded > 30) {
         if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
           const dailyVelocity = velocities[Math.floor(Math.random() * velocities.length)];
           simulatedCompleted += dailyVelocity;
@@ -136,8 +136,6 @@ export class SprintMonteCarlo {
         
         currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
         daysAdded++;
-
-        if (daysAdded > 30) break;
       }
 
       if (simulatedCompleted >= metrics.totalTasks) {
