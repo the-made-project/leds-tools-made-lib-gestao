@@ -28,7 +28,9 @@ export interface GitHubIssue {
 }
 import { Issue } from "../../model/models";
 export class IssueService {
-  constructor(private token: string) {}
+  constructor(private token: string) {
+    this.token = token;
+  }
 
   /**
    * Fetches all issues from a specific project

@@ -13,7 +13,9 @@ export interface GitHubProject {
 export class GitHubProjectService {
   private GITHUB_API_URL = "https://api.github.com/graphql";
 
-  constructor(private token: string) {}
+  constructor(private token: string) {
+    this.token = token;
+  }
 
   async getAll(org: string): Promise<GitHubProject[]> {
     const query = `
