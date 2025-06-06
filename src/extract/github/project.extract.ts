@@ -1,4 +1,6 @@
 import {Project} from "../../model/models";
+import { DefaultProjectAdapter } from "./Adapters/ProjectAdapter";
+import { GitHubTokenManager } from "./GitHubTokenManager";
 
 export interface GitHubProject {
   id: string;
@@ -12,8 +14,7 @@ export interface GitHubProject {
 
 export class GitHubProjectService {
   private GITHUB_API_URL = "https://api.github.com/graphql";
-
-  constructor(private token: string) {}
+  private token: string = GitHubTokenManager.getInstance().getToken();
 
   async getAll(org: string): Promise<GitHubProject[]> {
     const query = `
@@ -93,21 +94,7 @@ export class GitHubProjectService {
    * @returns Projeto no formato padronizado
    */
   async mapGitHubProjectToProject(githubProject: GitHubProject): Promise<Project> {
-    // Criamos uma data de vencimento estimada (3 meses após a criação)
-    const createdDate = new Date(githubProject.createdAt);
-    const estimatedDueDate = new Date(createdDate);
-    estimatedDueDate.setMonth(createdDate.getMonth() + 3);
-    
-    // Se o projeto estiver fechado, usamos a data de atualização como data de conclusão
-    const completedDate = githubProject.closed ? githubProject.updatedAt : undefined;
-    
-    return {
-      id: githubProject.id,
-      name: githubProject.title,
-      description: githubProject.shortDescription || undefined,
-      startDate: githubProject.createdAt,
-      dueDate: estimatedDueDate.toISOString().split('T')[0], // Formato YYYY-MM-DD
-      completedDate: completedDate
-    };
+    let project: DefaultProjectAdapter = new DefaultProjectAdapter();
+    return project.toInternalFormat(githubProject)
   }
 }

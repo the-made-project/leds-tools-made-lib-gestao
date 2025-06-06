@@ -1,6 +1,7 @@
 import { expect, test, describe, beforeAll } from "vitest";
 import { GitHubService } from "./service/GitHubService";
 import dotenv from "dotenv";
+import { GitHubTokenManager } from "./extract/github/GitHubTokenManager";
 
 dotenv.config();
 
@@ -14,8 +15,9 @@ beforeAll(() => {
   if (!token) {
     throw new Error("GITHUB_TOKEN não definido no .env");
   }
+  GitHubTokenManager.initialize(token);
 
-  service = new GitHubService(token);
+  service = new GitHubService();
 });
 
 describe("GitHubService ETL", () => {

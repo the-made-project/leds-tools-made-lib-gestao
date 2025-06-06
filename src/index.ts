@@ -2,11 +2,15 @@ import { MarkdownService } from "./documentation/service/markdown/MarkdownServic
 export * from './model/models';
 import { GitHubService } from "./service/GitHubService";
 import { GitHubPushService } from "./service/GitHubPushService";
+import { GitHubTokenManager } from "./extract/github/GitHubTokenManager";
 
 export class ReportManager {
 
     public async githubETL(token: string, org: string, project: string) {
-        const githubService = new GitHubService(token);
+        if (!token) throw new Error('GITHUB_TOKEN not set');
+        GitHubTokenManager.initialize(token);
+        
+        const githubService = new GitHubService();
         await githubService.ETLProject(org, project);
         await githubService.ETLIssue(org, project);
         await githubService.ETLBacklog(org, project);

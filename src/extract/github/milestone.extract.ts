@@ -1,10 +1,6 @@
-// milestone.service.ts
-// milestone.model.ts
-/**
- * Interface para representar um milestone do GitHub
- */
-
 import { Milestone } from '../../model/models';
+import { DefaultMilestoneAdapter } from './Adapters/MilestoneAdapter';
+import { GitHubTokenManager } from './GitHubTokenManager';
 
 export interface GitHubMilestone {
   id: number;
@@ -19,23 +15,13 @@ export interface GitHubMilestone {
   html_url: string;
 }
 
-
 /**
  * Serviço responsável por interagir com milestones do GitHub
  */
 export class MilestoneService {
   private baseUrl: string = 'https://api.github.com';
-  private token?: string;
-
-  /**
-   * Construtor da classe
-   * @param token Token de autenticação GitHub (opcional)
-   */
-  constructor(token?: string) {
-    this.token = token;
-  }
-  
-  
+  private token: string = GitHubTokenManager.getInstance().getToken();
+ 
   /**
    * Obtém todos os milestones com suporte a paginação
    * @param owner Nome do proprietário do repositório
@@ -216,33 +202,11 @@ export class MilestoneService {
    * @param githubMilestone Milestone do GitHub a ser convertido
    * @returns Milestone no formato padronizado
    */
-  async mapGitHubMilestoneToMilestone(
+  mapGitHubMilestoneToMilestone(
     githubMilestone: GitHubMilestone
-  ): Promise<Milestone> {
-    // Determina o status com base no estado e datas
-    let status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'DELAYED' = 'PLANNED';
-    
-    if (githubMilestone.state === 'closed') {
-      status = 'COMPLETED';
-    } else if (githubMilestone.state === 'open') {
-      const now = new Date();
-      const dueDate = githubMilestone.due_on ? new Date(githubMilestone.due_on) : null;
-      
-      if (dueDate && dueDate < now) {
-        status = 'DELAYED';
-      } else {
-        status = 'IN_PROGRESS';
-      }
-    }
-    
-    return {
-      id: githubMilestone.id.toString(),
-      name: githubMilestone.title,
-      description: githubMilestone.description || '',
-      startDate: githubMilestone.created_at,
-      dueDate: githubMilestone.due_on || githubMilestone.updated_at,
-      status
-    };
+  ): Milestone {
+    let milestoneAdapter: DefaultMilestoneAdapter = new DefaultMilestoneAdapter();
+    return milestoneAdapter.toInternalFormat(githubMilestone);
   }
 
   

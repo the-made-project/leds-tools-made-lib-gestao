@@ -17,13 +17,13 @@ interface PersonSummary {
   items: PersonTaskItem[];
 }
 
-interface SprintSummaryStats {
+export interface SprintSummaryStats {
   total: number;
   statusCount: Record<string, number>;
   statusPercentage: Record<string, string>;
 }
 
-interface ThroughputData {
+export interface ThroughputData {
   date: string;
   count: number;
 }
