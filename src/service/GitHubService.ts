@@ -1,11 +1,11 @@
 // github.service.ts
 import { GitHubIssue, IssueService } from '../extract/github/issue.extract';
 import { GitHubMilestone, MilestoneService } from '../extract/github/milestone.extract';
-import { GitHubProject,GitHubProjectService } from '../extract/github/project.extract';
-import { GitHubSprintService, GitHubSprint } from '../extract/github/sprints.extract';
+import { GitHubProject, GitHubProjectService } from '../extract/github/project.extract';
+import { GitHubSprint, GitHubSprintService } from '../extract/github/sprints.extract';
 import { Backlog, Project, Milestone, Issue, TimeBox } from '../model/models';
 
-import { GenericRepository } from "../repository/generic.repository";
+import { GenericRepository } from "../push/repository/generic.repository";
 /**
  * Serviço principal que coordena as operações do GitHub
  */
@@ -14,15 +14,12 @@ export class GitHubService {
   private issueService: IssueService;
   private projectService: GitHubProjectService;
   private sprintService: GitHubSprintService;
-  /**
-   * Construtor da classe
-   * @param token Token de autenticação GitHub (opcional)
-   */
-  constructor(token: string) {
-    this.milestoneService = new MilestoneService(token);
-    this.issueService = new IssueService(token);
-    this.projectService = new GitHubProjectService(token);
-    this.sprintService = new GitHubSprintService(token);
+  
+  constructor() {
+    this.milestoneService = new MilestoneService();
+    this.issueService = new IssueService();
+    this.projectService = new GitHubProjectService();
+    this.sprintService = new GitHubSprintService();
   }
   
   async getSprints(
@@ -196,7 +193,7 @@ async ETLBacklog (
     await Promise.all(
       milestones.map(async (milestone) => {
         const issues = await this.getIssuesFromMilestoneInProject(
-          "leds-conectafapes",
+          org,
           project.number,
           milestone.number
         );
@@ -257,7 +254,7 @@ async ETLIssue (
     await Promise.all(
       milestones.map(async (milestone) => {
         const issues = await this.getIssuesFromMilestoneInProject(
-          "leds-conectafapes",
+          org,
           project.number,
           milestone.number
         );

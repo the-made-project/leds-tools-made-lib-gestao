@@ -3,6 +3,7 @@ import { GitHubService } from "./service/GitHubService";
 
 
 import dotenv from 'dotenv';
+import { GitHubTokenManager } from "./extract/github/GitHubTokenManager";
 dotenv.config(); // carrega o .env para process.env
 
 
@@ -10,7 +11,8 @@ let service: GitHubService;
 
 const token = process.env.GITHUB_TOKEN;
   if (!token) throw new Error('GITHUB_TOKEN not set');
-  service = new GitHubService(token);
+  GitHubTokenManager.initialize(token);
+  service = new GitHubService();
 
 test("Map GithuProject to Project", async () => {
   const projects = await service.getProjects("made-test");

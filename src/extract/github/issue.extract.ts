@@ -1,3 +1,8 @@
+
+import { Issue } from "../../model/models";
+import { DefaultIssueAdapter } from "./Adapters/IssueAdapter";
+import { GitHubTokenManager } from "./GitHubTokenManager";
+
 export interface GitHubIssue {
   number: number;
   title: string;
@@ -26,11 +31,9 @@ export interface GitHubIssue {
   }[]; // Issues que dependem desta issue
   customFields: Record<string, string>;
 }
-import { Issue } from "../../model/models";
+
 export class IssueService {
-  constructor(private token: string) {
-    this.token = token;
-  }
+  private token: string = GitHubTokenManager.getInstance().getToken();
 
   /**
    * Fetches all issues from a specific project
@@ -154,17 +157,15 @@ export class IssueService {
 
   async getProjectId(org: string, projectNumber: number): Promise<string | null> {
     const query = `
-      query($org: String!) {
-        organization(login: $org) {
-          projectsV2(first: 100) {
-            nodes {
-              id
-              title
-              number
-            }
-          }
+    query($org: String!, $projectNumber: Int!) {
+      organization(login: $org) {
+        projectV2(number: $projectNumber) {
+          id
+          title
+          number
         }
       }
+    }   
     `;
 
     const variables = { org, projectNumber };
@@ -183,8 +184,8 @@ export class IssueService {
     const json = await response.json();
     console.log("Response from getProjectId:", JSON.stringify(json, null, 2));
     console.log("Variables used:", JSON.stringify(variables, null, 2));
-    const projects = json.data.organization.projectsV2.nodes;
-    const project = projects.find((p: any) => Number(p.number) === Number(projectNumber));
+    const project = json.data.organization.projectV2;
+    // const project = projects.find((p: any) => Number(p.number) === Number(projectNumber));
     console.log("Found project:", project);
     return project?.id || null;
   }
@@ -919,20 +920,9 @@ export class IssueService {
    * @param githubIssue The GitHub issue to convert
    * @returns An Issue object with mapped properties
    */
-  async  mapGitHubIssueToIssue(githubIssue: GitHubIssue): Promise<Issue> {
-    return {
-      id: githubIssue.number.toString(),
-      externalId: `${githubIssue.repositoryOwner}/${githubIssue.repository}#${githubIssue.number}`,
-      key: `${githubIssue.repository}-${githubIssue.number}`,
-      self: githubIssue.url,
-      type: 'github',
-      subtype: githubIssue.type || 'issue',
-      title: githubIssue.title,
-      description: githubIssue.customFields.description || '',
-      status: githubIssue.state === 'OPEN' ? 'open' : 'closed',
-      createdDate: githubIssue.createdAt,
-      labels: githubIssue.labels
-    };
+  mapGitHubIssueToIssue(githubIssue: GitHubIssue): Issue {
+    let issueAdapter: DefaultIssueAdapter = new DefaultIssueAdapter();
+    return issueAdapter.toInternalFormat(githubIssue);
   }
 
 }

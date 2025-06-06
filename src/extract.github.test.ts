@@ -1,7 +1,10 @@
 import { expect, test } from "vitest";
 import { GitHubService } from "./service/GitHubService";
 import dotenv from 'dotenv';
+import { GitHubTokenManager } from "./extract/github/GitHubTokenManager";
+
 dotenv.config(); // carrega o .env para process.env
+
 let service: GitHubService;
 
 const org_name = "made-test";
@@ -9,7 +12,8 @@ const project_name = "project-test"
 
 const token = process.env.GITHUB_TOKEN;
   if (!token) throw new Error('GITHUB_TOKEN not set');
-  service = new GitHubService(token);
+  GitHubTokenManager.initialize(token);
+  service = new GitHubService();
 
 test("Baixando os Projetos", async () => {
   const value = await service.getProjects(org_name);
