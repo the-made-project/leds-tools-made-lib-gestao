@@ -1,6 +1,6 @@
 import { Milestone } from '../../model/models';
 import { DefaultMilestoneAdapter } from './Adapters/MilestoneAdapter';
-import { GitHubTokenManager } from './GitHubTokenManager';
+import { GitHubTokenManager } from '../../service/GitHubTokenManager';
 
 export interface GitHubMilestone {
   id: number;

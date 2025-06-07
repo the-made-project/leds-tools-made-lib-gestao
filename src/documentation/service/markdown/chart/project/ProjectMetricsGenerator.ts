@@ -4,6 +4,7 @@ import { Project, SprintItem, TimeBox } from '../../../../../model/models.js';
 import { ProjectCFD } from './ProjectCFD.js';
 import { ProjectThroughputGenerator } from './ProjectThroughputGenerator.js';
 import { ProjectMonteCarlo } from './ProjectMonteCarlo.js';
+import { parseDate } from '../../../../../util/date-util.js';
 
 interface SprintStatus {
   completed: number;
@@ -29,32 +30,9 @@ export class ProjectMetricsGenerator {
     return "TODO"; // Default fallback
   }
 
-  private parseBrazilianDate(dateStr: string): Date {
-    if (!dateStr) {
-      throw new Error('Data não fornecida');
-    }
-
-    dateStr = dateStr.trim();
-    const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
-    const match = dateStr.match(dateRegex);
-
-    if (!match) {
-      throw new Error(`Data inválida: ${dateStr}. Formato esperado: dd/mm/yyyy`);
-    }
-
-    const [, day, month, year] = match;
-    const date = new Date(`${year}-${month}-${day}`);
-
-    if (isNaN(date.getTime())) {
-      throw new Error(`Data inválida após conversão: ${dateStr}`);
-    }
-
-    return date;
-  }
-
   private formatDate(date: string): string {
     try {
-      const parsedDate = this.parseBrazilianDate(date);
+      const parsedDate = parseDate(date);
       return parsedDate.toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit'
@@ -67,8 +45,8 @@ export class ProjectMetricsGenerator {
 
   private calculateDuration(startDate: string, endDate: string): number {
     try {
-      const start = this.parseBrazilianDate(startDate);
-      const end = this.parseBrazilianDate(endDate);
+      const start = parseDate(startDate);
+      const end = parseDate(endDate);
       
       const startTime = start.getTime();
       const endTime = end.getTime();

@@ -1,9 +1,7 @@
 import { expect, test } from "vitest";
 import { GitHubService } from "./service/GitHubService";
-
-
+import { GitHubTokenManager } from "./service/GitHubTokenManager";
 import dotenv from 'dotenv';
-import { GitHubTokenManager } from "./extract/github/GitHubTokenManager";
 dotenv.config(); // carrega o .env para process.env
 
 

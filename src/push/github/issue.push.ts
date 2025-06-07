@@ -1,3 +1,4 @@
+import { GitHubTokenManager } from '../../service/GitHubTokenManager.ts';
 import { axiosInstance } from '../../util/axiosInstance.ts';
 import { getRepositoryId, addAssigneesToIssue, addLabelsToLabelable, getLabelIds } from './githubApi.js';
 import { Issue } from '../../model/models.ts';
@@ -34,7 +35,7 @@ export class GitHubIssuePushService {
       title: issue.title || 'Sem título',
       body: issue.description || '',
       labels: issue.labels || [],
-      assignees: [] // Adapte se seu modelo MADE tiver assignees
+      assignees: [] // Assignees podem ser adicionados posteriormente
     };
   }
 
@@ -69,7 +70,8 @@ export class GitHubIssuePushService {
     };
 
     // Cria a issue
-    const response = await axiosInstance.post('', { query, variables });
+    const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+    const response = await axios_instance.post('', { query, variables });
     const issueData = response.data?.data?.createIssue?.issue;
     if (!issueData) {
       throw new Error('❌ A resposta da API não contém os dados esperados.');

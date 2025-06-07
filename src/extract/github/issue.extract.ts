@@ -1,7 +1,7 @@
 
 import { Issue } from "../../model/models";
 import { DefaultIssueAdapter } from "./Adapters/IssueAdapter";
-import { GitHubTokenManager } from "./GitHubTokenManager";
+import { GitHubTokenManager } from "../../service/GitHubTokenManager";
 
 export interface GitHubIssue {
   number: number;

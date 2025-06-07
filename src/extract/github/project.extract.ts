@@ -1,6 +1,6 @@
 import {Project} from "../../model/models";
 import { DefaultProjectAdapter } from "./Adapters/ProjectAdapter";
-import { GitHubTokenManager } from "./GitHubTokenManager";
+import { GitHubTokenManager } from "../../service/GitHubTokenManager";
 
 export interface GitHubProject {
   id: string;

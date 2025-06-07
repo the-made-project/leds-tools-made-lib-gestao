@@ -1,6 +1,6 @@
 import { TimeBox } from "../../model/models";
 import { DefaultSprintAdapter } from "./Adapters/SprintAdapter";
-import { GitHubTokenManager } from "./GitHubTokenManager";
+import { GitHubTokenManager } from "../../service/GitHubTokenManager";
 
 export interface GitHubSprint {
   id: string;

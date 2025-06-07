@@ -1,7 +1,7 @@
 export type Project = {
   id: string;
   name: string;
-  description?:string;
+  description?: string;
   startDate: string;
   dueDate: string;
   completedDate?: string;
@@ -10,16 +10,16 @@ export type Project = {
 
 export type Backlog = {
   id: string;
-  name: string
-  description: string
-  issues?:Issue[];
+  name: string;
+  description: string;
+  issues?: Issue[];
   
 }
 
 
 export type Roadmap = {
   id: string;
-  name?:string;
+  name?: string;
   description?: string;
   milestones?: Milestone[];
 }
@@ -28,7 +28,7 @@ export type Milestone = {
   id: string;
   name: string;
   description: string;
-  startDate:string
+  startDate: string
   dueDate: string;
   status?: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'DELAYED';
   dependencies?: Milestone[];
@@ -49,43 +49,43 @@ export type Release = {
 
  
 export type IssuesDTO = {
-    data: any[];
- };
+  data: any[];
+};
 
 
 export type Team = {
-  id:string;  
-  name : string;
+  id: string;  
+  name: string;
   description: string
-  teammebers: Person[] 
+  teamMembers: Person[] 
 }
 
 export type Person = {
-  id:string;  
+  id: string;  
   email: string;
-  name : string;  
-  discod:string;
+  name: string;  
+  discord: string;
 }
 
  export type TimeBox = {
   id?: string;  
-  description:string;
-  startDate:string;
+  description: string;
+  startDate: string;
   endDate: string;
   name: string;      
   status?: 'PLANNED' | 'IN_PROGRESS' | 'CLOSED' ;
-  completeDate?:string;  
-  sprintItems:SprintItem[];
+  completeDate?: string;  
+  sprintItems: SprintItem[];
 };
 
 export type SprintItem = {
   id: string;
-  assignee:Person;
-  issue: Issue;  
+  assignee: Person;
+  issue: Issue;
   startDate?: string;
   dueDate?: string;
-  plannedStartDate?:string;
-  planneddueDate?:string;
+  plannedStartDate?: string;
+  plannedDueDate?: string;
   status?: string;  
 }
 
@@ -95,12 +95,12 @@ export type Issue = {
   key?: string;
   self?: string;
   type: string;
-  subtype:string;
+  subtype: string;
   title?: string;
-  description?:string;
-  status?:string;
-  createdDate?:string;            
-  issues?:  Issue[]; 
+  description?: string;
+  status?: string;
+  createdDate?: string;            
+  issues?: Issue[]; 
   depends?: Issue[];
   labels?: string[];
 };

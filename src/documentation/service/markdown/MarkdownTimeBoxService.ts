@@ -1,34 +1,33 @@
-import { createPath} from '../../../util/generator-utils.js'
 import * as path from 'path';
 import * as fs from 'fs';
 import { readdirSync } from 'fs';
-
 import { LowSync } from 'lowdb';
 import { JSONFileSync  } from 'lowdb/node';
-import { IssuesDTO, TimeBox} from '../../../model/models.js'
-import { CumulativeFlowDiagram } from './chart/sprint/CumulativeFlowDiagram.js';
-import { SprintMonteCarlo } from "./chart/sprint/MonteCarlo.js";
-import { ProjectDependencyAnalyzer } from "./chart/sprint/ProjectDependencyAnalyzer.js";
-import { SprintSummary, SprintSummaryGenerator } from './sprint/SprintSummaryGenerator.js';
+
+import { AbstractMarkdown } from './AbstractMarkdown.js';
+import { SprintMonteCarlo } from './chart/sprint/MonteCarlo.js';
 import { ThroughputGenerator } from './chart/sprint/Throughput.js';
 import { TimeBoxGanttGenerator } from './chart/sprint/TimeBoxGanttGenerator.js';
+import { CumulativeFlowDiagram } from './chart/sprint/CumulativeFlowDiagram.js';
+import { ProjectDependencyAnalyzer } from './chart/sprint/ProjectDependencyAnalyzer.js';
+import { SprintSummary, SprintSummaryGenerator } from './sprint/SprintSummaryGenerator.js';
 
-export class MarkdownTimeBoxService {
+import { createPath} from '../../../util/generator-utils.js'
 
-    target_folder:string
+import type { IssuesDTO, TimeBox} from '../../../model/models.js'
+
+export class MarkdownTimeBoxService extends AbstractMarkdown {
+
     TIMEBOX_PATH :string
     TIMEBOX_CHARTS_PATH :string
-    jsonFile: string
-    DB_PATH: string
-    
-    constructor ( target_folder:string, db_path:string){
-     
-        this.target_folder = target_folder
+
+    constructor (target_folder: string, db_path: string) {
+        super(target_folder, db_path)
         this.TIMEBOX_PATH = createPath(this.target_folder,'sprints')
         this.TIMEBOX_CHARTS_PATH = createPath(this.TIMEBOX_PATH,'charts')
         this.jsonFile = "timebox.json"
-        this.DB_PATH = db_path
     }
+
     private async createCategory(){
         return `
         {
@@ -54,10 +53,11 @@ export class MarkdownTimeBoxService {
         }
         `
     }
+
     public async create(){
 
-        const timeBoxes = await this.retrive(this.jsonFile);
-        
+        const timeBoxes = await this.retrieve(this.jsonFile);
+
         const filePathCategory = path.join(this.TIMEBOX_PATH, "_category_.json")
 
         const filePathCategoryxxx = path.join(this.target_folder, "_category_.json")
@@ -72,7 +72,7 @@ export class MarkdownTimeBoxService {
             // Gerar o CFD
             let generatorx = new CumulativeFlowDiagram(timebox,this.TIMEBOX_CHARTS_PATH+`/cfd-${timebox.id}.svg`);
             let generatorThroput = new ThroughputGenerator(timebox, this.TIMEBOX_CHARTS_PATH+`/throuput-${timebox.id}.svg`)
-            
+
             if (!exist){
                 fs.writeFileSync(filePath, this.createTimeBoxExport(timebox))
                 generatorx.generate();    
@@ -82,10 +82,11 @@ export class MarkdownTimeBoxService {
                 fs.writeFileSync(filePath, this.createTimeBoxExport(timebox))                        
                 generatorThroput.generate()        
             }
-            
+
         } );
-                
+
     }
+
     private  fileContainsName(directory: string, partialName: string): boolean {
         try {
             const files = readdirSync(directory); // Lista todos os arquivos no diretório
@@ -95,6 +96,7 @@ export class MarkdownTimeBoxService {
             return false;
         }
     }
+
     private createTimeBoxExport(timeBox: TimeBox ):string {
 
        let monteCarloAnalysis = ""
@@ -139,25 +141,9 @@ ${dependencyAnalysis}
         
 ${monteCarloAnalysis}
         `
-}
-
-    protected async retrive(database: string){
-    
-        const ISSUEPATH = path.join(this.DB_PATH, database);
-        
-        const adapter = new JSONFileSync<IssuesDTO>(ISSUEPATH);
-        const defaultData: IssuesDTO = { data: [] };
-
-        const db = new LowSync<IssuesDTO>(adapter, defaultData);
-        await db.read();
-        
-        return db.data.data.sort((a, b) => {
-            return Number(a.id) - Number(b.id);
-        }); 
-        
     }
 
-    protected async retrive_status_in_progress(database: string) {
+    protected async retrieve_status_in_progress(database: string) {
         const ISSUEPATH = path.join(this.DB_PATH, database);
         
         const adapter = new JSONFileSync<IssuesDTO>(ISSUEPATH);
@@ -174,19 +160,18 @@ ${monteCarloAnalysis}
     }
 
     public async createSprintSummary(){
-        const sprints = await this.retrive_status_in_progress(this.jsonFile)
+        const sprints = await this.retrieve_status_in_progress(this.jsonFile)
         const generator = new SprintSummaryGenerator(sprints);
         const summary = await generator.generateSprintsSummary();
         return summary
     }
 
     public async createSprintSummaryReport(){
-        const sprints = await this.retrive_status_in_progress(this.jsonFile)
+        const sprints = await this.retrieve_status_in_progress(this.jsonFile)
         const generator = new SprintSummaryGenerator(sprints);
         let summary: SprintSummary[] = await generator.generateSprintsSummary();
         return await generator.createSprintCompleteMarkdown(summary);           
         
     }
    
-
 }

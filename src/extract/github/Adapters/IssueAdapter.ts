@@ -18,7 +18,7 @@ export class DefaultIssueAdapter implements IssueAdapter {
             description: gitHubIssue.customFields.description || '',
             status: gitHubIssue.state === 'OPEN' ? 'open' : 'closed',
             createdDate: gitHubIssue.createdAt,
-            labels: gitHubIssue.labels
+            labels: gitHubIssue.labels,
         };
     }
 }
