@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import { TimeBox } from '../../../../../model/models.js';
+import { parseDate } from '../../../../../util/date-util.js';
 
 export class ProjectThroughputGenerator {
     private sprints: TimeBox[];
@@ -21,15 +22,10 @@ export class ProjectThroughputGenerator {
       return "TODO"; // Default fallback
     }
 
-    private parseBrazilianDate(dateString: string): Date {
-      const [day, month, year] = dateString.split('/').map(Number);
-      return new Date(year, month - 1, day);
-    }
-
     private sortSprints(sprints: TimeBox[]): TimeBox[] {
       return sprints.sort((a, b) => 
-        this.parseBrazilianDate(a.startDate).getTime() - 
-        this.parseBrazilianDate(b.startDate).getTime()
+        parseDate(a.startDate).getTime() - 
+        parseDate(b.startDate).getTime()
       );
     }
   
@@ -40,8 +36,8 @@ export class ProjectThroughputGenerator {
         return `${dia}/${mes}`;
       };
   
-      const startDate = this.parseBrazilianDate(this.sprints[0].startDate);
-      const endDate = this.parseBrazilianDate(this.sprints[this.sprints.length - 1].endDate);
+      const startDate = parseDate(this.sprints[0].startDate);
+      const endDate = parseDate(this.sprints[this.sprints.length - 1].endDate);
       const days: { day: string; date: Date; done: number }[] = [];
       
       let currentDate = new Date(startDate);
@@ -51,7 +47,7 @@ export class ProjectThroughputGenerator {
         
         const allTasksUntilDay = this.sprints.flatMap(sprint => {
           return sprint.sprintItems.filter(task => {
-            const taskDueDate = task.dueDate ? this.parseBrazilianDate(task.dueDate) : null;
+            const taskDueDate = task.dueDate ? parseDate(task.dueDate) : null;
             return taskDueDate ? taskDueDate.toDateString() === currentDate.toDateString() : false;
           });
         });

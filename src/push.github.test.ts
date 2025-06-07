@@ -1,16 +1,20 @@
-import { expect, test, beforeEach, afterEach } from "vitest";
+import { expect, test, beforeAll, beforeEach, afterEach } from "vitest";
 import { GitHubPushService } from "./service/GitHubPushService";
+import { GitHubTokenManager } from "./service/GitHubTokenManager";
 import { Project, Issue } from "./model/models";
 import dotenv from 'dotenv';
 import nock from 'nock';
 
 dotenv.config();
 
-const token = process.env.GITHUB_TOKEN || 'fake-token';
 const org = "made-test";
 const repo = "test";
-
-const pushService = new GitHubPushService(token);
+const token = process.env.GITHUB_TOKEN;
+if (!token) {
+  throw new Error('GITHUB_TOKEN not set');
+}
+GitHubTokenManager.initialize(token);
+const pushService = new GitHubPushService();
 
 beforeEach(() => {
   // Mock para criar projeto (mais específico, vem primeiro)

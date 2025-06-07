@@ -1,3 +1,8 @@
+
+import { Issue } from "../../model/models";
+import { DefaultIssueAdapter } from "./Adapters/IssueAdapter";
+import { GitHubTokenManager } from "../../service/GitHubTokenManager";
+
 export interface GitHubIssue {
   number: number;
   title: string;
@@ -26,9 +31,9 @@ export interface GitHubIssue {
   }[]; // Issues que dependem desta issue
   customFields: Record<string, string>;
 }
-import { Issue } from "../../model/models";
+
 export class IssueService {
-  constructor(private token: string) {}
+  private token: string = GitHubTokenManager.getInstance().getToken();
 
   /**
    * Fetches all issues from a specific project
@@ -150,15 +155,55 @@ export class IssueService {
     return issues;
   }
 
+  async getProjectId(org: string, projectNumber: number): Promise<string | null> {
+    const query = `
+    query($org: String!, $projectNumber: Int!) {
+      organization(login: $org) {
+        projectV2(number: $projectNumber) {
+          id
+          title
+          number
+        }
+      }
+    }   
+    `;
+
+    const variables = { org, projectNumber };
+    const response = await fetch("https://api.github.com/graphql", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.token}`,
+      },
+      body: JSON.stringify({
+        query,
+        variables,
+      }),
+    });
+
+    const json = await response.json();
+    console.log("Response from getProjectId:", JSON.stringify(json, null, 2));
+    console.log("Variables used:", JSON.stringify(variables, null, 2));
+    const project = json.data.organization.projectV2;
+    // const project = projects.find((p: any) => Number(p.number) === Number(projectNumber));
+    console.log("Found project:", project);
+    return project?.id || null;
+  }
+
   async getFromMilestoneInProject(
     org: string,
     projectNumber: number,
     milestoneNumber: number
   ): Promise<GitHubIssue[]> {
+    const projectId = await this.getProjectId(org, projectNumber);
+    if (!projectId) {
+      throw new Error(`Projeto ${projectId} não encontrado.`);
+    }
+
     const query = `
-      query($org: String!, $projectNumber: Int!, $after: String) {
-        organization(login: $org) {
-          projectV2(number: $projectNumber) {
+      query($projectId: ID!, $after: String) {
+        node(id: $projectId) {
+          ... on ProjectV2 {
             items(first: 100, after: $after) {
               pageInfo {
                 hasNextPage
@@ -300,7 +345,7 @@ export class IssueService {
         },
         body: JSON.stringify({
           query,
-          variables: { org, projectNumber, after },
+          variables: { projectId, after },
         }),
       });
   
@@ -310,8 +355,9 @@ export class IssueService {
         console.error("GraphQL error:", JSON.stringify(json.errors, null, 2));
         throw new Error(`Erro ao buscar issues do projeto: ${json.errors[0].message}`);
       }
-  
-      const items = json.data?.organization?.projectV2?.items;
+
+      // Corrija aqui:
+      const items = json.data?.node?.items;
       if (!items) {
         throw new Error(`❌ Projeto #${projectNumber} não encontrado em ${org}`);
       }
@@ -874,20 +920,9 @@ export class IssueService {
    * @param githubIssue The GitHub issue to convert
    * @returns An Issue object with mapped properties
    */
-  async  mapGitHubIssueToIssue(githubIssue: GitHubIssue): Promise<Issue> {
-    return {
-      id: githubIssue.number.toString(),
-      externalId: `${githubIssue.repositoryOwner}/${githubIssue.repository}#${githubIssue.number}`,
-      key: `${githubIssue.repository}-${githubIssue.number}`,
-      self: githubIssue.url,
-      type: 'github',
-      subtype: githubIssue.type || 'issue',
-      title: githubIssue.title,
-      description: githubIssue.customFields.description || '',
-      status: githubIssue.state === 'OPEN' ? 'open' : 'closed',
-      createdDate: githubIssue.createdAt,
-      labels: githubIssue.labels
-    };
+  mapGitHubIssueToIssue(githubIssue: GitHubIssue): Issue {
+    let issueAdapter: DefaultIssueAdapter = new DefaultIssueAdapter();
+    return issueAdapter.toInternalFormat(githubIssue);
   }
 
 }

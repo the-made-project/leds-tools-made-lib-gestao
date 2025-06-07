@@ -1,3 +1,4 @@
+import { GitHubTokenManager } from '../../service/GitHubTokenManager';
 import { axiosInstance } from '../../util/axiosInstance';
 
 // Obtém o ID da organização
@@ -17,7 +18,8 @@ export async function getOrganizationId(organizationName: string): Promise<strin
 
     try {
         // Envia a query para obter o ID da organização
-        const response = await axiosInstance.post('', { query, variables });
+        const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+        const response = await axios_instance.post('', { query, variables });
         const organizationId = response.data.data.organization.id;
         console.log(`✅ ID da organização obtido: ${organizationId}`);
         return organizationId;
@@ -47,7 +49,8 @@ export async function getRepositoryId(organizationName: string, repositoryName: 
 
     try {
         // Envia a query para obter o ID do repositório
-        const response = await axiosInstance.post('', { query, variables });
+        const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+        const response = await axios_instance.post('', { query, variables });
         const repository = response.data?.data?.organization?.repository;
 
         if (!repository || !repository.id) {
@@ -78,7 +81,8 @@ export async function getLabelIds(organizationName: string, repositoryName: stri
       }
     `;
     const variables = { repositoryName, organization: organizationName };
-    const response = await axiosInstance.post('', { query, variables });
+    const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+    const response = await axios_instance.post('', { query, variables });
     const allLabels = response.data.data.repository.labels.nodes;
     return labels.map(label => {
       const foundLabel = allLabels.find((l: any) => l.name === label);
@@ -99,14 +103,16 @@ export async function addLabelsToLabelable(labelableId: string, labelIds: string
     `;
     // Corrigido: usar labelableId, não issueId
     const variables = { labelableId, labelIds };
-    await axiosInstance.post('', { query, variables });
+    const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+    await axios_instance.post('', { query, variables });
 }
 
 // Adiciona assignees a uma issue
 export async function addAssigneesToIssue(organizationName: string, repositoryName: string, issueNumber: number, assignees: string[]): Promise<void> {
   const url = `https://api.github.com/repos/${organizationName}/${repositoryName}/issues/${issueNumber}/assignees`;
     const data = { assignees };
-    await axiosInstance.post(url, data, {
+    const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+    await axios_instance.post(url, data, {
       headers: {
         Authorization: `Bearer ${this.token}`,
         'Content-Type': 'application/json',
@@ -116,7 +122,8 @@ export async function addAssigneesToIssue(organizationName: string, repositoryNa
 
 // Executa uma query/mutação GraphQL genérica
 export async function githubGraphQL<T>(query: string, variables: any): Promise<T> {
-  const response = await axiosInstance.post('', { query, variables });
+  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+  const response = await axios_instance.post('', { query, variables });
   if (response.data.errors) throw new Error(JSON.stringify(response.data.errors));
   return response.data.data;
 }

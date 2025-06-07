@@ -1,29 +1,29 @@
 {
   "data": [
     {
-      "id": "f719229a",
-      "description": "Sprint 8",
-      "startDate": "2025-04-22",
-      "endDate": "2025-05-06",
-      "name": "Sprint 8",
+      "id": "81c38044",
+      "description": "Iteration",
+      "startDate": "2025-05-28",
+      "endDate": "2025-06-11",
+      "name": "Iteration",
       "status": "IN_PROGRESS",
       "sprintItems": []
     },
     {
-      "id": "9a76b603",
-      "description": "Sprint 9",
-      "startDate": "2025-05-06",
-      "endDate": "2025-05-20",
-      "name": "Sprint 9",
+      "id": "e3402e20",
+      "description": "Iteration 2",
+      "startDate": "2025-06-11",
+      "endDate": "2025-06-25",
+      "name": "Iteration 2",
       "status": "PLANNED",
       "sprintItems": []
     },
     {
-      "id": "9f279b22",
-      "description": "Sprint 10",
-      "startDate": "2025-05-20",
-      "endDate": "2025-06-03",
-      "name": "Sprint 10",
+      "id": "281acee8",
+      "description": "Iteration 3",
+      "startDate": "2025-06-25",
+      "endDate": "2025-07-09",
+      "name": "Iteration 3",
       "status": "PLANNED",
       "sprintItems": []
     }

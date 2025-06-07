@@ -1,15 +1,13 @@
 import { createProject, addIssueToProject } from '../push/github/project.push';
 import { GitHubIssuePushService } from '../push/github/issue.push';
+import { GitHubTokenManager } from './GitHubTokenManager';
 import { Project, Issue } from '../model/models';
 
 // Serviço para enviar modelos MADE para o GitHub
 export class GitHubPushService {
-  private token: string;
   private issuePushService: GitHubIssuePushService;
-
-  constructor(token: string) {
-    this.token = token;
-    this.issuePushService = new GitHubIssuePushService(token);
+  constructor() {
+    this.issuePushService = new GitHubIssuePushService(GitHubTokenManager.getInstance().getToken());
   }
 
   // Cria um projeto no GitHub a partir do modelo MADE Project
@@ -24,10 +22,11 @@ export class GitHubPushService {
     org: string,
     repo: string,
     projectId: string,
-    issue: Issue
+    issue: Issue,
   ): Promise<{ issueId: string; issueNumber: number; projectItemId: string }> {
     // Cria a issue no GitHub
     const created = await this.issuePushService.createIssue(org, repo, issue);
+
     // Adiciona a issue ao projeto
     const projectItemId = await addIssueToProject(projectId, created.id);
     return {
@@ -42,7 +41,7 @@ export class GitHubPushService {
     org: string,
     repo: string,
     project: Project,
-    issues: Issue[]
+    issues: Issue[],
   ): Promise<void> {
     const projectId = await this.pushProject(org, project);
     for (const issue of issues) {

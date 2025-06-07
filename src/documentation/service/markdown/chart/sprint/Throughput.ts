@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import { TimeBox } from '../../../../../model/models.js';
+import { parseDate } from '../../../../../util/date-util.js';
 
 export class ThroughputGenerator {
   private data: TimeBox;
@@ -11,21 +12,6 @@ export class ThroughputGenerator {
     }
     this.data = sprintData;
     this.outputPath = outputPath;
-  }
-
-  private parseBrazilianDate(dateString: string): Date {
-    try {
-      const [day, month, year] = dateString.split('/').map(Number);
-      const date = new Date(year, month - 1, day);
-      
-      if (isNaN(date.getTime())) {
-        throw new Error(`Data inválida: ${dateString}`);
-      }
-      
-      return date;
-    } catch (error) {
-      throw new Error(`Erro ao processar data ${dateString}: ${error}`);
-    }
   }
 
   private formatDate(date: Date) {
@@ -48,8 +34,8 @@ export class ThroughputGenerator {
 
   private processData() {
     try {
-      const startDate = this.parseBrazilianDate(this.data.startDate);
-      const endDate = this.parseBrazilianDate(this.data.endDate);
+      const startDate = parseDate(this.data.startDate);
+      const endDate = parseDate(this.data.endDate);
       const days: { day: string; date: Date; todo: number; inProgress: number; done: number }[] = [];
       
       if (endDate < startDate) {
@@ -64,7 +50,7 @@ export class ThroughputGenerator {
         // Alterado para usar dueDate ao invés de startDate
         const issuesUntilDay = this.data.sprintItems.filter(issue => {
           if (!issue.dueDate) return false;
-          const issueDueDate = this.parseBrazilianDate(issue.dueDate);
+          const issueDueDate = parseDate(issue.dueDate);
           return issueDueDate <= currentDate;
         });
 

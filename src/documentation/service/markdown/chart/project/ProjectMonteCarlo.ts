@@ -1,4 +1,5 @@
 import { TimeBox } from '../../../../../model/models.js';
+import { parseDate } from '../../../../../util/date-util.js';
 
 export class ProjectMonteCarlo {
   private sprints: TimeBox[];
@@ -23,15 +24,10 @@ export class ProjectMonteCarlo {
     return "TODO"; // Default fallback
   }
 
-  private parseBrazilianDate(dateString: string): Date {
-    const [day, month, year] = dateString.split('/').map(Number);
-    return new Date(year, month - 1, day);
-  }
-
   private sortSprints(sprints: TimeBox[]): TimeBox[] {
     return sprints.sort((a, b) => 
-      this.parseBrazilianDate(a.startDate).getTime() - 
-      this.parseBrazilianDate(b.startDate).getTime()
+      parseDate(a.startDate).getTime() - 
+      parseDate(b.startDate).getTime()
     );
   }
 
@@ -67,7 +63,7 @@ export class ProjectMonteCarlo {
     const remainingTasks = totalTasks - completedTasks;
     
     const today = new Date();
-    const endDate = this.parseBrazilianDate(this.sprints[this.sprints.length - 1].endDate);
+    const endDate = parseDate(this.sprints[this.sprints.length - 1].endDate);
     const diffTime = endDate.getTime() - today.getTime();
     const remainingDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
 
@@ -112,7 +108,7 @@ export class ProjectMonteCarlo {
     }
 
     if (completionDates.length === 0) {
-      completionDates.push(this.parseBrazilianDate(this.sprints[this.sprints.length - 1].endDate));
+      completionDates.push(parseDate(this.sprints[this.sprints.length - 1].endDate));
     }
 
     const dateFrequencyMap = new Map<string, number>();
@@ -174,7 +170,7 @@ export class ProjectMonteCarlo {
       }
 
       const completionDates = this.simulateCompletionDates();
-      const projectEndDate = this.parseBrazilianDate(this.sprints[this.sprints.length - 1].endDate);
+      const projectEndDate = parseDate(this.sprints[this.sprints.length - 1].endDate);
       const onTimeProb = completionDates.find(d => d.date > projectEndDate)?.cumulativeProbability || 100;
       
       let mostLikelyDate = completionDates[0];
@@ -241,7 +237,7 @@ export class ProjectMonteCarlo {
 
       markdown += `\n## ℹ️ Informações do Projeto\n\n`;
       markdown += `- **Total de Sprints**: ${this.sprints.length}\n`;
-      markdown += `- **Início**: ${this.formatDate(this.parseBrazilianDate(this.sprints[0].startDate))}\n`;
+      markdown += `- **Início**: ${this.formatDate(parseDate(this.sprints[0].startDate))}\n`;
       markdown += `- **Término Planejado**: ${this.formatDate(projectEndDate)}\n`;
       markdown += `- **Total de Tarefas**: ${metrics.totalTasks}\n`;
       markdown += `- **Simulações Realizadas**: ${this.simulations.toLocaleString()}\n\n`;

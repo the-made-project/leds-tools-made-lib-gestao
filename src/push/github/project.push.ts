@@ -1,3 +1,4 @@
+import { GitHubTokenManager } from '../../service/GitHubTokenManager.js';
 import { axiosInstance } from '../../util/axiosInstance.js';
 import { getOrganizationId, getRepositoryId } from './githubApi';
 
@@ -27,7 +28,8 @@ export async function createProject(organization: string, projectTitle: string):
         console.log('Enviando mutação para criar projeto...');
 
         // Envia a mutação para criar o projeto
-        const response = await axiosInstance.post('', { query, variables });
+        const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+        const response = await axios_instance.post('', { query, variables });
         console.log('Resposta da API:', JSON.stringify(response.data, null, 2));
 
         // Obtém o ID do projeto criado
@@ -66,7 +68,8 @@ export async function addIssueToProject(
         console.log('Project ID:', projectId);
         console.log('Content ID (Issue ID):', issueId);
 
-        const response = await axiosInstance.post('', { query, variables });
+        const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+        const response = await axios_instance.post('', { query, variables });
         console.log('Resposta da API:', JSON.stringify(response.data, null, 2));
 
         const itemId = response.data.data.addProjectV2ItemById.item.id;

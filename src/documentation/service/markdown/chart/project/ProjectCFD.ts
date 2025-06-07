@@ -1,5 +1,6 @@
 import * as fs from 'fs';
-import { TimeBox } from '../../../../../model/models.js';
+import { TimeBox, SprintItem } from '../../../../../model/models.js';
+import { parseDate } from '../../../../../util/date-util.js';
 
 export class ProjectCFD {
   private sprints: TimeBox[];
@@ -10,15 +11,10 @@ export class ProjectCFD {
     this.outputPath = outputPath;
   }
 
-  private parseBrazilianDate(dateString: string): Date {
-    const [day, month, year] = dateString.split('/').map(Number);
-    return new Date(year, month - 1, day);
-  }
-
   private sortSprints(sprints: TimeBox[]): TimeBox[] {
     return sprints.sort((a, b) => 
-      this.parseBrazilianDate(a.startDate).getTime() - 
-      this.parseBrazilianDate(b.startDate).getTime()
+      parseDate(a.startDate).getTime() -
+      parseDate(b.startDate).getTime()
     );
   }
 
@@ -40,9 +36,15 @@ export class ProjectCFD {
       return `${dia}/${mes}`;
     };
 
-    const startDate = this.parseBrazilianDate(this.sprints[0].startDate);
-    const endDate = this.parseBrazilianDate(this.sprints[this.sprints.length - 1].endDate);
-    const days = [];
+    const startDate = parseDate(this.sprints[0].startDate);
+    const endDate = parseDate(this.sprints[this.sprints.length - 1].endDate);
+    const days: {
+      day: string
+      date: Date
+      todo: number
+      inProgress: number
+      done: number
+    }[] = [];
     
     let currentDate = new Date(startDate);
     while (currentDate <= endDate) {
@@ -51,7 +53,7 @@ export class ProjectCFD {
       
       const allTasksUntilDay = this.sprints.flatMap(sprint => {
         return sprint.sprintItems.filter(task => {
-          const taskStartDate = task.startDate ? this.parseBrazilianDate(task.startDate) : null;
+          const taskStartDate = task.startDate ? parseDate(task.startDate) : null;
           return taskStartDate ? taskStartDate <= currentDate : true;
         });
       });
@@ -94,7 +96,7 @@ export class ProjectCFD {
     const chartHeight = height - margin.top - margin.bottom;
 
     const xScale = (date: Date) => {
-      const startDate = this.parseBrazilianDate(this.sprints[0].startDate);
+      const startDate = parseDate(this.sprints[0].startDate);
       const totalDays = Math.max(1, dailyData.length - 1);
       const dayIndex = Math.floor((date.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
       return margin.left + (dayIndex * (chartWidth / totalDays));

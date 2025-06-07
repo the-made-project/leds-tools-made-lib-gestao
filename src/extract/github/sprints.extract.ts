@@ -1,8 +1,7 @@
 import { TimeBox } from "../../model/models";
+import { DefaultSprintAdapter } from "./Adapters/SprintAdapter";
+import { GitHubTokenManager } from "../../service/GitHubTokenManager";
 
-/**
- * Interface para sprints/iterações do GitHub
- */
 export interface GitHubSprint {
   id: string;
   title: string;
@@ -12,9 +11,6 @@ export interface GitHubSprint {
   items?: GitHubSprintItem[];
 }
 
-/**
- * Interface para itens dentro de um sprint
- */
 export interface GitHubSprintItem {
   id: string;
   contentType: string;
@@ -48,15 +44,7 @@ export interface GitHubSprintItem {
  * Classe para gerenciar sprints em projetos do GitHub
  */
 export class GitHubSprintService {
-  private token: string;
-
-  /**
-   * Cria uma nova instância do serviço de sprints
-   * @param token Token de autenticação do GitHub
-   */
-  constructor(token: string) {
-    this.token = token;
-  }
+  private token: string = GitHubTokenManager.getInstance().getToken();
 
   /**
    * Busca todos os sprints/iterações em um projeto do GitHub
@@ -591,34 +579,14 @@ export class GitHubSprintService {
     }
   }
   /**
- * Mapeia um GitHubSprint para o formato TimeBox, sem processar os items
- * @param githubSprint O sprint do GitHub para converter
- * @returns Um objeto TimeBox com propriedades mapeadas
- */
-async mapGitHubSprintToTimeBox(githubSprint: GitHubSprint): Promise<TimeBox> {
-  // Determina o status baseado nas datas
-  const currentDate = new Date();
-  const startDate = new Date(githubSprint.startDate);
-  const endDate = new Date(githubSprint.endDate);
-  
-  let status: 'PLANNED' | 'IN_PROGRESS' | 'CLOSED' = 'PLANNED';
-  if (currentDate > endDate) {
-    status = 'CLOSED';
-  } else if (currentDate >= startDate && currentDate <= endDate) {
-    status = 'IN_PROGRESS';
+   * Mapeia um GitHubSprint para o formato TimeBox, sem processar os items
+   * @param githubSprint O sprint do GitHub para converter
+   * @returns Um objeto TimeBox com propriedades mapeadas
+   */
+  async mapGitHubSprintToTimeBox(githubSprint: GitHubSprint): Promise<TimeBox> {
+    let sprintAdapter: DefaultSprintAdapter = new DefaultSprintAdapter();
+    return sprintAdapter.toInternalFormat(githubSprint);
   }
-  
-  return {
-    id: githubSprint.id,
-    description: githubSprint.title,
-    startDate: githubSprint.startDate,
-    endDate: githubSprint.endDate,
-    name: githubSprint.title,
-    status: status,
-    completeDate: status === 'CLOSED' ? githubSprint.endDate : undefined,
-    sprintItems: [] // Array vazio, já que não estamos mapeando os itens
-  };
 }
-  }
 
 
