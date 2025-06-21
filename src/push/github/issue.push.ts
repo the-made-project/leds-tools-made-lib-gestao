@@ -1,7 +1,7 @@
 import { GitHubTokenManager } from '../../service/GitHubTokenManager.ts';
 import { axiosInstance } from '../../util/axiosInstance.ts';
 import { getRepositoryId, addAssigneesToIssue, addLabelsToLabelable, getLabelIds } from './githubApi.js';
-import { Issue } from '../../model/models.ts';
+import { Issue, TimeBox } from '../../model/models.ts';
 
 // Interface para representar uma Issue no GitHub (resumida para criação)
 export interface GitHubIssueInput {
@@ -27,6 +27,17 @@ export class GitHubIssuePushService {
     }
   }
 
+  // Retorna todos os usernames dos assignees dos SprintItems de uma issue específica
+  getAssigneesForIssueFromTimeBox(timebox: TimeBox, issueId: string): string[] {
+    const assigneesSet = new Set<string>();
+    for (const item of timebox.sprintItems) {
+      if (item.issue && item.issue.id === issueId && item.assignee && item.assignee.discord) {
+        assigneesSet.add(item.assignee.name);
+      }
+    }
+    return Array.from(assigneesSet);
+  }
+
   /**
    * Converte um modelo MADE Issue para o modelo de entrada do GitHub
    */
@@ -45,7 +56,8 @@ export class GitHubIssuePushService {
   async createIssue(
     organizationName: string,
     repositoryName: string,
-    issue: Issue
+    issue: Issue,
+    assignees?: string[]
   ): Promise<GitHubIssueCreated> {
     const input = this.mapIssueToGitHubInput(issue);
 
@@ -82,8 +94,10 @@ export class GitHubIssuePushService {
       const labelIds = await getLabelIds(organizationName, repositoryName, input.labels);
       await addLabelsToLabelable(issueData.id, labelIds);
     }
-    if (input.assignees && input.assignees.length > 0) {
-      await addAssigneesToIssue(organizationName, repositoryName, issueData.number, input.assignees);
+    // Adiciona assignees se fornecidos
+    const assigneesToAdd = assignees && assignees.length > 0 ? assignees : input.assignees;
+    if (assigneesToAdd && assigneesToAdd.length > 0) {
+      await addAssigneesToIssue(organizationName, repositoryName, issueData.number, assigneesToAdd);
     }
 
     return {

@@ -108,16 +108,16 @@ export async function addLabelsToLabelable(labelableId: string, labelIds: string
 }
 
 // Adiciona assignees a uma issue
-export async function addAssigneesToIssue(organizationName: string, repositoryName: string, issueNumber: number, assignees: string[]): Promise<void> {
+export async function addAssigneesToIssue(
+  organizationName: string,
+  repositoryName: string,
+  issueNumber: number,
+  assignees: string[]
+): Promise<void> {
   const url = `https://api.github.com/repos/${organizationName}/${repositoryName}/issues/${issueNumber}/assignees`;
-    const data = { assignees };
-    const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
-    await axios_instance.post(url, data, {
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
-      },
-    });
+  const data = { assignees };
+  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+  await axios_instance.post(url, data);
 }
 
 // Executa uma query/mutação GraphQL genérica

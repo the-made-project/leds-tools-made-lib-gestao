@@ -5,7 +5,7 @@ import { GitHubProject, GitHubProjectService } from '../extract/github/project.e
 import { GitHubSprint, GitHubSprintService } from '../extract/github/sprints.extract';
 import { Backlog, Project, Milestone, Issue, TimeBox } from '../model/models';
 
-import { GenericRepository } from "../push/repository/generic.repository";
+import { GenericRepository } from "../repository/generic.repository";
 /**
  * Serviço principal que coordena as operações do GitHub
  */

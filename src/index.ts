@@ -3,6 +3,7 @@ export * from './model/models';
 import { GitHubService } from "./service/GitHubService";
 import { GitHubPushService } from "./service/GitHubPushService";
 import { GitHubTokenManager } from "./service/GitHubTokenManager";
+import { time } from "console";
 
 export class ReportManager {
 
@@ -23,10 +24,11 @@ export class ReportManager {
         repo: string,
         project: import('./model/models').Project,
         issues: import('./model/models').Issue[],
+        timebox: import('./model/models').TimeBox
     ) {
         GitHubTokenManager.initialize(token);
         const pushService = new GitHubPushService();
-        await pushService.pushProjectWithIssues(org, repo, project, issues);
+        await pushService.pushProjectWithIssues(org, repo, project, issues, timebox);
     }
 
     public createReport(dbPath: string) {

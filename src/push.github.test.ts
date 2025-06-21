@@ -152,7 +152,17 @@ test("Push Issue to GitHub and add to Project", async () => {
     labels: ["test"],
   };
 
-  const result = await pushService.pushIssue(org, repo, projectId, issue);
+  // Mock de timebox com sprintItem e assignee
+  const timebox = {
+    sprintItems: [
+      {
+        issue: { id: "issue-id" },
+        assignee: { discord: "usuario-github" }
+      }
+    ]
+  };
+
+  const result = await pushService.pushIssue(org, repo, projectId, issue, timebox as any);
   expect(result.issueId).toBeDefined();
   expect(result.issueNumber).toBeGreaterThan(0);
   expect(result.projectItemId).toBeDefined();
@@ -185,6 +195,20 @@ test("Push Project with Issues", async () => {
     },
   ];
 
-  await pushService.pushProjectWithIssues(org, repo, project, issues);
-  expect(true).toBe(true); // Se não der erro, passou
+  // Mock de timebox para passar como argumento
+  const timebox = {
+    sprintItems: [
+      {
+        issue: { id: "issue-1" },
+        assignee: { discord: "usuario-github" }
+      },
+      {
+        issue: { id: "issue-2" },
+        assignee: { discord: "usuario-github" }
+      }
+    ]
+  };
+
+  await pushService.pushProjectWithIssues(org, repo, project, issues, timebox as any);
+  expect(true).toBe(true);
 }, 60000);
