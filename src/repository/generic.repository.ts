@@ -16,6 +16,13 @@ import {
     private data: T[];
   
     constructor(directory: string, fileName: string = 'data.json') {
+      console.log('[GenericRepository] directory:', directory, 'fileName:', fileName);
+      if (!directory || typeof directory !== 'string') {
+        throw new Error('O parâmetro "directory" deve ser uma string válida.');
+      }
+      if (!fileName || typeof fileName !== 'string') {
+        throw new Error('O parâmetro "fileName" deve ser uma string válida.');
+      }
       const resolvedDir = resolve(directory);
   
       if (!existsSync(resolvedDir)) {
@@ -63,4 +70,3 @@ import {
       }
     }
   }
-  

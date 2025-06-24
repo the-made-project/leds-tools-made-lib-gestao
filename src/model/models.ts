@@ -13,7 +13,6 @@ export type Backlog = {
   name: string;
   description: string;
   issues?: Issue[];
-  
 }
 
 
@@ -103,6 +102,7 @@ export type Issue = {
   issues?: Issue[]; 
   depends?: Issue[];
   labels?: string[];
+  assignee?: Person;
 };
 
 export type Task  = {

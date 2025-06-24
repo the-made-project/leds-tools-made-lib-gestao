@@ -1,6 +1,6 @@
 import { MarkdownService } from "./documentation/service/markdown/MarkdownService";
 export * from './model/models';
-import { GitHubService } from "./service/GitHubService";
+// import { GitHubService } from "./service/GitHubService";
 import { GitHubPushService } from "./service/GitHubPushService";
 import { GitHubTokenManager } from "./service/GitHubTokenManager";
 import { time } from "console";
@@ -18,17 +18,39 @@ export class ReportManager {
     //     await githubService.ETLTimeBox(org, project);
     // }
 
+    /**
+     * Cria uma Feature (story) e suas Tasks no GitHub, seguindo o template correto.
+     */
     public async githubPush(
         token: string,
         org: string,
         repo: string,
         project: import('./model/models').Project,
-        issues: import('./model/models').Issue[],
-        timebox: import('./model/models').TimeBox
+        story: import('./model/models').Issue[], // Feature
+        tasks: import('./model/models').Issue[], // Tasks relacionadas à story
     ) {
         GitHubTokenManager.initialize(token);
         const pushService = new GitHubPushService();
-        await pushService.pushProjectWithIssues(org, repo, project, issues, timebox);
+
+        // Cria a Feature (story)
+        const storyResults = await pushService.pushProjectWithIssues(org, repo, project, story);
+
+        // Cria as Tasks relacionadas à Feature e relaciona
+        if (tasks && tasks.length > 0) {
+          const taskResults = await pushService.pushProjectWithIssues(org, repo, project, tasks);
+          // Relaciona cada task à primeira story criada
+          if (storyResults.length > 0) {
+            for (const taskResult of taskResults) {
+              await pushService.linkIssues(
+                org,
+                repo,
+                storyResults[0].issueNumber, // agora garantido
+                taskResult.issueNumber,
+                'is blocked by'
+              );
+            }
+          }
+        }
     }
 
     public createReport(dbPath: string) {

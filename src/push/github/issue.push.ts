@@ -27,26 +27,83 @@ export class GitHubIssuePushService {
     }
   }
 
-  // Retorna todos os usernames dos assignees dos SprintItems de uma issue específica
-  getAssigneesForIssueFromTimeBox(timebox: TimeBox, issueId: string): string[] {
-    const assigneesSet = new Set<string>();
-    for (const item of timebox.sprintItems) {
-      if (item.issue && item.issue.id === issueId && item.assignee && item.assignee.discord) {
-        assigneesSet.add(item.assignee.name);
-      }
+  // Retorna o username do assignee da issue, se existir. Caso contrário, retorna vazio.
+  getAssigneesForIssue(issue: Issue): string[] {
+    if (issue.assignee && issue.assignee.name) {
+      return [issue.assignee.name];
     }
-    return Array.from(assigneesSet);
+    return [];
+  }
+
+  private buildFeatureBody(issue: Issue): string {
+    return `**⚠️ Entregas são feitas via PR. Associe este issue ao pull request correspondente.**
+
+# Descrição
+${issue.description || '[Descreva de forma clara e sucinta o propósito da funcionalidade.]'}
+
+## Requisitos Técnicos
+- Item 1
+- Item 2
+
+# Atividades a serem realizadas
+- [ ] Item 1
+- [ ] Item 2
+- [ ] Item 3
+
+# Critérios de Aceitação (Feature-Level)
+Para que essa tarefa seja considerada **concluída com sucesso**, o seguinte deve ser entregue: 
+
+- Item 1
+- Item 2
+- Item 3
+
+## Observações
+`;
+  }
+
+  private buildTaskBody(issue: Issue): string {
+    return `**⚠️ Entregas são feitas via PR. Associe este issue ao pull request correspondente.**
+
+# Objetivo da Tarefa  
+${issue.description || '[Descreva de forma clara e sucinta o propósito da tarefa.]'}
+
+# Entregáveis
+Para que essa tarefa seja considerada **concluída com sucesso**, o seguinte deve ser entregue: 
+
+- Item 1
+- Item 2
+- Item 3
+
+## Observações
+`;
   }
 
   /**
    * Converte um modelo MADE Issue para o modelo de entrada do GitHub
    */
   mapIssueToGitHubInput(issue: Issue): GitHubIssueInput {
+    let title = issue.title || '';
+    let body = '';
+    let labels = issue.labels || [];
+    let type = '';
+
+    if (issue.type === 'Feature' || issue.type === 'Story') {
+      title = `[FEATURE] ${title}`;
+      body = this.buildFeatureBody(issue);
+      type = 'Feature';
+    } else if (issue.type === 'Task') {
+      title = `[TASK] ${title}`;
+      body = this.buildTaskBody(issue);
+      type = 'Task';
+    } else {
+      body = issue.description || '';
+    }
+
     return {
-      title: issue.title || 'Sem título',
-      body: issue.description || '',
-      labels: issue.labels || [],
-      assignees: [] // Assignees podem ser adicionados posteriormente
+      title,
+      body,
+      labels,
+      assignees: []
     };
   }
 

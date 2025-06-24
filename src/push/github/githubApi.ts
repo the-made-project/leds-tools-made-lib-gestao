@@ -127,3 +127,57 @@ export async function githubGraphQL<T>(query: string, variables: any): Promise<T
   if (response.data.errors) throw new Error(JSON.stringify(response.data.errors));
   return response.data.data;
 }
+
+// Busca o ID do campo "Type" no projeto
+export async function getProjectFieldIdByName(projectId: string, fieldName: string): Promise<string | null> {
+  const query = `
+    query($projectId: ID!) {
+      node(id: $projectId) {
+        ... on ProjectV2 {
+          fields(first: 20) {
+            nodes {
+              ... on ProjectV2FieldCommon {
+                id
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+  const variables = { projectId };
+  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+  const response = await axios_instance.post('', { query, variables });
+  const fields = response.data.data.node.fields.nodes;
+  const field = fields.find((f: any) => f.name === fieldName);
+  return field ? field.id : null;
+}
+
+// Atualiza o valor de um campo customizado em um item do projeto
+export async function setProjectItemField(
+  projectId: string,
+  itemId: string,
+  fieldId: string,
+  value: string
+): Promise<void> {
+  const mutation = `
+    mutation($input: UpdateProjectV2ItemFieldValueInput!) {
+      updateProjectV2ItemFieldValue(input: $input) {
+        projectV2Item {
+          id
+        }
+      }
+    }
+  `;
+  const variables = {
+    input: {
+      projectId,
+      itemId,
+      fieldId,
+      value: { text: value }
+    }
+  };
+  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+  await axios_instance.post('', { query: mutation, variables });
+}
