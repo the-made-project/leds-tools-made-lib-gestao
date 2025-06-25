@@ -35,7 +35,16 @@ export class GitHubIssuePushService {
     return [];
   }
 
-  private buildFeatureBody(issue: Issue): string {
+  private buildFeatureBody(issue: Issue, allTasks: Issue[]): string {
+    // Filtra as tasks que dependem desta story
+    const relatedTasks = allTasks.filter(
+      task => Array.isArray(task.depends) && task.depends.some(dep => dep.id === issue.id)
+    );
+
+    const tasksMarkdown = relatedTasks.length > 0
+      ? relatedTasks.map(task => `- [ ] ${task.title}`).join('\n')
+      : '- [ ] (Nenhuma task cadastrada)';
+
     return `**⚠️ Entregas são feitas via PR. Associe este issue ao pull request correspondente.**
 
 # Descrição
@@ -46,9 +55,7 @@ ${issue.description || '[Descreva de forma clara e sucinta o propósito da funci
 - Item 2
 
 # Atividades a serem realizadas
-- [ ] Item 1
-- [ ] Item 2
-- [ ] Item 3
+${tasksMarkdown}
 
 # Critérios de Aceitação (Feature-Level)
 Para que essa tarefa seja considerada **concluída com sucesso**, o seguinte deve ser entregue: 
@@ -78,23 +85,48 @@ Para que essa tarefa seja considerada **concluída com sucesso**, o seguinte dev
 `;
   }
 
+  private buildEpicBody(issue: Issue, allStories: Issue[]): string {
+    // Filtra as stories que dependem desta epic
+    const relatedStories = allStories.filter(
+      story => Array.isArray(story.depends) && story.depends.some(dep => dep.id === issue.id)
+    );
+
+    const storiesMarkdown = relatedStories.length > 0
+      ? relatedStories.map(story => `- [ ] ${story.title}`).join('\n')
+      : '- [ ] (Nenhuma feature/story cadastrada)';
+
+    return `**⚠️ Entregas são feitas via PR. Associe este Epic às features correspondentes.**
+
+# Descrição
+${issue.description || '[Descreva de forma clara e sucinta o propósito da Epic.]'}
+
+# Features/Stories relacionadas
+${storiesMarkdown}
+
+## Observações
+`;
+  }
+
   /**
    * Converte um modelo MADE Issue para o modelo de entrada do GitHub
    */
-  mapIssueToGitHubInput(issue: Issue): GitHubIssueInput {
+  mapIssueToGitHubInput(issue: Issue, allTasks: Issue[] = [], allStories: Issue[] = []): GitHubIssueInput {
     let title = issue.title || '';
     let body = '';
     let labels = issue.labels || [];
-    let type = '';
 
-    if (issue.type === 'Feature' || issue.type === 'Story') {
+    if (issue.type === 'Epic') {
       title = `[FEATURE] ${title}`;
-      body = this.buildFeatureBody(issue);
-      type = 'Feature';
+      body = this.buildEpicBody(issue, allStories);
+      if (!labels.includes('Feature')) labels.push('Feature');
+    } else if (issue.type === 'Feature' || issue.type === 'Story') {
+      title = `[FEATURE] ${title}`;
+      body = this.buildFeatureBody(issue, allTasks);
+      if (!labels.includes('Feature')) labels.push('Feature');
     } else if (issue.type === 'Task') {
       title = `[TASK] ${title}`;
       body = this.buildTaskBody(issue);
-      type = 'Task';
+      if (!labels.includes('Task')) labels.push('Task');
     } else {
       body = issue.description || '';
     }
@@ -114,9 +146,11 @@ Para que essa tarefa seja considerada **concluída com sucesso**, o seguinte dev
     organizationName: string,
     repositoryName: string,
     issue: Issue,
-    assignees?: string[]
+    assignees?: string[],
+    allTasks: Issue[] = [],
+    allStories: Issue[] = []
   ): Promise<GitHubIssueCreated> {
-    const input = this.mapIssueToGitHubInput(issue);
+    const input = this.mapIssueToGitHubInput(issue, allTasks, allStories);
 
     const query = `
       mutation($repositoryId: ID!, $title: String!, $body: String!) {

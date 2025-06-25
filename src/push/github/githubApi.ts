@@ -1,5 +1,49 @@
-import { GitHubTokenManager } from '../../service/GitHubTokenManager';
 import { axiosInstance } from '../../util/axiosInstance';
+import { GitHubTokenManager } from '../../service/GitHubTokenManager';
+
+// Garante que a label exista no repositório, criando se necessário
+export async function ensureLabelExists(
+  organizationName: string,
+  repositoryName: string,
+  label: { name: string; color?: string; description?: string }
+): Promise<void> {
+  // Busca as labels existentes
+  const query = `
+    query($repositoryName: String!, $organization: String!) {
+      repository(name: $repositoryName, owner: $organization) {
+        labels(first: 100) {
+          nodes { name }
+        }
+      }
+    }
+  `;
+  const variables = { repositoryName, organization: organizationName };
+  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+  const response = await axios_instance.post('', { query, variables });
+  const allLabels = response.data.data.repository.labels.nodes;
+  const exists = allLabels.some((l: any) => l.name === label.name);
+
+  if (!exists) {
+    // Cria a label via REST API
+    const url = `https://api.github.com/repos/${organizationName}/${repositoryName}/labels`;
+    await axios_instance.post(
+      url,
+      {
+        name: label.name,
+        color: label.color || 'ededed', // cor padrão se não informado
+        description: label.description || ''
+      },
+      {
+        headers: {
+          Accept: 'application/vnd.github+json'
+        }
+      }
+    );
+    console.log(`✅ Label "${label.name}" criada no repositório.`);
+  } else {
+    console.log(`ℹ️ Label "${label.name}" já existe no repositório.`);
+  }
+}
 
 // Obtém o ID da organização
 export async function getOrganizationId(organizationName: string): Promise<string> {
@@ -180,4 +224,62 @@ export async function setProjectItemField(
   };
   const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
   await axios_instance.post('', { query: mutation, variables });
+}
+
+// Certifica-se de que o campo "Backlog" existe no projeto, criando-o se necessário
+export async function ensureProjectBacklogField(projectId: string, options: string[]): Promise<void> {
+  // Busca campos existentes
+  const query = `
+    query($projectId: ID!) {
+      node(id: $projectId) {
+        ... on ProjectV2 {
+          fields(first: 50) {
+            nodes {
+              ... on ProjectV2FieldCommon {
+                id
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+  const variables = { projectId };
+  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+  const response = await axios_instance.post('', { query, variables });
+  const fields = response.data.data.node.fields.nodes;
+  const backlogField = fields.find((f: any) => f.name === "Backlog");
+
+  if (!backlogField) {
+    // Cria o campo "Backlog" como Single Select
+    const mutation = `
+      mutation($input: AddProjectV2FieldInput!) {
+        addProjectV2Field(input: $input) {
+          projectV2Field {
+            ... on ProjectV2SingleSelectField {
+              id
+              name
+              options {
+                id
+                name
+              }
+            }
+          }
+        }
+      }
+    `;
+    const variables = {
+      input: {
+        projectId,
+        name: "Backlog",
+        dataType: "SINGLE_SELECT",
+        options: options.map(name => ({ name }))
+      }
+    };
+    await axios_instance.post('', { query: mutation, variables });
+    console.log('✅ Campo "Backlog" criado no projeto.');
+  } else {
+    console.log('ℹ️ Campo "Backlog" já existe no projeto.');
+  }
 }

@@ -103,6 +103,7 @@ export type Issue = {
   depends?: Issue[];
   labels?: string[];
   assignee?: Person;
+  backlog?: string;
 };
 
 export type Task  = {

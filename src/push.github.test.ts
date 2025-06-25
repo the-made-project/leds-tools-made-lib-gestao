@@ -7,8 +7,8 @@ import nock from 'nock';
 
 dotenv.config();
 
-const org = "made-test";
-const repo = "test";
+const org = process.env.GITHUB_ORG;
+const repo = process.env.GITHUB_REPO;
 const token = process.env.GITHUB_TOKEN;
 if (!token) {
   throw new Error('GITHUB_TOKEN not set');

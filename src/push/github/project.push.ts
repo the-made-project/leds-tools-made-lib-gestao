@@ -1,6 +1,6 @@
 import { GitHubTokenManager } from '../../service/GitHubTokenManager.js';
 import { axiosInstance } from '../../util/axiosInstance.js';
-import { getOrganizationId, getRepositoryId } from './githubApi';
+import { getOrganizationId } from './githubApi';
 
 // Função para criar um projeto na organização
 export async function createProject(organization: string, projectTitle: string): Promise<string> {
@@ -46,7 +46,7 @@ export async function createProject(organization: string, projectTitle: string):
 // Função para adicionar uma issue ao projeto
 export async function addIssueToProject(
     projectId: string,
-    issueId: string // Agora espera o ID da issue
+    issueId: string
 ): Promise<string> {
     const query = `
         mutation($projectId: ID!, $contentId: ID!) {
@@ -57,28 +57,32 @@ export async function addIssueToProject(
             }
         }
     `;
+    const variables = { projectId, contentId: issueId };
+    const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
 
-    const variables = {
-        projectId,
-        contentId: issueId, // Passa o ID da issue
-    };
-
-    try {
-        console.log('Adicionando issue ao projeto...');
-        console.log('Project ID:', projectId);
-        console.log('Content ID (Issue ID):', issueId);
-
-        const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
-        const response = await axios_instance.post('', { query, variables });
-        console.log('Resposta da API:', JSON.stringify(response.data, null, 2));
-
-        const itemId = response.data.data.addProjectV2ItemById.item.id;
-        console.log(`✅ Issue adicionada ao projeto: ${itemId}`);
-
-        return itemId;
-
-    } catch (error: any) {
-        console.error('❌ Erro ao adicionar issue ao projeto:', error.response?.data || error.message);
-        throw error;
+    let retries = 3;
+    while (retries > 0) {
+        try {
+            const response = await axios_instance.post('', { query, variables });
+            const item = response.data.data.addProjectV2ItemById?.item;
+            if (!item) {
+                const errorMsg = response.data.errors?.[0]?.message || 'Unknown error';
+                if (errorMsg.includes('temporary conflict') && retries > 1) {
+                    await new Promise(res => setTimeout(res, 1500));
+                    retries--;
+                    continue;
+                }
+                throw new Error(errorMsg);
+            }
+            return item.id;
+        } catch (error: any) {
+            if (retries > 1 && error.message?.includes('temporary conflict')) {
+                await new Promise(res => setTimeout(res, 1500));
+                retries--;
+                continue;
+            }
+            throw error;
+        }
     }
+    throw new Error('Failed to add issue to project after retries.');
 }
