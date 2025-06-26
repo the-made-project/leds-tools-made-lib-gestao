@@ -283,3 +283,66 @@ export async function ensureProjectBacklogField(projectId: string, options: stri
     console.log('ℹ️ Campo "Backlog" já existe no projeto.');
   }
 }
+
+// Cria ou garante um time na organização
+export async function ensureTeamExists(
+  org: string,
+  teamName: string,
+  description?: string
+): Promise<void> {
+  const url = `https://api.github.com/orgs/${org}/teams/${teamName.toLowerCase().replace(/ /g, '-')}`;
+  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+
+  try {
+    // Tenta buscar o time
+    await axios_instance.get(url);
+    // Se não lançar erro, o time já existe
+  } catch (error: any) {
+    if (error.response && error.response.status === 404) {
+      // Cria o time se não existir
+      await axios_instance.post(
+        `https://api.github.com/orgs/${org}/teams`,
+        {
+          name: teamName,
+          description: description || '',
+        }
+      );
+    } else {
+      throw error;
+    }
+  }
+}
+
+// Adiciona um membro ao time
+export async function addMemberToTeam(
+  org: string,
+  teamName: string,
+  username: string
+): Promise<void> {
+  const url = `https://api.github.com/orgs/${org}/teams/${teamName.toLowerCase().replace(/ /g, '-')}/memberships/${username}`;
+  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+  await axios_instance.put(url, { role: "member" });
+}
+
+// Cria relação de sub-issue (parent-child) entre duas issues
+export async function addLinkedIssue(
+  parentId: string,
+  childId: string
+): Promise<void> {
+  const query = `
+    mutation($input: AddLinkedIssueInput!) {
+      addLinkedIssue(input: $input) {
+        clientMutationId
+      }
+    }
+  `;
+  const variables = {
+    input: {
+      issueId: parentId,
+      linkedIssueId: childId,
+      relationshipType: "child"
+    }
+  };
+  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+  await axios_instance.post('', { query, variables });
+}

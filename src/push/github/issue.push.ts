@@ -35,15 +35,23 @@ export class GitHubIssuePushService {
     return [];
   }
 
-  private buildFeatureBody(issue: Issue, allTasks: Issue[]): string {
-    // Filtra as tasks que dependem desta story
+  private buildFeatureBody(issue: Issue, allTasks: Issue[], allTasksResults: { issueId: string, issueNumber: number }[] = []): string {
+    const idToNumber = new Map<string, number>();
+    allTasksResults.forEach(res => idToNumber.set(res.issueId, res.issueNumber));
+
     const relatedTasks = allTasks.filter(
       task => Array.isArray(task.depends) && task.depends.some(dep => dep.id === issue.id)
     );
-
     const tasksMarkdown = relatedTasks.length > 0
-      ? relatedTasks.map(task => `- [ ] ${task.title}`).join('\n')
+      ? relatedTasks.map(task => {
+          const num = idToNumber.get(task.id);
+          return num ? `- [ ] #${num}` : `- [ ] ${task.title}`;
+        }).join('\n')
       : '- [ ] (Nenhuma task cadastrada)';
+
+    const criterions = (issue.criterions || []).map(c => `- ${c}`).join('\n') || '- [Adicione critérios de aceitação]';
+    const requirements = (issue.requirements || []).map(r => `- ${r}`).join('\n') || '- [Adicione requisitos]';
+    const observation = issue.observation ? `\n## Observações\n${issue.observation}` : '';
 
     return `**⚠️ Entregas são feitas via PR. Associe este issue ao pull request correspondente.**
 
@@ -51,59 +59,60 @@ export class GitHubIssuePushService {
 ${issue.description || '[Descreva de forma clara e sucinta o propósito da funcionalidade.]'}
 
 ## Requisitos Técnicos
-- Item 1
-- Item 2
+${requirements}
 
 # Atividades a serem realizadas
 ${tasksMarkdown}
 
 # Critérios de Aceitação (Feature-Level)
-Para que essa tarefa seja considerada **concluída com sucesso**, o seguinte deve ser entregue: 
-
-- Item 1
-- Item 2
-- Item 3
-
-## Observações
+${criterions}
+${observation}
 `;
   }
 
   private buildTaskBody(issue: Issue): string {
+    const deliverables = (issue.deliverables || []).map(d => `- ${d}`).join('\n') || '- [Adicione entregáveis]';
+    const observation = issue.observation ? `\n## Observações\n${issue.observation}` : '';
+
     return `**⚠️ Entregas são feitas via PR. Associe este issue ao pull request correspondente.**
 
 # Objetivo da Tarefa  
 ${issue.description || '[Descreva de forma clara e sucinta o propósito da tarefa.]'}
 
 # Entregáveis
-Para que essa tarefa seja considerada **concluída com sucesso**, o seguinte deve ser entregue: 
-
-- Item 1
-- Item 2
-- Item 3
-
-## Observações
+${deliverables}
+${observation}
 `;
   }
 
-  private buildEpicBody(issue: Issue, allStories: Issue[]): string {
-    // Filtra as stories que dependem desta epic
+  private buildEpicBody(issue: Issue, allStories: Issue[], allStoriesResults: { issueId: string, issueNumber: number }[] = []): string {
+    const idToNumber = new Map<string, number>();
+    allStoriesResults.forEach(res => idToNumber.set(res.issueId, res.issueNumber));
+
     const relatedStories = allStories.filter(
       story => Array.isArray(story.depends) && story.depends.some(dep => dep.id === issue.id)
     );
-
     const storiesMarkdown = relatedStories.length > 0
-      ? relatedStories.map(story => `- [ ] ${story.title}`).join('\n')
+      ? relatedStories.map(story => {
+          const num = idToNumber.get(story.id);
+          return num ? `- [ ] #${num}` : `- [ ] ${story.title}`;
+        }).join('\n')
       : '- [ ] (Nenhuma feature/story cadastrada)';
+
+    const criterions = (issue.criterions || []).map(c => `- ${c}`).join('\n') || '- [Adicione critérios de aceitação]';
+    const observation = issue.observation ? `\n## Observações\n${issue.observation}` : '';
 
     return `**⚠️ Entregas são feitas via PR. Associe este Epic às features correspondentes.**
 
 # Descrição
 ${issue.description || '[Descreva de forma clara e sucinta o propósito da Epic.]'}
 
-# Features/Stories relacionadas
+# Features relacionadas
 ${storiesMarkdown}
 
-## Observações
+# Critérios de Aceitação (Epic-Level)
+${criterions}
+${observation}
 `;
   }
 
@@ -116,9 +125,9 @@ ${storiesMarkdown}
     let labels = issue.labels || [];
 
     if (issue.type === 'Epic') {
-      title = `[FEATURE] ${title}`;
+      title = `[EPIC] ${title}`;
       body = this.buildEpicBody(issue, allStories);
-      if (!labels.includes('Feature')) labels.push('Feature');
+      if (!labels.includes('Epic')) labels.push('Epic');
     } else if (issue.type === 'Feature' || issue.type === 'Story') {
       title = `[FEATURE] ${title}`;
       body = this.buildFeatureBody(issue, allTasks);

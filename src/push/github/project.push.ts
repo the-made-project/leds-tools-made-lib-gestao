@@ -60,24 +60,32 @@ export async function addIssueToProject(
     const variables = { projectId, contentId: issueId };
     const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
 
-    let retries = 3;
+    let retries = 5; // aumente o número de tentativas
+    let delay = 1500;
     while (retries > 0) {
         try {
             const response = await axios_instance.post('', { query, variables });
-            const item = response.data.data.addProjectV2ItemById?.item;
+            console.log('Resposta da API addIssueToProject:', JSON.stringify(response.data, null, 2));
+            const item = response.data.data?.addProjectV2ItemById?.item;
             if (!item) {
                 const errorMsg = response.data.errors?.[0]?.message || 'Unknown error';
-                if (errorMsg.includes('temporary conflict') && retries > 1) {
-                    await new Promise(res => setTimeout(res, 1500));
-                    retries--;
-                    continue;
-                }
+                // log detalhado
+                console.error('❌ Failed to add issue to project:', {
+                    error: response.data.errors,
+                    variables
+                });
                 throw new Error(errorMsg);
             }
             return item.id;
         } catch (error: any) {
+            // log detalhado
+            console.error('❌ Exception in addIssueToProject:', {
+                error: error?.response?.data || error.message,
+                variables
+            });
             if (retries > 1 && error.message?.includes('temporary conflict')) {
-                await new Promise(res => setTimeout(res, 1500));
+                await new Promise(res => setTimeout(res, delay));
+                delay *= 2; // backoff exponencial
                 retries--;
                 continue;
             }

@@ -104,6 +104,10 @@ export type Issue = {
   labels?: string[];
   assignee?: Person;
   backlog?: string;
+  criterions?: string[];
+  observation?: string;
+  requirements?: string[];
+  deliverables?: string[];
 };
 
 export type Task  = {
