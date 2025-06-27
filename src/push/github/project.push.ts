@@ -60,37 +60,98 @@ export async function addIssueToProject(
     const variables = { projectId, contentId: issueId };
     const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
 
-    let retries = 5; // aumente o número de tentativas
-    let delay = 1500;
-    while (retries > 0) {
+    let retries = 7; // Aumentar número de tentativas
+    let baseDelay = 2000; // Delay inicial maior
+    
+    for (let attempt = 1; attempt <= retries; attempt++) {
         try {
+            // Adicionar delay antes de cada tentativa (exceto a primeira)
+            if (attempt > 1) {
+                const delay = baseDelay * Math.pow(2, attempt - 2); // Backoff exponencial
+                console.log(`⏳ Tentativa ${attempt}/${retries} em ${delay}ms...`);
+                await new Promise(res => setTimeout(res, delay));
+            }
+
             const response = await axios_instance.post('', { query, variables });
-            console.log('Resposta da API addIssueToProject:', JSON.stringify(response.data, null, 2));
-            const item = response.data.data?.addProjectV2ItemById?.item;
-            if (!item) {
-                const errorMsg = response.data.errors?.[0]?.message || 'Unknown error';
-                // log detalhado
-                console.error('❌ Failed to add issue to project:', {
-                    error: response.data.errors,
+            
+            // Verificar se há erros na resposta
+            if (response.data.errors) {
+                const errors = response.data.errors;
+                const errorMsg = errors[0]?.message || 'Unknown GraphQL error';
+                
+                // Se é um erro temporário do GitHub, tentar novamente
+                if (isTemporaryGitHubError(errorMsg)) {
+                    console.log(`⚠️ Erro temporário detectado (tentativa ${attempt}/${retries}): ${errorMsg}`);
+                    if (attempt === retries) {
+                        throw new Error(`Falha após ${retries} tentativas: ${errorMsg}`);
+                    }
+                    continue;
+                }
+                
+                // Se não é temporário, falhar imediatamente
+                console.error('❌ Erro permanente ao adicionar issue ao projeto:', {
+                    error: errors,
                     variables
                 });
                 throw new Error(errorMsg);
             }
+
+            // Sucesso - extrair item
+            const item = response.data.data?.addProjectV2ItemById?.item;
+            if (!item) {
+                throw new Error('Resposta inválida: item não encontrado');
+            }
+
+            console.log(`✅ Issue adicionada ao projeto com sucesso (ID: ${item.id})`);
             return item.id;
+
         } catch (error: any) {
-            // log detalhado
-            console.error('❌ Exception in addIssueToProject:', {
-                error: error?.response?.data || error.message,
-                variables
-            });
-            if (retries > 1 && error.message?.includes('temporary conflict')) {
-                await new Promise(res => setTimeout(res, delay));
-                delay *= 2; // backoff exponencial
-                retries--;
+            const errorMessage = error?.response?.data?.errors?.[0]?.message || error.message;
+            
+            // Se é um erro temporário, tentar novamente
+            if (isTemporaryGitHubError(errorMessage)) {
+                console.log(`⚠️ Erro temporário (tentativa ${attempt}/${retries}): ${errorMessage}`);
+                if (attempt === retries) {
+                    console.error('❌ Falha após todas as tentativas:', {
+                        error: errorMessage,
+                        variables,
+                        attempts: retries
+                    });
+                    throw new Error(`Falha após ${retries} tentativas: ${errorMessage}`);
+                }
                 continue;
             }
+            
+            // Erro não temporário - falhar imediatamente
+            console.error('❌ Erro permanente ao adicionar issue ao projeto:', {
+                error: errorMessage,
+                variables,
+                attempt
+            });
             throw error;
         }
     }
-    throw new Error('Failed to add issue to project after retries.');
+    
+    throw new Error(`Falha após ${retries} tentativas para adicionar issue ao projeto`);
+}
+
+/**
+ * Verifica se o erro é temporário e deve ser tentado novamente
+ */
+function isTemporaryGitHubError(errorMessage: string): boolean {
+    if (!errorMessage) return false;
+    
+    const temporaryErrors = [
+        'Something went wrong while executing your query',
+        'temporary conflict',
+        'rate limit',
+        'timeout',
+        'temporarily unavailable',
+        'internal server error',
+        'service unavailable'
+    ];
+    
+    return temporaryErrors.some(pattern => 
+        errorMessage.toLowerCase().includes(pattern.toLowerCase())
+    );
 }

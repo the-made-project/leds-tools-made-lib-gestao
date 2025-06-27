@@ -3,7 +3,7 @@ export * from './model/models';
 // import { GitHubService } from "./service/GitHubService";
 import { GitHubPushService } from "./service/GitHubPushService";
 import { GitHubTokenManager } from "./service/GitHubTokenManager";
-import type { Project, Issue, Backlog, Team, TimeBox } from './model/models';
+import type { Project, Issue, Backlog, Team, TimeBox, Roadmap } from './model/models';
 
 export class ReportManager {
 
@@ -28,12 +28,13 @@ export class ReportManager {
         tasks: Issue[],
         backlogs?: Backlog[],
         teams?: Team[],
-        timeboxes?: TimeBox[]
+        timeboxes?: TimeBox[],
+        roadmaps?: Roadmap[]
     ) {
         GitHubTokenManager.initialize(token);
         const pushService = new GitHubPushService();
         try {
-            await pushService.fullPush(org, repo, project, epics, stories, tasks, backlogs, teams, timeboxes);
+            await pushService.fullPush(org, repo, project, epics, stories, tasks, backlogs, teams, timeboxes, roadmaps);
         } catch (error) {
             console.error("Erro durante o push para o GitHub:", error);
             throw error;

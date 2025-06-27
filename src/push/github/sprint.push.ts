@@ -116,7 +116,7 @@ export class GitHubSprintPushService {
     const idToNumber = new Map<string, number>();
     taskResults.forEach(res => idToNumber.set(res.issueId, res.issueNumber));
 
-    let body = `# Sprint: ${timebox.name}\n\n`;
+    let body = `# [Sprint] ${timebox.name}\n\n`;
     
     if (timebox.description) {
       body += `## Descrição\n${timebox.description}\n\n`;
@@ -147,18 +147,6 @@ export class GitHubSprintPushService {
         const status = item.status || 'TODO';
 
         body += `| ${taskTitle} | ${assignee} | ${plannedStart} | ${plannedDue} | ${status} |\n`;
-      });
-      body += `\n`;
-    }
-
-    // Checklist de Tasks
-    if (relatedTasks.length > 0) {
-      body += `## Tasks da Sprint\n\n`;
-      relatedTasks.forEach(task => {
-        const taskNumber = idToNumber.get(task.id);
-        const taskReference = taskNumber ? `#${taskNumber}` : task.title || task.id;
-        const checked = task.status === 'DONE' || task.status === 'CLOSED' ? 'x' : ' ';
-        body += `- [${checked}] ${taskReference} - ${task.title || task.description || task.id}\n`;
       });
       body += `\n`;
     }
