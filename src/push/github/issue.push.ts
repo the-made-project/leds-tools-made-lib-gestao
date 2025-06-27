@@ -1,7 +1,7 @@
 import { GitHubTokenManager } from '../../service/GitHubTokenManager.ts';
 import { axiosInstance } from '../../util/axiosInstance.ts';
 import { getRepositoryId, addAssigneesToIssue, addLabelsToLabelable, getLabelIds } from './githubApi.js';
-import { Issue, TimeBox } from '../../model/models.ts';
+import { Issue} from '../../model/models.ts';
 
 // Interface para representar uma Issue no GitHub (resumida para criação)
 export interface GitHubIssueInput {
@@ -42,12 +42,20 @@ export class GitHubIssuePushService {
     const relatedTasks = allTasks.filter(
       task => Array.isArray(task.depends) && task.depends.some(dep => dep.id === issue.id)
     );
-    const tasksMarkdown = relatedTasks.length > 0
-      ? relatedTasks.map(task => {
-          const num = idToNumber.get(task.id);
-          return num ? `- [ ] #${num}` : `- [ ] ${task.title}`;
-        }).join('\n')
-      : '- [ ] (Nenhuma task cadastrada)';
+
+    // Checklist de tasks melhorado
+    let tasksMarkdown = '';
+    if (relatedTasks.length > 0) {
+      tasksMarkdown = relatedTasks.map(task => {
+        const taskNumber = idToNumber.get(task.id);
+        const taskRef = taskNumber ? `#${taskNumber}` : task.title || task.id;
+        const taskTitle = task.title || task.description || task.id;
+        const checked = task.status === 'DONE' || task.status === 'CLOSED' ? 'x' : ' ';
+        return `- [${checked}] ${taskRef} - ${taskTitle}`;
+      }).join('\n');
+    } else {
+      tasksMarkdown = '- [ ] (Nenhuma task cadastrada)';
+    }
 
     const criterions = (issue.criterions || []).map(c => `- ${c}`).join('\n') || '- [Adicione critérios de aceitação]';
     const requirements = (issue.requirements || []).map(r => `- ${r}`).join('\n') || '- [Adicione requisitos]';
@@ -92,12 +100,20 @@ ${observation}
     const relatedStories = allStories.filter(
       story => Array.isArray(story.depends) && story.depends.some(dep => dep.id === issue.id)
     );
-    const storiesMarkdown = relatedStories.length > 0
-      ? relatedStories.map(story => {
-          const num = idToNumber.get(story.id);
-          return num ? `- [ ] #${num}` : `- [ ] ${story.title}`;
-        }).join('\n')
-      : '- [ ] (Nenhuma feature/story cadastrada)';
+
+    // Checklist de stories melhorado
+    let storiesMarkdown = '';
+    if (relatedStories.length > 0) {
+      storiesMarkdown = relatedStories.map(story => {
+        const storyNumber = idToNumber.get(story.id);
+        const storyRef = storyNumber ? `#${storyNumber}` : story.title || story.id;
+        const storyTitle = story.title || story.description || story.id;
+        const checked = story.status === 'DONE' || story.status === 'CLOSED' ? 'x' : ' ';
+        return `- [${checked}] ${storyRef} - ${storyTitle}`;
+      }).join('\n');
+    } else {
+      storiesMarkdown = '- [ ] (Nenhuma feature/story cadastrada)';
+    }
 
     const criterions = (issue.criterions || []).map(c => `- ${c}`).join('\n') || '- [Adicione critérios de aceitação]';
     const observation = issue.observation ? `\n## Observações\n${issue.observation}` : '';
@@ -119,18 +135,24 @@ ${observation}
   /**
    * Converte um modelo MADE Issue para o modelo de entrada do GitHub
    */
-  mapIssueToGitHubInput(issue: Issue, allTasks: Issue[] = [], allStories: Issue[] = []): GitHubIssueInput {
+  mapIssueToGitHubInput(
+    issue: Issue, 
+    allTasks: Issue[] = [], 
+    allStories: Issue[] = [],
+    taskResults: { issueId: string, issueNumber: number }[] = [],
+    storyResults: { issueId: string, issueNumber: number }[] = []
+  ): GitHubIssueInput {
     let title = issue.title || '';
     let body = '';
     let labels = issue.labels || [];
 
     if (issue.type === 'Epic') {
       title = `[EPIC] ${title}`;
-      body = this.buildEpicBody(issue, allStories);
+      body = this.buildEpicBody(issue, allStories, storyResults);
       if (!labels.includes('Epic')) labels.push('Epic');
     } else if (issue.type === 'Feature' || issue.type === 'Story') {
       title = `[FEATURE] ${title}`;
-      body = this.buildFeatureBody(issue, allTasks);
+      body = this.buildFeatureBody(issue, allTasks, taskResults);
       if (!labels.includes('Feature')) labels.push('Feature');
     } else if (issue.type === 'Task') {
       title = `[TASK] ${title}`;
@@ -157,9 +179,11 @@ ${observation}
     issue: Issue,
     assignees?: string[],
     allTasks: Issue[] = [],
-    allStories: Issue[] = []
+    allStories: Issue[] = [],
+    taskResults: { issueId: string, issueNumber: number }[] = [],
+    storyResults: { issueId: string, issueNumber: number }[] = []
   ): Promise<GitHubIssueCreated> {
-    const input = this.mapIssueToGitHubInput(issue, allTasks, allStories);
+    const input = this.mapIssueToGitHubInput(issue, allTasks, allStories, taskResults, storyResults);
 
     const query = `
       mutation($repositoryId: ID!, $title: String!, $body: String!) {

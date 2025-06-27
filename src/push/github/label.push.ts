@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { axiosInstance } from '../../util/axiosInstance';
 import { GitHubTokenManager } from '../../service/GitHubTokenManager';
 
@@ -11,18 +12,26 @@ export async function createOrEnsureLabel(
   color: string = 'ededed',
   description: string = ''
 ): Promise<void> {
-  const slug = repo.toLowerCase().replace(/ /g, '-');
-  const url = `https://api.github.com/orgs/${org}/teams/${encodeURIComponent(slug)}`;
-  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+  const url = `https://api.github.com/repos/${org}/${repo}/labels`;
+  const token = GitHubTokenManager.getInstance().getToken();
+  
+  // Cria uma instância do axios específica para REST API
+  const restAxios = axios.create({
+    baseURL: 'https://api.github.com',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
 
   try {
     // Tenta buscar a label
-    await axios_instance.get(`${url}/${encodeURIComponent(name)}`);
+    await restAxios.get(`/repos/${org}/${repo}/labels/${encodeURIComponent(name)}`);
     // Se não lançar erro, a label já existe
   } catch (error: any) {
     if (error.response && error.response.status === 404) {
       // Cria a label se não existir
-      await axios_instance.post(url, {
+      await restAxios.post(`/repos/${org}/${repo}/labels`, {
         name,
         color,
         description

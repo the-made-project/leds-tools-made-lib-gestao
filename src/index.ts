@@ -32,7 +32,12 @@ export class ReportManager {
     ) {
         GitHubTokenManager.initialize(token);
         const pushService = new GitHubPushService();
-        await pushService.fullPush(org, repo, project, epics, stories, tasks, backlogs, teams, timeboxes);
+        try {
+            await pushService.fullPush(org, repo, project, epics, stories, tasks, backlogs, teams, timeboxes);
+        } catch (error) {
+            console.error("Erro durante o push para o GitHub:", error);
+            throw error;
+        }
     }
 
     public createReport(dbPath: string) {

@@ -1,19 +1,21 @@
 import { createProject, addIssueToProject } from '../push/github/project.push';
 import { GitHubIssuePushService } from '../push/github/issue.push';
+import { GitHubSprintPushService } from '../push/github/sprint.push';
 import { GitHubTokenManager } from './GitHubTokenManager';
-import { Project, Issue, Backlog, Team, TimeBox, SprintItem } from '../model/models';
-import { getProjectFieldIdByName, setProjectItemField, ensureLabelExists, ensureProjectBacklogField } from '../push/github/githubApi';
+import { Project, Issue, Backlog, Team, TimeBox } from '../model/models';
+import { getProjectFieldIdByName, setProjectItemField, ensureLabelExists } from '../push/github/githubApi';
 import { axiosInstance } from '../util/axiosInstance';
 import { createOrEnsureTeam } from '../push/github/team.push';
 import { addMemberToTeam } from '../push/github/teamMember.push';
-import { pushSprintsToGitHub } from '../push/github/sprint.push';
-import { addLinkedIssue } from '../push/github/githubApi';
 
 // Serviço para enviar modelos MADE para o GitHub
 export class GitHubPushService {
   private issuePushService: GitHubIssuePushService;
+  private sprintPushService: GitHubSprintPushService;
+  
   constructor() {
     this.issuePushService = new GitHubIssuePushService(GitHubTokenManager.getInstance().getToken());
+    this.sprintPushService = new GitHubSprintPushService(GitHubTokenManager.getInstance().getToken());
   }
 
   // Cria um projeto no GitHub a partir do modelo MADE Project
@@ -30,14 +32,16 @@ export class GitHubPushService {
     issue: Issue,
     allTasks: Issue[] = [],
     allStories: Issue[] = [],
-    idToGitHubIdMap?: Map<string, string>
+    idToGitHubIdMap?: Map<string, string>,
+    taskResults: { issueId: string, issueNumber: number }[] = [],
+    storyResults: { issueId: string, issueNumber: number }[] = []
   ): Promise<{ issueId: string; issueNumber: number; projectItemId: string }> {
     const assignees = this.issuePushService.getAssigneesForIssue(issue);
     let created;
     if (issue.type === 'Epic') {
-      created = await this.issuePushService.createIssue(org, repo, issue, assignees, [], allStories);
+      created = await this.issuePushService.createIssue(org, repo, issue, assignees, [], allStories, [], storyResults);
     } else if (issue.type === 'Feature' || issue.type === 'Story') {
-      created = await this.issuePushService.createIssue(org, repo, issue, assignees, allTasks);
+      created = await this.issuePushService.createIssue(org, repo, issue, assignees, allTasks, [], taskResults, []);
     } else {
       created = await this.issuePushService.createIssue(org, repo, issue, assignees);
     }
@@ -57,20 +61,6 @@ export class GitHubPushService {
       const backlogFieldId = await getProjectFieldIdByName(projectId, 'Backlog');
       if (backlogFieldId) {
         await setProjectItemField(projectId, projectItemId, backlogFieldId, issue.backlog);
-      }
-    }
-
-    // Adiciona vínculo de sub-issue (parent-child) se houver dependência
-    if (Array.isArray(issue.depends) && idToGitHubIdMap) {
-      for (const dep of issue.depends) {
-        const parentId = idToGitHubIdMap.get(dep.id);
-        if (parentId) {
-          try {
-            await addLinkedIssue(parentId, created.id);
-          } catch (err) {
-            console.error(`Erro ao criar vínculo parent-child entre ${parentId} e ${created.id}:`, err);
-          }
-        }
       }
     }
 
@@ -232,6 +222,18 @@ export class GitHubPushService {
     teams?: Team[],
     timeboxes?: TimeBox[]
   ) {
+    // Garante que todas as issues tenham labels inicializado como array
+    [epics, stories, tasks].forEach(issueList => {
+      issueList.forEach(issue => {
+        if (!Array.isArray(issue.labels)) {
+          issue.labels = [];
+        }
+      });
+    });
+
+    // Criar todas as labels necessárias antes de processar as issues
+    await this.ensureLabels(org, repo, backlogs, timeboxes);
+
     // Adiciona teams antes do restante do fluxo
     if (teams && teams.length > 0) {
       for (const team of teams) {
@@ -246,13 +248,6 @@ export class GitHubPushService {
       }
     }
 
-    // Coleta todos os status de sprint únicos
-    const sprintStatuses = (timeboxes || [])
-      .map(tb => tb.status)
-      .filter((v, i, a) => v && a.indexOf(v) === i) as string[];
-
-    // Garante labels padrão, de backlog e de status de sprint
-    await this.ensureLabels(org, repo, backlogs, sprintStatuses, timeboxes);
 
     // Adiciona a label do backlog correspondente em cada issue do backlog
     if (backlogs && backlogs.length > 0) {
@@ -268,97 +263,141 @@ export class GitHubPushService {
       }
     }
 
-    // Garante labels das epics, stories e tasks apenas
-    const allLabels = new Set<string>();
-    [epics, stories, tasks].forEach(issueList => {
-      issueList.forEach(issue => {
-        (issue.labels || []).forEach(label => allLabels.add(label));
-      });
-    });
-
-    for (const label of allLabels) {
-      await ensureLabelExists(org, repo, { name: label, color: 'ededed', description: '' });
-    }
-
-    this.prepareIssues(epics, 'Epic');
-    this.prepareIssues(stories, 'Feature');
     this.prepareIssues(tasks, 'Task');
+    this.prepareIssues(stories, 'Feature');
+    this.prepareIssues(epics, 'Epic');
 
     const projectId = await this.pushProject(org, project);
 
+    // Garante que o campo "Backlog" existe no projeto, se houver backlogs
     if (backlogs && backlogs.length > 0) {
       const backlogNames = backlogs.map(b => b.name);
-      await ensureProjectBacklogField(projectId, backlogNames);
+      // TODO: Implement ensureProjectBacklogField if needed
+      console.log(`📝 Backlogs detectados: ${backlogNames.join(', ')}`);
     }
 
-    // Cria as sprints como issues e as tasks do sprint associadas
-    if (timeboxes && timeboxes.length > 0) {
-      for (const sprint of timeboxes) {
-        if (!sprint.name || !sprint.startDate || !sprint.endDate) {
-          console.error(`Sprint inválida: ${JSON.stringify(sprint)}`);
-          continue; // ou lance um erro
-        }
-        // Cria a issue da sprint
-        const sprintIssues = await pushSprintsToGitHub(org, repo, [sprint]);
-        const sprintIssue = sprintIssues[0];
-        if (!sprintIssue) {
-          console.error(`Falha ao criar a issue do sprint: ${sprint.name}`);
-          continue;
-        }
-        for (const sprintItem of sprint.sprintItems) {
-          const taskIssue: Issue = {
-            ...sprintItem.issue,
-            assignee: sprintItem.assignee,
-            labels: [
-              ...(sprintItem.issue.labels || []),
-              sprint.name,
-              sprint.status || ''
-            ].filter(Boolean),
-            depends: [
-              ...(sprintItem.issue.depends || []),
-              { id: sprintIssue.id, type: 'Sprint', subtype: '', title: sprint.name }
-            ]
-          };
-          await this.issuePushService.createIssue(org, repo, taskIssue, [sprintItem.assignee.name]);
-        }
-      }
-    }
-
-    // Criação das issues e mapeamento de IDs para usar nos vínculos parent-child
+    // 1. Crie Epics primeiro (são independentes)
     const epicResults = epics.length > 0
       ? await Promise.all(epics.map(e => this.pushIssue(org, repo, projectId, e, [], stories)))
       : [];
     const epicIdToGitHubId = new Map<string, string>();
     const epicIdToGitHubNumber = new Map<string, number>();
-epics.forEach((epic, idx) => {
-  if (epic.id && epicResults[idx]) {
-    epicIdToGitHubId.set(epic.id, epicResults[idx].issueId);
-    epicIdToGitHubNumber.set(epic.id, epicResults[idx].issueNumber);
+    epics.forEach((epic, idx) => {
+      if (epic.id && epicResults[idx]) {
+        epicIdToGitHubId.set(epic.id, epicResults[idx].issueId);
+        epicIdToGitHubNumber.set(epic.id, epicResults[idx].issueNumber);
+      }
+    });
+
+    // 2. Crie Stories (agora com referência aos epics)
+    const storyResults = stories.length > 0
+      ? await Promise.all(stories.map(s => this.pushIssue(org, repo, projectId, s, tasks, [], epicIdToGitHubId)))
+      : [];
+    const storyIdToGitHubId = new Map<string, string>();
+    const storyIdToGitHubNumber = new Map<string, number>();
+    stories.forEach((story, idx) => {
+      if (story.id && storyResults[idx]) {
+        storyIdToGitHubId.set(story.id, storyResults[idx].issueId);
+        storyIdToGitHubNumber.set(story.id, storyResults[idx].issueNumber);
+      }
+    });
+
+    // 3. Crie Tasks (agora com referência às stories)
+    const taskResults = tasks.length > 0
+      ? await Promise.all(tasks.map(t => this.pushIssue(org, repo, projectId, t, [], [], storyIdToGitHubId)))
+      : [];
+    const taskIdToGitHubId = new Map<string, string>();
+    const taskIdToGitHubNumber = new Map<string, number>();
+    tasks.forEach((task, idx) => {
+      if (task.id && taskResults[idx]) {
+        taskIdToGitHubId.set(task.id, taskResults[idx].issueId);
+        taskIdToGitHubNumber.set(task.id, taskResults[idx].issueNumber);
+      }
+    });
+
+
+    // Criação das issues (epics, stories, tasks) e mapeamento dos números do GitHub
+
+    // Linkagem de dependências
+    await this.linkTasksToStories(org, repo, tasks, taskResults, storyIdToGitHubNumber);
+    await this.linkStoriesToEpics(org, repo, stories, storyIdToGitHubNumber, epicIdToGitHubNumber);
+
+    // 4. Processar Timeboxes (Sprints)
+    if (timeboxes && timeboxes.length > 0) {
+      await this.processTimeboxes(org, repo, projectId, timeboxes, tasks, taskIdToGitHubNumber);
+    }
   }
-});
 
-const storyResults = stories.length > 0
-  ? await Promise.all(stories.map(s => this.pushIssue(org, repo, projectId, s, tasks, [], epicIdToGitHubId)))
-  : [];
-const storyIdToGitHubId = new Map<string, string>();
-const storyIdToGitHubNumber = new Map<string, number>();
-stories.forEach((story, idx) => {
-  if (story.id && storyResults[idx]) {
-    storyIdToGitHubId.set(story.id, storyResults[idx].issueId);
-    storyIdToGitHubNumber.set(story.id, storyResults[idx].issueNumber);
+  /**
+   * Processa timeboxes (sprints) criando as issues de sprint usando REST API
+   */
+  public async processTimeboxes(
+    org: string,
+    repo: string,
+    projectId: string,
+    timeboxes: TimeBox[],
+    allTasks: Issue[],
+    taskIdToGitHubNumber: Map<string, number>
+  ) {
+    console.log(`🚀 Iniciando processamento de ${timeboxes.length} timeboxes...`);
+
+    for (const timebox of timeboxes) {
+      try {
+        console.log(`📋 Processando timebox: ${timebox.name}`);
+
+        // Obter as tasks relacionadas a esta sprint
+        const relatedTasks = timebox.sprintItems
+          ? timebox.sprintItems.map(item => item.issue)
+          : [];
+
+        console.log(`📝 Encontradas ${relatedTasks.length} tasks relacionadas à sprint`);
+
+        // Criar array de resultados das tasks para referência
+        const taskResults = relatedTasks
+          .map(task => {
+            const taskNumber = taskIdToGitHubNumber.get(task.id);
+            return taskNumber ? { issueId: task.id, issueNumber: taskNumber } : null;
+          })
+          .filter(result => result !== null) as { issueId: string, issueNumber: number }[];
+
+        console.log(`🔗 ${taskResults.length} tasks mapeadas para números do GitHub`);
+
+        // Criar a issue de sprint usando a nova implementação REST
+        const sprintResult = await this.sprintPushService.createSprintIssue(
+          org,
+          repo,
+          timebox,
+          relatedTasks,
+          taskResults
+        );
+
+        console.log(`✅ Sprint issue criada: #${sprintResult.number}`);
+
+        // Adicionar labels de sprint às tasks relacionadas
+        const taskNumbers = taskResults.map(result => result.issueNumber);
+        if (taskNumbers.length > 0) {
+          console.log(`🏷️ Adicionando labels de sprint a ${taskNumbers.length} tasks...`);
+          await this.sprintPushService.addSprintLabelsToTasks(
+            org,
+            repo,
+            timebox.name,
+            taskNumbers
+          );
+        }
+
+        console.log(`✅ Sprint "${timebox.name}" processada com sucesso: #${sprintResult.number}`);
+
+      } catch (error: any) {
+        console.error(`❌ Erro ao processar timebox "${timebox.name}":`, error.message);
+        // Não interrompe o processo para outras sprints
+        continue;
+      }
+    }
+
+    console.log(`🎉 Processamento de timeboxes concluído!`);
   }
-});
 
-const taskResults = tasks.length > 0
-  ? await Promise.all(tasks.map(t => this.pushIssue(org, repo, projectId, t, [], [], storyIdToGitHubId)))
-  : [];
-
-// Corrigido: use o mapa de número para as funções que esperam número
-await this.linkTasksToStories(org, repo, tasks, taskResults, storyIdToGitHubNumber);
-await this.linkStoriesToEpics(org, repo, stories, storyIdToGitHubNumber, epicIdToGitHubNumber);
-  }
-
-  public async ensureLabels(org: string, repo: string, backlogs?: Backlog[], sprintStatuses: string[] = [], timeboxes?: TimeBox[]) {
+  public async ensureLabels(org: string, repo: string, backlogs?: Backlog[], timeboxes?: TimeBox[]) {
     await ensureLabelExists(org, repo, { name: 'Feature', color: '1d76db', description: 'Funcionalidade' });
     await ensureLabelExists(org, repo, { name: 'Task', color: 'cccccc', description: 'Tarefa' });
     await ensureLabelExists(org, repo, { name: 'Epic', color: '5319e7', description: 'Epic' });
@@ -370,18 +409,33 @@ await this.linkStoriesToEpics(org, repo, stories, storyIdToGitHubNumber, epicIdT
       }
     }
 
-    // Cria labels de status de sprint
-    for (const status of sprintStatuses) {
-      await ensureLabelExists(org, repo, { name: status, color: 'ededed', description: `Sprint Status: ${status}` });
-    }
-
-    // Cria labels para cada sprint (nome da sprint)
+    // Cria labels para as sprints/timeboxes, se houver
     if (timeboxes && timeboxes.length > 0) {
-      for (const sprint of timeboxes) {
-        if (sprint.name) {
-          await ensureLabelExists(org, repo, { name: sprint.name, color: 'ededed', description: `Sprint: ${sprint.name}` });
-        }
+      for (const timebox of timeboxes) {
+        // Label do nome da sprint
+        await ensureLabelExists(org, repo, { 
+          name: `sprint: ${timebox.name}`, 
+          color: '0052CC', 
+          description: `Sprint ${timebox.name}` 
+        });
+
+        // Label do status da sprint
+        const statusColors: { [key: string]: string } = {
+          'PLANNED': 'FEF2C0',
+          'IN_PROGRESS': '0E8A16',
+          'CLOSED': '5319E7'
+        };
+        
+        await ensureLabelExists(org, repo, { 
+          name: `status: ${timebox.status || 'PLANNED'}`, 
+          color: statusColors[timebox.status || 'PLANNED'] || 'CCCCCC', 
+          description: `Status: ${timebox.status || 'PLANNED'}` 
+        });
       }
+      
+      // Label genérica para tipo sprint
+      await ensureLabelExists(org, repo, { name: 'type: sprint', color: 'B60205', description: 'Sprint issue type' });
     }
   }
+
 }

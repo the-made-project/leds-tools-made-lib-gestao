@@ -66,7 +66,7 @@ export type Person = {
   discord: string;
 }
 
- export type TimeBox = {
+export type TimeBox = {
   id?: string;  
   description: string;
   startDate: string;

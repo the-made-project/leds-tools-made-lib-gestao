@@ -1,5 +1,6 @@
 import { axiosInstance } from '../../util/axiosInstance';
 import { GitHubTokenManager } from '../../service/GitHubTokenManager';
+import axios from 'axios';
 
 // Garante que a label exista no repositório, criando se necessário
 export async function ensureLabelExists(
@@ -25,18 +26,22 @@ export async function ensureLabelExists(
 
   if (!exists) {
     // Cria a label via REST API
-    const url = `https://api.github.com/repos/${organizationName}/${repositoryName}/labels`;
-    await axios_instance.post(
-      url,
+    const token = GitHubTokenManager.getInstance().getToken();
+    const restAxios = axios.create({
+      baseURL: 'https://api.github.com',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        Accept: 'application/vnd.github+json'
+      },
+    });
+
+    await restAxios.post(
+      `/repos/${organizationName}/${repositoryName}/labels`,
       {
         name: label.name,
         color: label.color || 'ededed', // cor padrão se não informado
         description: label.description || ''
-      },
-      {
-        headers: {
-          Accept: 'application/vnd.github+json'
-        }
       }
     );
     console.log(`✅ Label "${label.name}" criada no repositório.`);
@@ -158,10 +163,19 @@ export async function addAssigneesToIssue(
   issueNumber: number,
   assignees: string[]
 ): Promise<void> {
-  const url = `https://api.github.com/repos/${organizationName}/${repositoryName}/issues/${issueNumber}/assignees`;
-  const data = { assignees };
-  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
-  await axios_instance.post(url, data);
+  const token = GitHubTokenManager.getInstance().getToken();
+  const restAxios = axios.create({
+    baseURL: 'https://api.github.com',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  await restAxios.post(
+    `/repos/${organizationName}/${repositoryName}/issues/${issueNumber}/assignees`,
+    { assignees }
+  );
 }
 
 // Executa uma query/mutação GraphQL genérica
@@ -290,18 +304,25 @@ export async function ensureTeamExists(
   teamName: string,
   description?: string
 ): Promise<void> {
-  const url = `https://api.github.com/orgs/${org}/teams/${teamName.toLowerCase().replace(/ /g, '-')}`;
-  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+  const slug = teamName.toLowerCase().replace(/ /g, '-');
+  const token = GitHubTokenManager.getInstance().getToken();
+  const restAxios = axios.create({
+    baseURL: 'https://api.github.com',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
 
   try {
     // Tenta buscar o time
-    await axios_instance.get(url);
+    await restAxios.get(`/orgs/${org}/teams/${encodeURIComponent(slug)}`);
     // Se não lançar erro, o time já existe
   } catch (error: any) {
     if (error.response && error.response.status === 404) {
       // Cria o time se não existir
-      await axios_instance.post(
-        `https://api.github.com/orgs/${org}/teams`,
+      await restAxios.post(
+        `/orgs/${org}/teams`,
         {
           name: teamName,
           description: description || '',
@@ -319,30 +340,18 @@ export async function addMemberToTeam(
   teamName: string,
   username: string
 ): Promise<void> {
-  const url = `https://api.github.com/orgs/${org}/teams/${teamName.toLowerCase().replace(/ /g, '-')}/memberships/${username}`;
-  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
-  await axios_instance.put(url, { role: "member" });
-}
-
-// Cria relação de sub-issue (parent-child) entre duas issues
-export async function addLinkedIssue(
-  parentId: string,
-  childId: string
-): Promise<void> {
-  const query = `
-    mutation($input: AddLinkedIssueInput!) {
-      addLinkedIssue(input: $input) {
-        clientMutationId
-      }
-    }
-  `;
-  const variables = {
-    input: {
-      issueId: parentId,
-      linkedIssueId: childId,
-      relationshipType: "child"
-    }
-  };
-  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
-  await axios_instance.post('', { query, variables });
+  const slug = teamName.toLowerCase().replace(/ /g, '-');
+  const token = GitHubTokenManager.getInstance().getToken();
+  const restAxios = axios.create({
+    baseURL: 'https://api.github.com',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  
+  await restAxios.put(
+    `/orgs/${org}/teams/${encodeURIComponent(slug)}/memberships/${encodeURIComponent(username)}`,
+    { role: "member" }
+  );
 }
