@@ -8,6 +8,7 @@ import { getProjectFieldIdByName, setProjectItemField, ensureLabelExists } from 
 import { axiosInstance } from '../util/axiosInstance';
 import { createOrEnsureTeam } from '../push/github/team.push';
 import { addMemberToTeam } from '../push/github/teamMember.push';
+import { GenericRepository } from '../repository/generic.repository';
 
 // Serviço para enviar modelos MADE para o GitHub
 export class GitHubPushService {
@@ -23,8 +24,32 @@ export class GitHubPushService {
 
   // Cria um projeto no GitHub a partir do modelo MADE Project
   async pushProject(org: string, project: Project): Promise<string> {
+    // Cria um identificador único baseado no org/projeto para evitar duplicação
+    const uniqueKey = `${org}/${project.id}`;
+    
+    // Verifica se o projeto já foi processado para este org específico
+    const projectRepo = new GenericRepository<any>('./data/db', 'processed_projects.json');
+    if (projectRepo.exists(p => p.uniqueKey === uniqueKey)) {
+      const existingRecord = projectRepo.getAll().find(p => p.uniqueKey === uniqueKey);
+      console.log(`[GitHubPushService] Projeto ${project.id} já processado para ${org}. Ignorando envio.`);
+      return existingRecord.githubProjectId;
+    }
+    
     // Cria o projeto no GitHub
-    return await createProject(org, project.name);
+    const projectId = await createProject(org, project.name);
+    
+    // Salva o registro de processamento localmente após criação bem-sucedida
+    const processedRecord = {
+      uniqueKey,
+      madeProjectId: project.id,
+      githubProjectId: projectId,
+      org,
+      processedAt: new Date().toISOString(),
+      projectName: project.name
+    };
+    projectRepo.add(processedRecord);
+    
+    return projectId;
   }
 
   // Cria uma issue no GitHub a partir do modelo MADE Issue e adiciona ao projeto
@@ -39,7 +64,24 @@ export class GitHubPushService {
     storyResults: { issueId: string, issueNumber: number }[] = []
   ): Promise<{ issueId: string; issueNumber: number; projectItemId: string }> {
     try {
-      console.log(`📝 Criando issue: ${issue.title || issue.id} (${issue.type})`);
+      // Validate issue before processing
+      this.validateIssue(issue);
+      
+      // Cria um identificador único baseado no org/repo/projeto/issue para evitar duplicação
+      const uniqueKey = `${org}/${repo}/${projectId}/${issue.id}`;
+      
+      // Verifica se a issue já foi processada para este org/repo/projeto específico
+      const issueRepo = new GenericRepository<any>('./data/db', 'processed_issues.json');
+      if (issueRepo.exists(i => i.uniqueKey === uniqueKey)) {
+        const existingRecord = issueRepo.getAll().find(i => i.uniqueKey === uniqueKey);
+        console.log(`[GitHubPushService] Issue ${issue.id} já processada para ${org}/${repo}/${projectId}. Ignorando envio.`);
+        // Retorna dados reais da issue já processada
+        return {
+          issueId: existingRecord.githubIssueId,
+          issueNumber: existingRecord.githubIssueNumber,
+          projectItemId: existingRecord.projectItemId
+        };
+      }
       
       const assignees = this.issuePushService.getAssigneesForIssue(issue);
       let created;
@@ -52,39 +94,45 @@ export class GitHubPushService {
         created = await this.issuePushService.createIssue(org, repo, issue, assignees);
       }
 
-      console.log(`✅ Issue criada: #${created.number} (ID: ${created.id})`);
-
-      // Adicionar ao projeto com retry robusto
-      console.log(`🔗 Adicionando issue #${created.number} ao projeto...`);
       const projectItemId = await addIssueToProject(projectId, created.id);
 
-      // Seta o campo "Type" (já existente)
       if (issue.type) {
         try {
           const typeFieldId = await getProjectFieldIdByName(projectId, 'Type');
           if (typeFieldId) {
             await setProjectItemField(projectId, projectItemId, typeFieldId, issue.type);
-            console.log(`🏷️ Campo 'Type' definido como '${issue.type}'`);
           }
         } catch (error: any) {
           console.warn(`⚠️ Falha ao definir campo 'Type': ${error.message}`);
         }
       }
 
-      // Seta o campo "Backlog" se existir
       if (issue.backlog) {
         try {
           const backlogFieldId = await getProjectFieldIdByName(projectId, 'Backlog');
           if (backlogFieldId) {
             await setProjectItemField(projectId, projectItemId, backlogFieldId, issue.backlog);
-            console.log(`🗂️ Campo 'Backlog' definido como '${issue.backlog}'`);
           }
         } catch (error: any) {
           console.warn(`⚠️ Falha ao definir campo 'Backlog': ${error.message}`);
         }
       }
-
-      console.log(`✅ Issue ${issue.title || issue.id} processada com sucesso`);
+      
+      // Salva o registro de processamento localmente após criação bem-sucedida
+      const processedRecord = {
+        uniqueKey,
+        madeIssueId: issue.id,
+        githubIssueId: created.id,
+        githubIssueNumber: created.number,
+        projectItemId,
+        org,
+        repo,
+        projectId,
+        processedAt: new Date().toISOString(),
+        issueTitle: issue.title,
+        issueType: issue.type
+      };
+      issueRepo.add(processedRecord);
       
       return {
         issueId: created.id,
@@ -256,6 +304,17 @@ export class GitHubPushService {
     timeboxes?: TimeBox[],
     roadmaps?: Roadmap[]
   ) {
+    // Validate required parameters
+    if (!org || typeof org !== 'string' || org.trim() === '') {
+      throw new Error('Organization parameter is required and cannot be empty');
+    }
+    if (!repo || typeof repo !== 'string' || repo.trim() === '') {
+      throw new Error('Repository parameter is required and cannot be empty');
+    }
+    if (!project || !project.id || !project.name) {
+      throw new Error('Project parameter is required and must have id and name');
+    }
+
     // Garante que todas as issues tenham labels inicializado como array
     [epics, stories, tasks].forEach(issueList => {
       issueList.forEach(issue => {
@@ -270,7 +329,18 @@ export class GitHubPushService {
 
     // Adiciona teams antes do restante do fluxo
     if (teams && teams.length > 0) {
+      const teamRepo = new GenericRepository<any>('./data/db', 'processed_teams.json');
+      
       for (const team of teams) {
+        // Cria um identificador único baseado no org/team para evitar duplicação
+        const uniqueKey = `${org}/${team.id}`;
+        
+        // Verifica se o team já foi processado para este org específico
+        if (teamRepo.exists(t => t.uniqueKey === uniqueKey)) {
+          console.log(`[GitHubPushService] Team ${team.id} já processado para ${org}. Ignorando envio.`);
+          continue;
+        }
+        
         await createOrEnsureTeam(org, team.name, team.description);
         if (team.teamMembers && team.teamMembers.length > 0) {
           for (const member of team.teamMembers) {
@@ -279,13 +349,35 @@ export class GitHubPushService {
             }
           }
         }
+        
+        // Salva o registro de processamento localmente após criação bem-sucedida
+        const processedRecord = {
+          uniqueKey,
+          madeTeamId: team.id,
+          org,
+          processedAt: new Date().toISOString(),
+          teamName: team.name,
+          memberCount: team.teamMembers?.length || 0
+        };
+        teamRepo.add(processedRecord);
       }
     }
 
 
     // Adiciona a label do backlog correspondente em cada issue do backlog
     if (backlogs && backlogs.length > 0) {
+      const backlogRepo = new GenericRepository<any>('./data/db', 'processed_backlogs.json');
+      
       for (const backlog of backlogs) {
+        // Cria um identificador único baseado no org/repo/backlog para evitar duplicação
+        const uniqueKey = `${org}/${repo}/${backlog.id}`;
+        
+        // Verifica se o backlog já foi processado para este org/repo específico
+        if (backlogRepo.exists(b => b.uniqueKey === uniqueKey)) {
+          console.log(`[GitHubPushService] Backlog ${backlog.id} já processado para ${org}/${repo}. Ignorando processamento de labels.`);
+          continue;
+        }
+        
         if (backlog.issues) {
           for (const issue of backlog.issues) {
             issue.labels = issue.labels || [];
@@ -294,6 +386,18 @@ export class GitHubPushService {
             }
           }
         }
+        
+        // Salva o registro de processamento localmente após processamento bem-sucedido
+        const processedRecord = {
+          uniqueKey,
+          madeBacklogId: backlog.id,
+          org,
+          repo,
+          processedAt: new Date().toISOString(),
+          backlogName: backlog.name,
+          issueCount: backlog.issues?.length || 0
+        };
+        backlogRepo.add(processedRecord);
       }
     }
 
@@ -307,13 +411,11 @@ export class GitHubPushService {
     if (backlogs && backlogs.length > 0) {
       const backlogNames = backlogs.map(b => b.name);
       // TODO: Implement ensureProjectBacklogField if needed
-      console.log(`📝 Backlogs detectados: ${backlogNames.join(', ')}`);
     }
 
     // Primeiro, crie todas as issues básicas (sem checklists) em ordem: Tasks → Stories → Epics
     
     // 1. Crie Tasks primeiro (são as folhas da árvore de dependências)
-    console.log(`📝 Processando ${tasks.length} tasks...`);
     const taskResults = tasks.length > 0
       ? await this.processIssuesInBatches(org, repo, projectId, tasks, [], [], [], [])
       : [];
@@ -327,7 +429,6 @@ export class GitHubPushService {
     });
 
     // 2. Crie Stories (agora com referência aos tasks nos checklists)
-    console.log(`📝 Processando ${stories.length} stories...`);
     const storyResults = stories.length > 0
       ? await this.processIssuesInBatches(org, repo, projectId, stories, tasks, [], taskResults, [])
       : [];
@@ -341,7 +442,6 @@ export class GitHubPushService {
     });
 
     // 3. Crie Epics (agora com referência às stories nos checklists)
-    console.log(`📝 Processando ${epics.length} epics...`);
     const epicResults = epics.length > 0
       ? await this.processIssuesInBatches(org, repo, projectId, epics, [], stories, [], storyResults)
       : [];
@@ -382,18 +482,23 @@ export class GitHubPushService {
     allTasks: Issue[],
     taskIdToGitHubNumber: Map<string, number>
   ) {
-    console.log(`🚀 Iniciando processamento de ${timeboxes.length} timeboxes...`);
-
+    const timeboxRepo = new GenericRepository<any>('./data/db', 'processed_timeboxes.json');
+    
     for (const timebox of timeboxes) {
       try {
-        console.log(`📋 Processando timebox: ${timebox.name}`);
-
+        // Cria um identificador único baseado no org/repo/projeto/timebox para evitar duplicação
+        const uniqueKey = `${org}/${repo}/${projectId}/${timebox.id}`;
+        
+        // Verifica se o timebox já foi processado para este org/repo/projeto específico
+        if (timeboxRepo.exists(t => t.uniqueKey === uniqueKey)) {
+          console.log(`[GitHubPushService] Timebox ${timebox.id} já processado para ${org}/${repo}/${projectId}. Ignorando envio.`);
+          continue;
+        }
+        
         // Obter as tasks relacionadas a esta sprint
         const relatedTasks = timebox.sprintItems
           ? timebox.sprintItems.map(item => item.issue)
           : [];
-
-        console.log(`📝 Encontradas ${relatedTasks.length} tasks relacionadas à sprint`);
 
         // Criar array de resultados das tasks para referência
         const taskResults = relatedTasks
@@ -402,8 +507,6 @@ export class GitHubPushService {
             return taskNumber ? { issueId: task.id, issueNumber: taskNumber } : null;
           })
           .filter(result => result !== null) as { issueId: string, issueNumber: number }[];
-
-        console.log(`🔗 ${taskResults.length} tasks mapeadas para números do GitHub`);
 
         // Criar a issue de sprint usando a nova implementação REST
         const sprintResult = await this.sprintPushService.createSprintIssue(
@@ -414,12 +517,9 @@ export class GitHubPushService {
           taskResults
         );
 
-        console.log(`✅ Sprint issue criada: #${sprintResult.number}`);
-
         // Adicionar labels de sprint às tasks relacionadas
         const taskNumbers = taskResults.map(result => result.issueNumber);
         if (taskNumbers.length > 0) {
-          console.log(`🏷️ Adicionando labels de sprint a ${taskNumbers.length} tasks...`);
           await this.sprintPushService.addSprintLabelsToTasks(
             org,
             repo,
@@ -427,8 +527,21 @@ export class GitHubPushService {
             taskNumbers
           );
         }
-
-        console.log(`✅ Sprint "${timebox.name}" processada com sucesso: #${sprintResult.number}`);
+        
+        // Salva o registro de processamento localmente após criação bem-sucedida
+        const processedRecord = {
+          uniqueKey,
+          madeTimeboxId: timebox.id,
+          githubSprintIssueId: sprintResult?.id,
+          githubSprintIssueNumber: sprintResult?.number,
+          org,
+          repo,
+          projectId,
+          processedAt: new Date().toISOString(),
+          timeboxName: timebox.name,
+          sprintItemCount: timebox.sprintItems?.length || 0
+        };
+        timeboxRepo.add(processedRecord);
 
       } catch (error: any) {
         console.error(`❌ Erro ao processar timebox "${timebox.name}":`, error.message);
@@ -448,19 +561,36 @@ export class GitHubPushService {
     repo: string,
     roadmaps: Roadmap[]
   ) {
-    console.log(`🗺️ Iniciando processamento de ${roadmaps.length} roadmaps...`);
-
+    const roadmapRepo = new GenericRepository<any>('./data/db', 'processed_roadmaps.json');
+    
     for (const roadmap of roadmaps) {
       try {
-        console.log(`📋 Processando roadmap: ${roadmap.name || 'Unnamed Roadmap'}`);
-
+        // Cria um identificador único baseado no org/repo/roadmap para evitar duplicação
+        const uniqueKey = `${org}/${repo}/${roadmap.id}`;
+        
+        // Verifica se o roadmap já foi processado para este org/repo específico
+        if (roadmapRepo.exists(r => r.uniqueKey === uniqueKey)) {
+          console.log(`[GitHubPushService] Roadmap ${roadmap.id} já processado para ${org}/${repo}. Ignorando envio.`);
+          continue;
+        }
+        
         // Criar labels específicas do roadmap
         await this.roadmapPushService.createRoadmapLabels(org, repo, roadmap);
 
         // Criar milestones do roadmap
         const roadmapResult = await this.roadmapPushService.createRoadmap(org, repo, roadmap);
-
-        console.log(`✅ Roadmap "${roadmap.name}" processado com sucesso. ${roadmapResult.milestoneResults.length} milestones criados.`);
+        
+        // Salva o registro de processamento localmente após criação bem-sucedida
+        const processedRecord = {
+          uniqueKey,
+          madeRoadmapId: roadmap.id,
+          org,
+          repo,
+          processedAt: new Date().toISOString(),
+          roadmapName: roadmap.name,
+          milestoneCount: roadmap.milestones?.length || 0
+        };
+        roadmapRepo.add(processedRecord);
 
       } catch (error: any) {
         console.error(`❌ Erro ao processar roadmap "${roadmap.name}":`, error.message);
@@ -468,8 +598,6 @@ export class GitHubPushService {
         continue;
       }
     }
-
-    console.log(`🎉 Processamento de roadmaps concluído!`);
   }
 
   public async ensureLabels(org: string, repo: string, backlogs?: Backlog[], timeboxes?: TimeBox[], roadmaps?: Roadmap[]) {
@@ -543,8 +671,6 @@ export class GitHubPushService {
     
     for (let i = 0; i < issues.length; i += batchSize) {
       const batch = issues.slice(i, i + batchSize);
-      
-      console.log(`📦 Processando batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(issues.length / batchSize)} (${batch.length} issues)`);
       
       try {
         const batchResults = await Promise.all(

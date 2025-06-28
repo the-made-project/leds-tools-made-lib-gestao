@@ -86,10 +86,8 @@ export class GitHubSprintPushService {
         'Sprint issue type'
       );
 
-      console.log(`✅ Labels criadas para sprint: ${sprintName}`);
-    } catch (error) {
-      console.error('Erro ao criar labels da sprint:', error);
-      throw error;
+    } catch (error: any) {
+      console.error(`❌ Erro ao criar labels para sprint ${sprintName}:`, error.message);
     }
   }
 
@@ -116,7 +114,7 @@ export class GitHubSprintPushService {
     const idToNumber = new Map<string, number>();
     taskResults.forEach(res => idToNumber.set(res.issueId, res.issueNumber));
 
-    let body = `# [Sprint] ${timebox.name}\n\n`;
+    let body = `# [SPRINT] ${timebox.name}\n\n`;
     
     if (timebox.description) {
       body += `## Descrição\n${timebox.description}\n\n`;
@@ -228,7 +226,6 @@ export class GitHubSprintPushService {
       });
 
       const issue = response.data;
-      console.log(`✅ Sprint issue criada: #${issue.number} - ${sprintInput.title}`);
 
       return {
         id: issue.id,
@@ -266,10 +263,6 @@ export class GitHubSprintPushService {
           await this.restAxios.patch(`/repos/${org}/${repo}/issues/${taskNumber}`, {
             labels: newLabels
           });
-
-          console.log(`✅ Label '${sprintLabel}' adicionada à task #${taskNumber}`);
-        } else {
-          console.log(`⚪ Task #${taskNumber} já possui a label '${sprintLabel}'`);
         }
 
       } catch (error: any) {

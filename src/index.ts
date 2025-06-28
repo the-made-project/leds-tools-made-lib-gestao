@@ -1,22 +1,22 @@
 import { MarkdownService } from "./documentation/service/markdown/MarkdownService";
 export * from './model/models';
-// import { GitHubService } from "./service/GitHubService";
+import { GitHubService } from "./service/GitHubService";
 import { GitHubPushService } from "./service/GitHubPushService";
 import { GitHubTokenManager } from "./service/GitHubTokenManager";
 import type { Project, Issue, Backlog, Team, TimeBox, Roadmap } from './model/models';
 
 export class ReportManager {
 
-    // public async githubETL(token: string, org: string, project: string) {
-    //     if (!token) throw new Error('GITHUB_TOKEN not set');
-    //     GitHubTokenManager.initialize(token);
+    public async githubETL(token: string, org: string, project: string) {
+        if (!token) throw new Error('GITHUB_TOKEN not set');
+        GitHubTokenManager.initialize(token);
         
-    //     const githubService = new GitHubService();
-    //     await githubService.ETLProject(org, project);
-    //     await githubService.ETLIssue(org, project);
-    //     await githubService.ETLBacklog(org, project);
-    //     await githubService.ETLTimeBox(org, project);
-    // }
+        const githubService = new GitHubService();
+        await githubService.ETLProject(org, project);
+        await githubService.ETLIssue(org, project);
+        await githubService.ETLBacklog(org, project);
+        await githubService.ETLTimeBox(org, project);
+    }
 
     public async githubPush(
         token: string,

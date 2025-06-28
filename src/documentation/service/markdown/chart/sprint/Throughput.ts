@@ -279,7 +279,6 @@ export class ThroughputGenerator {
     try {
       const svg = this.generateSVG();
       fs.writeFileSync(this.outputPath, svg);
-      console.log(`Throughput gerado com sucesso em: ${this.outputPath}`);
     } catch (error) {
       console.error('Erro ao gerar throughput:', error);
       throw error;

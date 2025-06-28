@@ -271,7 +271,6 @@ export class CumulativeFlowDiagram {
     try {
       const svg = this.generateSVG();
       fs.writeFileSync(this.outputPath, svg);
-      console.log(`CFD gerado com sucesso em: ${this.outputPath}`);
     } catch (error) {
       console.error('Erro ao gerar CFD:', error);
       throw error;

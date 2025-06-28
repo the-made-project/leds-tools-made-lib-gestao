@@ -15,26 +15,17 @@ export async function createProject(organization: string, projectTitle: string):
     `;
 
     try {
-        // Obtém o ID da organização
         const organizationId = await getOrganizationId(organization);
-        console.log('ID da organização:', organizationId);
 
-        // Define as variáveis para a mutação GraphQL
         const variables = {
             organizationId,
             title: projectTitle,
         };
 
-        console.log('Enviando mutação para criar projeto...');
-
-        // Envia a mutação para criar o projeto
         const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
         const response = await axios_instance.post('', { query, variables });
-        console.log('Resposta da API:', JSON.stringify(response.data, null, 2));
 
-        // Obtém o ID do projeto criado
         const projectId = response.data.data.createProjectV2.projectV2.id;
-        console.log(`✅ Projeto criado com ID: ${projectId}`);
         return projectId;
 
     } catch (error: any) {
@@ -65,23 +56,18 @@ export async function addIssueToProject(
     
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
-            // Adicionar delay antes de cada tentativa (exceto a primeira)
             if (attempt > 1) {
-                const delay = baseDelay * Math.pow(2, attempt - 2); // Backoff exponencial
-                console.log(`⏳ Tentativa ${attempt}/${retries} em ${delay}ms...`);
+                const delay = baseDelay * Math.pow(2, attempt - 2);
                 await new Promise(res => setTimeout(res, delay));
             }
 
             const response = await axios_instance.post('', { query, variables });
             
-            // Verificar se há erros na resposta
             if (response.data.errors) {
                 const errors = response.data.errors;
                 const errorMsg = errors[0]?.message || 'Unknown GraphQL error';
                 
-                // Se é um erro temporário do GitHub, tentar novamente
                 if (isTemporaryGitHubError(errorMsg)) {
-                    console.log(`⚠️ Erro temporário detectado (tentativa ${attempt}/${retries}): ${errorMsg}`);
                     if (attempt === retries) {
                         throw new Error(`Falha após ${retries} tentativas: ${errorMsg}`);
                     }

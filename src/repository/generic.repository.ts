@@ -5,25 +5,20 @@ import {
     unlinkSync,
     mkdirSync
   } from 'fs';
-  import { fileURLToPath } from 'url';
-  import { dirname, join, resolve } from 'path';
-  
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = dirname(__filename);
+  import { join, resolve } from 'path';
   
   export class GenericRepository<T> {
     private filePath: string;
     private data: T[];
   
-    constructor(directory: string, fileName: string = 'data.json') {
-      console.log('[GenericRepository] directory:', directory, 'fileName:', fileName);
-      if (!directory || typeof directory !== 'string') {
-        throw new Error('O parâmetro "directory" deve ser uma string válida.');
-      }
-      if (!fileName || typeof fileName !== 'string') {
-        throw new Error('O parâmetro "fileName" deve ser uma string válida.');
-      }
-      const resolvedDir = resolve(directory);
+  constructor(directory: string, fileName: string = 'data.json') {
+    if (!directory || typeof directory !== 'string') {
+      throw new Error('O parâmetro "directory" deve ser uma string válida.');
+    }
+    if (!fileName || typeof fileName !== 'string') {
+      throw new Error('O parâmetro "fileName" deve ser uma string válida.');
+    }
+    const resolvedDir = resolve(directory);
   
       if (!existsSync(resolvedDir)) {
         mkdirSync(resolvedDir, { recursive: true });
@@ -68,5 +63,13 @@ import {
         unlinkSync(this.filePath);
         this.data = [];
       }
+    }
+
+    /**
+     * Verifica se existe algum item que satisfaça o predicate
+     * @param predicate Função que retorna true se o item for considerado existente
+     */
+    public exists(predicate: (item: T) => boolean): boolean {
+      return this.data.some(predicate);
     }
   }

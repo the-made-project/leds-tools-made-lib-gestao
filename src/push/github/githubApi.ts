@@ -40,13 +40,10 @@ export async function ensureLabelExists(
       `/repos/${organizationName}/${repositoryName}/labels`,
       {
         name: label.name,
-        color: label.color || 'ededed', // cor padrão se não informado
+        color: label.color || 'ededed',
         description: label.description || ''
       }
     );
-    console.log(`✅ Label "${label.name}" criada no repositório.`);
-  } else {
-    console.log(`ℹ️ Label "${label.name}" já existe no repositório.`);
   }
 }
 
@@ -70,7 +67,6 @@ export async function getOrganizationId(organizationName: string): Promise<strin
         const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
         const response = await axios_instance.post('', { query, variables });
         const organizationId = response.data.data.organization.id;
-        console.log(`✅ ID da organização obtido: ${organizationId}`);
         return organizationId;
     } catch (error: any) {
         console.error('❌ Erro ao obter o ID da organização:', error.response?.data || error.message);
