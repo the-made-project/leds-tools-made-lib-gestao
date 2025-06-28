@@ -62,5 +62,12 @@ import {
         this.data = [];
       }
     }
+
+    /**
+     * Verifica se existe algum item que satisfaça o predicate
+     * @param predicate Função que retorna true se o item for considerado existente
+     */
+    public exists(predicate: (item: T) => boolean): boolean {
+      return this.data.some(predicate);
+    }
   }
-  
