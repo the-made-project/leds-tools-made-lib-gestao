@@ -3,7 +3,7 @@ import { GitHubIssue, IssueService } from '../extract/github/issue.extract';
 import { GitHubMilestone, MilestoneService } from '../extract/github/milestone.extract';
 import { GitHubProject, GitHubProjectService } from '../extract/github/project.extract';
 import { GitHubSprint, GitHubSprintService } from '../extract/github/sprints.extract';
-import { Backlog, Project, Milestone, Issue, TimeBox } from '../model/models';
+import { Backlog, Project, Milestone, Issue, TimeBox, Team } from '../model/models';
 
 import { GenericRepository } from "../repository/generic.repository";
 /**
@@ -102,9 +102,10 @@ async ETLProject (
     throw new Error(`Project ${projectTitle} not found`);
   }
   const mapped = await this.mapGitHubProjectToProject(project);
-  const repository = new GenericRepository<Project>('./data/db','project.json');	
+  const repository = new GenericRepository<Project>('./data/db','processed_projects.json');	
     
-  repository.clear();  
+  // Clear and add the project (ETL should refresh data)
+  repository.clear();
   repository.add(mapped);
   return mapped;
     
@@ -132,7 +133,7 @@ async ETLMilestone (
     milestones.map(milestone => this.mapGitHubMilestoneToMilestone(milestone))
   );
   
-  const repository = new GenericRepository<Milestone>('./data/db','milestone.json');	
+  const repository = new GenericRepository<Milestone>('./data/db','processed_milestones.json');	
     
   repository.clear();
   await repository.add(mapped);
@@ -162,7 +163,7 @@ async ETLTimeBox (
     sprints.map(sprint => this.mapGitHubSprintToTimeBox(sprint))
   );
   
-  const repository = new GenericRepository<TimeBox>('./data/db','sprint.json');	
+  const repository = new GenericRepository<TimeBox>('./data/db','processed_timeboxes.json');	
     
   repository.clear();
   await repository.add(mapped);
@@ -179,17 +180,14 @@ async ETLBacklog (
     throw new Error(`Project ${projectTitle} not found`);
   }
   
-  if (!project) {
-    throw new Error("Project not found");
-  }
   const milestones = await this.getMilestonesFromProjectNumber(org,project.number);
   
   if (!milestones || milestones.length === 0) {
     throw new Error("Milestone not found");
   }
   
-  
-  const issues = (
+  // Get issues from milestones
+  const issuesFromMilestones = (
     await Promise.all(
       milestones.map(async (milestone) => {
         const issues = await this.getIssuesFromMilestoneInProject(
@@ -203,17 +201,17 @@ async ETLBacklog (
       })
     )
   ).flat();
+  
+  // Get issues without milestones
+  const issuesWithoutMilestone = await this.getIssesWithoutMilestoneInProject(org, project.number);
+  const mappedIssuesWithoutMilestone = await Promise.all(
+    issuesWithoutMilestone.map(issue => this.mapGitHubIssueToIssue(issue))
+  );
+  
+  // Combine all issues
+  const allIssues = [...issuesFromMilestones, ...mappedIssuesWithoutMilestone];
     
-  this.getIssesWithoutMilestoneInProject(org, project.number).then((issues) => {
-    return Promise.all(
-      issues.map(issue => this.mapGitHubIssueToIssue(issue))
-    );
-  }).then((issues) => {
-    issues.forEach(issue => {
-      issues.push(issue);
-    });
-  });
-  const repository = new GenericRepository<Backlog>('./data/db','backlog.json');	
+  const repository = new GenericRepository<Backlog>('./data/db','processed_backlogs.json');	
  
   repository.clear();
   
@@ -221,13 +219,12 @@ async ETLBacklog (
     id: project.id,
     name: project.title,
     description: project.shortDescription ?? '',
-    issues: issues
+    issues: allIssues
   };
   
   await repository.add(backlog);
   
   return backlog;
-    
 }
 
  
@@ -240,17 +237,14 @@ async ETLIssue (
     throw new Error(`Project ${projectTitle} not found`);
   }
   
-  if (!project) {
-    throw new Error("Project not found");
-  }
   const milestones = await this.getMilestonesFromProjectNumber(org,project.number);
   
   if (!milestones || milestones.length === 0) {
     throw new Error("Milestone not found");
   }
   
-  
-  const issues = (
+  // Get issues from milestones
+  const issuesFromMilestones = (
     await Promise.all(
       milestones.map(async (milestone) => {
         const issues = await this.getIssuesFromMilestoneInProject(
@@ -264,23 +258,60 @@ async ETLIssue (
       })
     )
   ).flat();
-    
-  this.getIssesWithoutMilestoneInProject(org, project.number).then((issues) => {
-    return Promise.all(
-      issues.map(issue => this.mapGitHubIssueToIssue(issue))
-    );
-  }).then((issues) => {
-    issues.forEach(issue => {
-      issues.push(issue);
-    });
-  });
-  const repository = new GenericRepository<Issue>('./data/db','issue.json');	
+  
+  // Get issues without milestones
+  const issuesWithoutMilestone = await this.getIssesWithoutMilestoneInProject(org, project.number);
+  const mappedIssuesWithoutMilestone = await Promise.all(
+    issuesWithoutMilestone.map(issue => this.mapGitHubIssueToIssue(issue))
+  );
+  
+  // Combine all issues
+  const allIssues = [...issuesFromMilestones, ...mappedIssuesWithoutMilestone];
+  
+  const repository = new GenericRepository<Issue>('./data/db','processed_issues.json');	
  
   repository.clear();
-  await repository.add(issues);
+  await repository.add(allIssues);
   
-  return issues
-    
+  return allIssues;
+}
+
+async getAllTeams(org: string): Promise<any[]> {
+  // Busca todos os times de uma organização no GitHub
+  const axios = require('axios');
+  const token = require('./GitHubTokenManager').GitHubTokenManager.getInstance().getToken();
+  const url = `https://api.github.com/orgs/${org}/teams`;
+  const response = await axios.get(url, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.data;
+}
+
+async mapGitHubTeamToTeam(githubTeam: any): Promise<Team> {
+  // Mapeia um time do GitHub para o modelo Team local
+  return {
+    id: githubTeam.id?.toString() || githubTeam.slug,
+    name: githubTeam.name,
+    description: githubTeam.description || '',
+    teamMembers: [] // Pode ser preenchido depois com membros
+  };
+}
+
+async ETLTeam(
+  org: string
+): Promise<Team[] | null> {
+  // ETL para times do GitHub
+  const githubTeams = await this.getAllTeams(org);
+  if (!githubTeams || githubTeams.length === 0) {
+    throw new Error('Nenhum time encontrado');
+  }
+  const mapped = await Promise.all(
+    githubTeams.map(team => this.mapGitHubTeamToTeam(team))
+  );
+  const repository = new GenericRepository<Team>('./data/db', 'processed_teams.json');
+  repository.clear();
+  await repository.add(mapped);
+  return mapped;
 }
   
   

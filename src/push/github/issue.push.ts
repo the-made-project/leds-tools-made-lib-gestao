@@ -146,6 +146,11 @@ ${observation}
     let body = '';
     let labels = issue.labels || [];
 
+    // Add backlog label if issue has a backlog
+    if (issue.backlog && !labels.includes(issue.backlog)) {
+      labels.push(issue.backlog);
+    }
+
     if (issue.type === 'Epic') {
       title = `[EPIC] ${title}`;
       body = this.buildEpicBody(issue, allStories, storyResults);

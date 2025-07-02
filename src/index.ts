@@ -16,6 +16,7 @@ export class ReportManager {
         await githubService.ETLIssue(org, project);
         await githubService.ETLBacklog(org, project);
         await githubService.ETLTimeBox(org, project);
+        await githubService.ETLTeam(org);
     }
 
     public async githubPush(

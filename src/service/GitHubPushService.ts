@@ -9,45 +9,30 @@ import { axiosInstance } from '../util/axiosInstance';
 import { createOrEnsureTeam } from '../push/github/team.push';
 import { addMemberToTeam } from '../push/github/teamMember.push';
 import { GenericRepository } from '../repository/generic.repository';
+import { GitHubSyncService } from './GitHubSyncService';
 
 // Serviço para enviar modelos MADE para o GitHub
 export class GitHubPushService {
   private issuePushService: GitHubIssuePushService;
   private sprintPushService: GitHubSprintPushService;
   private roadmapPushService: GitHubRoadmapPushService;
+  private syncService: GitHubSyncService;
   
   constructor() {
     this.issuePushService = new GitHubIssuePushService(GitHubTokenManager.getInstance().getToken());
     this.sprintPushService = new GitHubSprintPushService(GitHubTokenManager.getInstance().getToken());
     this.roadmapPushService = new GitHubRoadmapPushService(GitHubTokenManager.getInstance().getToken());
+    this.syncService = new GitHubSyncService();
   }
 
   // Cria um projeto no GitHub a partir do modelo MADE Project
   async pushProject(org: string, project: Project): Promise<string> {
-    // Cria um identificador único baseado no org/projeto para evitar duplicação
-    const uniqueKey = `${org}/${project.id}`;
     
     // Verifica se o projeto já foi processado para este org específico
     const projectRepo = new GenericRepository<any>('./data/db', 'processed_projects.json');
-    if (projectRepo.exists(p => p.uniqueKey === uniqueKey)) {
-      const existingRecord = projectRepo.getAll().find(p => p.uniqueKey === uniqueKey);
-      console.log(`[GitHubPushService] Projeto ${project.id} já processado para ${org}. Ignorando envio.`);
-      return existingRecord.githubProjectId;
-    }
     
     // Cria o projeto no GitHub
     const projectId = await createProject(org, project.name);
-    
-    // Salva o registro de processamento localmente após criação bem-sucedida
-    const processedRecord = {
-      uniqueKey,
-      madeProjectId: project.id,
-      githubProjectId: projectId,
-      org,
-      processedAt: new Date().toISOString(),
-      projectName: project.name
-    };
-    projectRepo.add(processedRecord);
     
     return projectId;
   }
@@ -67,21 +52,8 @@ export class GitHubPushService {
       // Validate issue before processing
       this.validateIssue(issue);
       
-      // Cria um identificador único baseado no org/repo/projeto/issue para evitar duplicação
-      const uniqueKey = `${org}/${repo}/${projectId}/${issue.id}`;
-      
       // Verifica se a issue já foi processada para este org/repo/projeto específico
       const issueRepo = new GenericRepository<any>('./data/db', 'processed_issues.json');
-      if (issueRepo.exists(i => i.uniqueKey === uniqueKey)) {
-        const existingRecord = issueRepo.getAll().find(i => i.uniqueKey === uniqueKey);
-        console.log(`[GitHubPushService] Issue ${issue.id} já processada para ${org}/${repo}/${projectId}. Ignorando envio.`);
-        // Retorna dados reais da issue já processada
-        return {
-          issueId: existingRecord.githubIssueId,
-          issueNumber: existingRecord.githubIssueNumber,
-          projectItemId: existingRecord.projectItemId
-        };
-      }
       
       const assignees = this.issuePushService.getAssigneesForIssue(issue);
       let created;
@@ -118,21 +90,17 @@ export class GitHubPushService {
         }
       }
       
-      // Salva o registro de processamento localmente após criação bem-sucedida
-      const processedRecord = {
-        uniqueKey,
-        madeIssueId: issue.id,
-        githubIssueId: created.id,
-        githubIssueNumber: created.number,
-        projectItemId,
+      // Add the successfully created issue to the processed issues repository
+      const processedIssueRepo = new GenericRepository<any>('./data/db', 'processed_issues.json');
+      await processedIssueRepo.add({
+        id: created.id,
+        title: created.title || issue.title,
+        number: created.number,
+        uniqueKey: `${org}/${repo}/${created.id}`,
         org,
         repo,
-        projectId,
-        processedAt: new Date().toISOString(),
-        issueTitle: issue.title,
-        issueType: issue.type
-      };
-      issueRepo.add(processedRecord);
+        processedAt: new Date().toISOString()
+      });
       
       return {
         issueId: created.id,
@@ -304,28 +272,26 @@ export class GitHubPushService {
     timeboxes?: TimeBox[],
     roadmaps?: Roadmap[]
   ) {
-    // Validate required parameters
-    if (!org || typeof org !== 'string' || org.trim() === '') {
-      throw new Error('Organization parameter is required and cannot be empty');
-    }
-    if (!repo || typeof repo !== 'string' || repo.trim() === '') {
-      throw new Error('Repository parameter is required and cannot be empty');
-    }
-    if (!project || !project.id || !project.name) {
-      throw new Error('Project parameter is required and must have id and name');
-    }
-
-    // Garante que todas as issues tenham labels inicializado como array
-    [epics, stories, tasks].forEach(issueList => {
-      issueList.forEach(issue => {
-        if (!Array.isArray(issue.labels)) {
-          issue.labels = [];
-        }
-      });
-    });
-
-    // Criar todas as labels necessárias antes de processar as issues
+    // Cria as labels necessárias ANTES de processar qualquer coisa
+    console.log('🏷️ Criando labels necessárias...');
     await this.ensureLabels(org, repo, backlogs, timeboxes, roadmaps);
+    
+    // Sincroniza o cache local antes de fazer push
+    // Nota: Não abortar se a sincronização falhar - projeto pode ser novo
+    try {
+      await this.syncService.syncFromGitHub(org, project.name);
+    } catch (error: any) {
+      console.warn(`⚠️ Sincronização falhou (projeto pode ser novo): ${error.message}`);
+    }
+    
+    // Filtra apenas os itens que ainda não existem no GitHub (por título)
+    const newEpics = await this.syncService.filterNewIssues(epics);
+    const newStories = await this.syncService.filterNewIssues(stories);
+    const newTasks = await this.syncService.filterNewIssues(tasks);
+    let newTimeboxes: TimeBox[] = [];
+    if (timeboxes) {
+      newTimeboxes = await this.syncService.filterNewSprints(timeboxes);
+    }
 
     // Adiciona teams antes do restante do fluxo
     if (teams && teams.length > 0) {
@@ -349,125 +315,56 @@ export class GitHubPushService {
             }
           }
         }
-        
-        // Salva o registro de processamento localmente após criação bem-sucedida
-        const processedRecord = {
-          uniqueKey,
-          madeTeamId: team.id,
-          org,
-          processedAt: new Date().toISOString(),
-          teamName: team.name,
-          memberCount: team.teamMembers?.length || 0
-        };
-        teamRepo.add(processedRecord);
       }
     }
 
-
-    // Adiciona a label do backlog correspondente em cada issue do backlog
-    if (backlogs && backlogs.length > 0) {
-      const backlogRepo = new GenericRepository<any>('./data/db', 'processed_backlogs.json');
-      
-      for (const backlog of backlogs) {
-        // Cria um identificador único baseado no org/repo/backlog para evitar duplicação
-        const uniqueKey = `${org}/${repo}/${backlog.id}`;
-        
-        // Verifica se o backlog já foi processado para este org/repo específico
-        if (backlogRepo.exists(b => b.uniqueKey === uniqueKey)) {
-          console.log(`[GitHubPushService] Backlog ${backlog.id} já processado para ${org}/${repo}. Ignorando processamento de labels.`);
-          continue;
-        }
-        
-        if (backlog.issues) {
-          for (const issue of backlog.issues) {
-            issue.labels = issue.labels || [];
-            if (!issue.labels.includes(backlog.name)) {
-              issue.labels.push(backlog.name);
-            }
-          }
-        }
-        
-        // Salva o registro de processamento localmente após processamento bem-sucedido
-        const processedRecord = {
-          uniqueKey,
-          madeBacklogId: backlog.id,
-          org,
-          repo,
-          processedAt: new Date().toISOString(),
-          backlogName: backlog.name,
-          issueCount: backlog.issues?.length || 0
-        };
-        backlogRepo.add(processedRecord);
-      }
-    }
-
-    this.prepareIssues(tasks, 'Task');
-    this.prepareIssues(stories, 'Feature');
-    this.prepareIssues(epics, 'Epic');
-
+    // Normaliza e valida issues
+    this.prepareIssues(newTasks, 'Task');
+    this.prepareIssues(newStories, 'Feature');
+    this.prepareIssues(newEpics, 'Epic');
     const projectId = await this.pushProject(org, project);
 
-    // Garante que o campo "Backlog" existe no projeto, se houver backlogs
-    if (backlogs && backlogs.length > 0) {
-      const backlogNames = backlogs.map(b => b.name);
-      // TODO: Implement ensureProjectBacklogField if needed
-    }
-
-    // Primeiro, crie todas as issues básicas (sem checklists) em ordem: Tasks → Stories → Epics
-    
     // 1. Crie Tasks primeiro (são as folhas da árvore de dependências)
-    const taskResults = tasks.length > 0
-      ? await this.processIssuesInBatches(org, repo, projectId, tasks, [], [], [], [])
+    const taskResults = newTasks.length > 0
+      ? await this.processIssuesInBatches(org, repo, projectId, newTasks, [], [], [], [])
       : [];
     const taskIdToGitHubId = new Map<string, string>();
     const taskIdToGitHubNumber = new Map<string, number>();
-    tasks.forEach((task, idx) => {
+    newTasks.forEach((task, idx) => {
       if (task.id && taskResults[idx]) {
         taskIdToGitHubId.set(task.id, taskResults[idx].issueId);
         taskIdToGitHubNumber.set(task.id, taskResults[idx].issueNumber);
       }
     });
-
-    // 2. Crie Stories (agora com referência aos tasks nos checklists)
-    const storyResults = stories.length > 0
-      ? await this.processIssuesInBatches(org, repo, projectId, stories, tasks, [], taskResults, [])
+    const storyResults = newStories.length > 0
+      ? await this.processIssuesInBatches(org, repo, projectId, newStories, newTasks, [], taskResults, [])
       : [];
     const storyIdToGitHubId = new Map<string, string>();
     const storyIdToGitHubNumber = new Map<string, number>();
-    stories.forEach((story, idx) => {
+    newStories.forEach((story, idx) => {
       if (story.id && storyResults[idx]) {
         storyIdToGitHubId.set(story.id, storyResults[idx].issueId);
         storyIdToGitHubNumber.set(story.id, storyResults[idx].issueNumber);
       }
     });
-
-    // 3. Crie Epics (agora com referência às stories nos checklists)
-    const epicResults = epics.length > 0
-      ? await this.processIssuesInBatches(org, repo, projectId, epics, [], stories, [], storyResults)
+    const epicResults = newEpics.length > 0
+      ? await this.processIssuesInBatches(org, repo, projectId, newEpics, [], newStories, [], storyResults)
       : [];
     const epicIdToGitHubId = new Map<string, string>();
     const epicIdToGitHubNumber = new Map<string, number>();
-    epics.forEach((epic, idx) => {
+    newEpics.forEach((epic, idx) => {
       if (epic.id && epicResults[idx]) {
         epicIdToGitHubId.set(epic.id, epicResults[idx].issueId);
         epicIdToGitHubNumber.set(epic.id, epicResults[idx].issueNumber);
       }
     });
-
-    // Criação das issues (epics, stories, tasks) e mapeamento dos números do GitHub
-
-    // Linkagem de dependências
-    await this.linkTasksToStories(org, repo, tasks, taskResults, storyIdToGitHubNumber);
-    await this.linkStoriesToEpics(org, repo, stories, storyIdToGitHubNumber, epicIdToGitHubNumber);
-
-    // 4. Processar Roadmaps (Milestones)
+    await this.linkTasksToStories(org, repo, newTasks, taskResults, storyIdToGitHubNumber);
+    await this.linkStoriesToEpics(org, repo, newStories, storyIdToGitHubNumber, epicIdToGitHubNumber);
     if (roadmaps && roadmaps.length > 0) {
       await this.processRoadmaps(org, repo, roadmaps);
     }
-
-    // 5. Processar Timeboxes (Sprints)
-    if (timeboxes && timeboxes.length > 0) {
-      await this.processTimeboxes(org, repo, projectId, timeboxes, tasks, taskIdToGitHubNumber);
+    if (newTimeboxes && newTimeboxes.length > 0) {
+      await this.processTimeboxes(org, repo, projectId, newTimeboxes, newTasks, taskIdToGitHubNumber);
     }
   }
 
@@ -486,14 +383,6 @@ export class GitHubPushService {
     
     for (const timebox of timeboxes) {
       try {
-        // Cria um identificador único baseado no org/repo/projeto/timebox para evitar duplicação
-        const uniqueKey = `${org}/${repo}/${projectId}/${timebox.id}`;
-        
-        // Verifica se o timebox já foi processado para este org/repo/projeto específico
-        if (timeboxRepo.exists(t => t.uniqueKey === uniqueKey)) {
-          console.log(`[GitHubPushService] Timebox ${timebox.id} já processado para ${org}/${repo}/${projectId}. Ignorando envio.`);
-          continue;
-        }
         
         // Obter as tasks relacionadas a esta sprint
         const relatedTasks = timebox.sprintItems
@@ -527,21 +416,6 @@ export class GitHubPushService {
             taskNumbers
           );
         }
-        
-        // Salva o registro de processamento localmente após criação bem-sucedida
-        const processedRecord = {
-          uniqueKey,
-          madeTimeboxId: timebox.id,
-          githubSprintIssueId: sprintResult?.id,
-          githubSprintIssueNumber: sprintResult?.number,
-          org,
-          repo,
-          projectId,
-          processedAt: new Date().toISOString(),
-          timeboxName: timebox.name,
-          sprintItemCount: timebox.sprintItems?.length || 0
-        };
-        timeboxRepo.add(processedRecord);
 
       } catch (error: any) {
         console.error(`❌ Erro ao processar timebox "${timebox.name}":`, error.message);
@@ -561,36 +435,14 @@ export class GitHubPushService {
     repo: string,
     roadmaps: Roadmap[]
   ) {
-    const roadmapRepo = new GenericRepository<any>('./data/db', 'processed_roadmaps.json');
-    
     for (const roadmap of roadmaps) {
       try {
-        // Cria um identificador único baseado no org/repo/roadmap para evitar duplicação
-        const uniqueKey = `${org}/${repo}/${roadmap.id}`;
-        
-        // Verifica se o roadmap já foi processado para este org/repo específico
-        if (roadmapRepo.exists(r => r.uniqueKey === uniqueKey)) {
-          console.log(`[GitHubPushService] Roadmap ${roadmap.id} já processado para ${org}/${repo}. Ignorando envio.`);
-          continue;
-        }
         
         // Criar labels específicas do roadmap
         await this.roadmapPushService.createRoadmapLabels(org, repo, roadmap);
 
         // Criar milestones do roadmap
         const roadmapResult = await this.roadmapPushService.createRoadmap(org, repo, roadmap);
-        
-        // Salva o registro de processamento localmente após criação bem-sucedida
-        const processedRecord = {
-          uniqueKey,
-          madeRoadmapId: roadmap.id,
-          org,
-          repo,
-          processedAt: new Date().toISOString(),
-          roadmapName: roadmap.name,
-          milestoneCount: roadmap.milestones?.length || 0
-        };
-        roadmapRepo.add(processedRecord);
 
       } catch (error: any) {
         console.error(`❌ Erro ao processar roadmap "${roadmap.name}":`, error.message);
