@@ -223,14 +223,13 @@ export class ProjectThroughputGenerator {
       return svg;
     }
   
-    public generate(): void {
-      try {
-        const svg = this.generateSVG();
-        fs.writeFileSync(this.outputPath, svg);
-        console.log(`Throughput gerado com sucesso em: ${this.outputPath}`);
-      } catch (error) {
-        console.error('Erro ao gerar Throughput:', error);
-        throw error;
-      }
+  public generate(): void {
+    try {
+      const svg = this.generateSVG();
+      fs.writeFileSync(this.outputPath, svg);
+    } catch (error) {
+      console.error('Erro ao gerar Throughput:', error);
+      throw error;
     }
+  }
 }

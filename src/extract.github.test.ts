@@ -7,11 +7,11 @@ dotenv.config(); // carrega o .env para process.env
 
 let service: GitHubService;
 
-const org_name = "made-test";
-const project_name = "project-test"
-
+const org_name = process.env.GITHUB_ORG;
+const project_name = process.env.GITHUB_PROJECT_NAME;
 const token = process.env.GITHUB_TOKEN;
-  if (!token) throw new Error('GITHUB_TOKEN not set');
+
+  if (!token || !org_name || !project_name) throw new Error("GITHUB_TOKEN, GITHUB_ORG or GITHUB_PROJECT_NAME not set in environment variables");
   GitHubTokenManager.initialize(token);
   service = new GitHubService();
 

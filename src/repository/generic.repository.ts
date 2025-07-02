@@ -5,18 +5,20 @@ import {
     unlinkSync,
     mkdirSync
   } from 'fs';
-  import { fileURLToPath } from 'url';
-  import { dirname, join, resolve } from 'path';
-  
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = dirname(__filename);
+  import { join, resolve } from 'path';
   
   export class GenericRepository<T> {
     private filePath: string;
     private data: T[];
   
-    constructor(directory: string, fileName: string = 'data.json') {
-      const resolvedDir = resolve(directory);
+  constructor(directory: string, fileName: string = 'data.json') {
+    if (!directory || typeof directory !== 'string') {
+      throw new Error('O parâmetro "directory" deve ser uma string válida.');
+    }
+    if (!fileName || typeof fileName !== 'string') {
+      throw new Error('O parâmetro "fileName" deve ser uma string válida.');
+    }
+    const resolvedDir = resolve(directory);
   
       if (!existsSync(resolvedDir)) {
         mkdirSync(resolvedDir, { recursive: true });

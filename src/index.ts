@@ -3,44 +3,47 @@ export * from './model/models';
 import { GitHubService } from "./service/GitHubService";
 import { GitHubPushService } from "./service/GitHubPushService";
 import { GitHubTokenManager } from "./service/GitHubTokenManager";
+import type { Project, Issue, Backlog, Team, TimeBox, Roadmap } from './model/models';
 
 export class ReportManager {
 
-    // public async githubETL(token: string, org: string, project: string) {
-    //     if (!token) throw new Error('GITHUB_TOKEN not set');
-    //     GitHubTokenManager.initialize(token);
+    public async githubETL(token: string, org: string, project: string) {
+        if (!token) throw new Error('GITHUB_TOKEN not set');
+        GitHubTokenManager.initialize(token);
         
-    //     const githubService = new GitHubService();
-    //     await githubService.ETLProject(org, project);
-    //     await githubService.ETLIssue(org, project);
-    //     await githubService.ETLBacklog(org, project);
-    //     await githubService.ETLTimeBox(org, project);
-    // }
+        const githubService = new GitHubService();
+        await githubService.ETLProject(org, project);
+        await githubService.ETLIssue(org, project);
+        await githubService.ETLBacklog(org, project);
+        await githubService.ETLTimeBox(org, project);
+        await githubService.ETLTeam(org);
+    }
 
     public async githubPush(
         token: string,
         org: string,
         repo: string,
-        project: import('./model/models').Project,
-        issues: import('./model/models').Issue[],
+        project: Project,
+        epics: Issue[],
+        stories: Issue[],
+        tasks: Issue[],
+        backlogs?: Backlog[],
+        teams?: Team[],
+        timeboxes?: TimeBox[],
+        roadmaps?: Roadmap[]
     ) {
         GitHubTokenManager.initialize(token);
         const pushService = new GitHubPushService();
-        await pushService.pushProjectWithIssues(org, repo, project, issues);
+        try {
+            await pushService.fullPush(org, repo, project, epics, stories, tasks, backlogs, teams, timeboxes, roadmaps);
+        } catch (error) {
+            console.error("Erro durante o push para o GitHub:", error);
+            throw error;
+        }
     }
 
     public createReport(dbPath: string) {
         const markdownService = new MarkdownService(dbPath);
         markdownService.createManagementDocumentation();
     }
-    /*public createSprintSummary(dbPath: string){
-        const markdownService = new MarkdownService(dbPath);
-        return markdownService.createSprintSummary()
-    }
-    public createSprintSummaryReport(dbPath: string){
-        const markdownService = new MarkdownService(dbPath);
-        return markdownService.createSprintSumaryReport()
-    }*/
-
-   
 }

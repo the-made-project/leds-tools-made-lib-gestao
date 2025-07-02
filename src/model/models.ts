@@ -13,7 +13,6 @@ export type Backlog = {
   name: string;
   description: string;
   issues?: Issue[];
-  
 }
 
 
@@ -67,7 +66,7 @@ export type Person = {
   discord: string;
 }
 
- export type TimeBox = {
+export type TimeBox = {
   id?: string;  
   description: string;
   startDate: string;
@@ -103,6 +102,12 @@ export type Issue = {
   issues?: Issue[]; 
   depends?: Issue[];
   labels?: string[];
+  assignee?: Person;
+  backlog?: string;
+  criterions?: string[];
+  observation?: string;
+  requirements?: string[];
+  deliverables?: string[];
 };
 
 export type Task  = {

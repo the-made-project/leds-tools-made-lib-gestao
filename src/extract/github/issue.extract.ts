@@ -182,11 +182,7 @@ export class IssueService {
     });
 
     const json = await response.json();
-    console.log("Response from getProjectId:", JSON.stringify(json, null, 2));
-    console.log("Variables used:", JSON.stringify(variables, null, 2));
     const project = json.data.organization.projectV2;
-    // const project = projects.find((p: any) => Number(p.number) === Number(projectNumber));
-    console.log("Found project:", project);
     return project?.id || null;
   }
 
