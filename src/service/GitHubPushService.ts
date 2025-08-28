@@ -1,6 +1,6 @@
 import { createProject, addIssueToProject } from '../push/github/project.push';
 import { GitHubIssuePushService } from '../push/github/issue.push';
-import { GitHubSprintPushService } from '../push/github/sprint.push';
+//import { GitHubSprintPushService } from '../push/github/sprint.push';
 import { GitHubRoadmapPushService } from '../push/github/roadmap.push';
 import { GitHubTokenManager } from './GitHubTokenManager';
 import { Project, Issue, Backlog, Team, TimeBox, Roadmap } from '../model/models';
@@ -11,16 +11,17 @@ import { addMemberToTeam } from '../push/github/teamMember.push';
 import { GenericRepository } from '../repository/generic.repository';
 import { GitHubSyncService } from './GitHubSyncService';
 
+// Sprints desabilitadas no github no momento
 // Serviço para enviar modelos MADE para o GitHub
 export class GitHubPushService {
   private issuePushService: GitHubIssuePushService;
-  private sprintPushService: GitHubSprintPushService;
+  //private sprintPushService: GitHubSprintPushService;
   private roadmapPushService: GitHubRoadmapPushService;
   private syncService: GitHubSyncService;
   
   constructor() {
     this.issuePushService = new GitHubIssuePushService(GitHubTokenManager.getInstance().getToken());
-    this.sprintPushService = new GitHubSprintPushService(GitHubTokenManager.getInstance().getToken());
+    //this.sprintPushService = new GitHubSprintPushService(GitHubTokenManager.getInstance().getToken());
     this.roadmapPushService = new GitHubRoadmapPushService(GitHubTokenManager.getInstance().getToken());
     this.syncService = new GitHubSyncService();
   }
