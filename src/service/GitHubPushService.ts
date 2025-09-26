@@ -298,18 +298,8 @@ export class GitHubPushService {
 
     // Adiciona teams antes do restante do fluxo
     if (teams && teams.length > 0) {
-      const teamRepo = new GenericRepository<any>('./data/db', 'processed_teams.json');
-      
       for (const team of teams) {
-        // Cria um identificador único baseado no org/team para evitar duplicação
-        const uniqueKey = `${org}/${team.id}`;
-        
-        // Verifica se o team já foi processado para este org específico
-        if (teamRepo.exists(t => t.uniqueKey === uniqueKey)) {
-          Logger.info(`[GitHubPushService] Team ${team.id} já processado para ${org}. Ignorando envio.`);
-          continue;
-        }
-        
+        // Process team without checking if already exists
         await createOrEnsureTeam(org, team.name, team.description);
         if (team.teamMembers && team.teamMembers.length > 0) {
           for (const member of team.teamMembers) {
