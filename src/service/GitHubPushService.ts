@@ -9,7 +9,6 @@ import { axiosInstance } from '../util/axiosInstance';
 import { createOrEnsureTeam } from '../push/github/team.push';
 import { addMemberToTeam } from '../push/github/teamMember.push';
 import { GenericRepository } from '../repository/generic.repository';
-import { GitHubSyncService } from './GitHubSyncService';
 import { Logger } from '../util/logger';
 import { ISSUE_TYPES, PROJECT_FIELDS, LABEL_COLORS, STATUS_COLORS, DATA_PATHS, ERROR_MESSAGES } from '../util/constants';
 
@@ -19,13 +18,11 @@ export class GitHubPushService {
   private issuePushService: GitHubIssuePushService;
   //private sprintPushService: GitHubSprintPushService;
   private roadmapPushService: GitHubRoadmapPushService;
-  private syncService: GitHubSyncService;
   
   constructor() {
     this.issuePushService = new GitHubIssuePushService(GitHubTokenManager.getInstance().getToken());
     //this.sprintPushService = new GitHubSprintPushService(GitHubTokenManager.getInstance().getToken());
     this.roadmapPushService = new GitHubRoadmapPushService(GitHubTokenManager.getInstance().getToken());
-    this.syncService = new GitHubSyncService();
   }
 
   // Cria um projeto no GitHub a partir do modelo MADE Project
@@ -279,22 +276,11 @@ export class GitHubPushService {
     Logger.info('🏷️ Criando labels necessárias...');
     await this.ensureLabels(org, repo, backlogs, timeboxes, roadmaps);
     
-    // Sincroniza o cache local antes de fazer push
-    // Nota: Não abortar se a sincronização falhar - projeto pode ser novo
-    try {
-      await this.syncService.syncFromGitHub(org, project.name);
-    } catch (error: any) {
-      Logger.warn(`⚠️ Sincronização falhou (projeto pode ser novo): ${error.message}`);
-    }
-    
-    // Filtra apenas os itens que ainda não existem no GitHub (por título)
-    const newEpics = await this.syncService.filterNewIssues(epics);
-    const newStories = await this.syncService.filterNewIssues(stories);
-    const newTasks = await this.syncService.filterNewIssues(tasks);
-    let newTimeboxes: TimeBox[] = [];
-    if (timeboxes) {
-      newTimeboxes = await this.syncService.filterNewSprints(timeboxes);
-    }
+    // Process all valid issues without existence checking
+    const newEpics = epics.filter(issue => issue.title); // Only include issues with titles
+    const newStories = stories.filter(issue => issue.title);
+    const newTasks = tasks.filter(issue => issue.title);
+    const newTimeboxes = timeboxes || [];
 
     // Adiciona teams antes do restante do fluxo
     if (teams && teams.length > 0) {
@@ -323,7 +309,7 @@ export class GitHubPushService {
       : [];
     const taskIdToGitHubId = new Map<string, string>();
     const taskIdToGitHubNumber = new Map<string, number>();
-    newTasks.forEach((task, idx) => {
+    newTasks.forEach((task: Issue, idx: number) => {
       if (task.id && taskResults[idx]) {
         taskIdToGitHubId.set(task.id, taskResults[idx].issueId);
         taskIdToGitHubNumber.set(task.id, taskResults[idx].issueNumber);
@@ -334,7 +320,7 @@ export class GitHubPushService {
       : [];
     const storyIdToGitHubId = new Map<string, string>();
     const storyIdToGitHubNumber = new Map<string, number>();
-    newStories.forEach((story, idx) => {
+    newStories.forEach((story: Issue, idx: number) => {
       if (story.id && storyResults[idx]) {
         storyIdToGitHubId.set(story.id, storyResults[idx].issueId);
         storyIdToGitHubNumber.set(story.id, storyResults[idx].issueNumber);
@@ -345,7 +331,7 @@ export class GitHubPushService {
       : [];
     const epicIdToGitHubId = new Map<string, string>();
     const epicIdToGitHubNumber = new Map<string, number>();
-    newEpics.forEach((epic, idx) => {
+    newEpics.forEach((epic: Issue, idx: number) => {
       if (epic.id && epicResults[idx]) {
         epicIdToGitHubId.set(epic.id, epicResults[idx].issueId);
         epicIdToGitHubNumber.set(epic.id, epicResults[idx].issueNumber);
