@@ -1,6 +1,6 @@
 {
   "name": "made-lib-beta",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "description": "Made`s Report Lib",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
