@@ -1,7 +1,8 @@
-import { GitHubTokenManager } from '../../service/GitHubTokenManager.ts';
-import { axiosInstance } from '../../util/axiosInstance.ts';
-import { getRepositoryId, addAssigneesToIssue, addLabelsToLabelable, getLabelIds } from './githubApi.js';
-import { Issue} from '../../model/models.ts';
+import { GitHubTokenManager } from '../../service/GitHubTokenManager';
+import { axiosInstance } from '../../util/axiosInstance';
+import { getRepositoryId, addAssigneesToIssue, addLabelsToLabelable, getLabelIds } from './githubApi';
+import { Issue } from '../../model/models';
+import { Logger } from '../../util/logger';
 
 // Interface para representar uma Issue no GitHub (resumida para criação)
 export interface GitHubIssueInput {
@@ -144,7 +145,8 @@ ${observation}
   ): GitHubIssueInput {
     let title = issue.title || '';
     let body = '';
-    let labels = issue.labels || [];
+    // Ensure labels is always an array and filter out null/undefined values
+    let labels = (issue.labels || []).filter(label => label != null && label !== '');
 
     // Add backlog label if issue has a backlog
     if (issue.backlog && !labels.includes(issue.backlog)) {
@@ -212,21 +214,63 @@ ${observation}
 
     // Cria a issue
     const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
-    const response = await axios_instance.post('', { query, variables });
-    const issueData = response.data?.data?.createIssue?.issue;
-    if (!issueData) {
-      throw new Error('❌ A resposta da API não contém os dados esperados.');
+    
+    try {
+      const response = await axios_instance.post('', { query, variables });
+      
+      // Check for GraphQL errors
+      if (response.data?.errors) {
+        const errorMessages = response.data.errors.map((err: any) => err.message).join(', ');
+        throw new Error(`❌ GraphQL errors: ${errorMessages}`);
+      }
+      
+      const issueData = response.data?.data?.createIssue?.issue;
+      if (!issueData) {
+        throw new Error('❌ A resposta da API não contém os dados esperados.');
+      }
+      
+      // Process labels and assignees
+      return await this.processIssueLabelsAndAssignees(issueData, input, organizationName, repositoryName, assignees);
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+      throw error;
     }
+  }
+
+  private async processIssueLabelsAndAssignees(
+    issueData: any,
+    input: any,
+    organizationName: string,
+    repositoryName: string,
+    assignees?: string[]
+  ): Promise<GitHubIssueCreated> {
 
     // Adiciona labels e assignees se necessário
     if (input.labels && input.labels.length > 0) {
-      const labelIds = await getLabelIds(organizationName, repositoryName, input.labels);
-      await addLabelsToLabelable(issueData.id, labelIds);
+      try {
+        Logger.info(`ℹ️ Adding labels to issue: ${JSON.stringify(input.labels)}`);
+        const labelIds = await getLabelIds(organizationName, repositoryName, input.labels);
+        await addLabelsToLabelable(issueData.id, labelIds);
+      } catch (labelError: any) {
+        Logger.error(`⚠️ Failed to add labels to issue ${issueData.number}:`, labelError.message);
+        // Don't throw - issue creation succeeded, just labels failed
+      }
     }
     // Adiciona assignees se fornecidos
     const assigneesToAdd = assignees && assignees.length > 0 ? assignees : input.assignees;
     if (assigneesToAdd && assigneesToAdd.length > 0) {
-      await addAssigneesToIssue(organizationName, repositoryName, issueData.number, assigneesToAdd);
+      try {
+        await addAssigneesToIssue(organizationName, repositoryName, issueData.number, assigneesToAdd);
+      } catch (assigneeError: any) {
+        if (assigneeError.response?.status === 422) {
+          Logger.error(`⚠️ Invalid assignee(s) for issue ${issueData.number}. Check if usernames exist and have repository access.`);
+        } else {
+          Logger.error(`⚠️ Failed to add assignees to issue ${issueData.number}:`, assigneeError.message);
+        }
+      }
     }
 
     return {
