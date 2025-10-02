@@ -1,6 +1,6 @@
 ---
 name: Epic
-about: Solicitação de nova funcionalidade ou melhoria.
+about: Solicitação de funcionalidade ou melhoria de alto nível (Epic)
 title: "[Epic] "
 labels: Epic
 assignees: ''
