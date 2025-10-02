@@ -1,8 +1,15 @@
+import fs from "fs";
+
 import { GitHubTokenManager } from '../../service/GitHubTokenManager';
 import { axiosInstance } from '../../util/axiosInstance';
 import { getRepositoryId, addAssigneesToIssue, addLabelsToLabelable, getLabelIds } from './githubApi';
 import { Issue } from '../../model/models';
 import { Logger } from '../../util/logger';
+
+// Templates
+const epicBody = fs.readFileSync("GITHUB_TEMPLATES/epic.md", "utf-8");
+const featureBody = fs.readFileSync("GITHUB_TEMPLATES/feature.md", "utf-8");
+const taskBody = fs.readFileSync("GITHUB_TEMPLATES/task.md", "utf-8");
 
 // Interface para representar uma Issue no GitHub (resumida para criação)
 export interface GitHubIssueInput {
@@ -62,36 +69,22 @@ export class GitHubIssuePushService {
     const requirements = (issue.requirements || []).map(r => `- ${r}`).join('\n') || '- [Adicione requisitos]';
     const observation = issue.observation ? `\n## Observações\n${issue.observation}` : '';
 
-    return `**⚠️ Entregas são feitas via PR. Associe este issue ao pull request correspondente.**
-
-# Descrição
-${issue.description || '[Descreva de forma clara e sucinta o propósito da funcionalidade.]'}
-
-## Requisitos Técnicos
-${requirements}
-
-# Atividades a serem realizadas
-${tasksMarkdown}
-
-# Critérios de Aceitação (Feature-Level)
-${criterions}
-${observation}
-`;
+    return featureBody
+      .replace('{{description}}', issue.description || '[Descreva de forma clara e sucinta o propósito da funcionalidade.]')
+      .replace('{{requirements}}', requirements)
+      .replace('{{tasksMarkdown}}', tasksMarkdown)
+      .replace('{{criterions}}', criterions)
+      .replace('{{observation}}', observation);
   }
 
   private buildTaskBody(issue: Issue): string {
     const deliverables = (issue.deliverables || []).map(d => `- ${d}`).join('\n') || '- [Adicione entregáveis]';
     const observation = issue.observation ? `\n## Observações\n${issue.observation}` : '';
 
-    return `**⚠️ Entregas são feitas via PR. Associe este issue ao pull request correspondente.**
-
-# Objetivo da Tarefa  
-${issue.description || '[Descreva de forma clara e sucinta o propósito da tarefa.]'}
-
-# Entregáveis
-${deliverables}
-${observation}
-`;
+    return taskBody
+      .replace('{{description}}', issue.description || '[Descreva de forma clara e sucinta o propósito da tarefa.]')
+      .replace('{{deliverables}}', deliverables)
+      .replace('{{observation}}', observation);
   }
 
   private buildEpicBody(issue: Issue, allStories: Issue[], allStoriesResults: { issueId: string, issueNumber: number }[] = []): string {
@@ -119,18 +112,11 @@ ${observation}
     const criterions = (issue.criterions || []).map(c => `- ${c}`).join('\n') || '- [Adicione critérios de aceitação]';
     const observation = issue.observation ? `\n## Observações\n${issue.observation}` : '';
 
-    return `**⚠️ Entregas são feitas via PR. Associe este Epic às features correspondentes.**
-
-# Descrição
-${issue.description || '[Descreva de forma clara e sucinta o propósito da Epic.]'}
-
-# Features relacionadas
-${storiesMarkdown}
-
-# Critérios de Aceitação (Epic-Level)
-${criterions}
-${observation}
-`;
+    return epicBody
+      .replace('{{description}}', issue.description || '[Descreva de forma clara e sucinta o propósito da Epic.]')
+      .replace('{{storiesMarkdown}}', storiesMarkdown)
+      .replace('{{criterions}}', criterions)
+      .replace('{{observation}}', observation);
   }
 
   /**
