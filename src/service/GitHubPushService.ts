@@ -9,20 +9,19 @@ import { axiosInstance } from '../util/axiosInstance';
 import { createOrEnsureTeam } from '../push/github/team.push';
 import { addMemberToTeam } from '../push/github/teamMember.push';
 import { GenericRepository } from '../repository/generic.repository';
-import { GitHubSyncService } from './GitHubSyncService';
+import { Logger } from '../util/logger';
+import { ISSUE_TYPES, PROJECT_FIELDS, LABEL_COLORS, STATUS_COLORS, DATA_PATHS, ERROR_MESSAGES } from '../util/constants';
 
 // Serviço para enviar modelos MADE para o GitHub
 export class GitHubPushService {
   private issuePushService: GitHubIssuePushService;
   private sprintPushService: GitHubSprintPushService;
   private roadmapPushService: GitHubRoadmapPushService;
-  private syncService: GitHubSyncService;
   
   constructor() {
     this.issuePushService = new GitHubIssuePushService(GitHubTokenManager.getInstance().getToken());
     this.sprintPushService = new GitHubSprintPushService(GitHubTokenManager.getInstance().getToken());
     this.roadmapPushService = new GitHubRoadmapPushService(GitHubTokenManager.getInstance().getToken());
-    this.syncService = new GitHubSyncService();
   }
 
   // Cria um projeto no GitHub a partir do modelo MADE Project
@@ -75,7 +74,7 @@ export class GitHubPushService {
             await setProjectItemField(projectId, projectItemId, typeFieldId, issue.type);
           }
         } catch (error: any) {
-          console.warn(`⚠️ Falha ao definir campo 'Type': ${error.message}`);
+          Logger.warn(`⚠️ Falha ao definir campo 'Type': ${error.message}`);
         }
       }
 
@@ -86,7 +85,7 @@ export class GitHubPushService {
             await setProjectItemField(projectId, projectItemId, backlogFieldId, issue.backlog);
           }
         } catch (error: any) {
-          console.warn(`⚠️ Falha ao definir campo 'Backlog': ${error.message}`);
+          Logger.warn(`⚠️ Falha ao definir campo 'Backlog': ${error.message}`);
         }
       }
       
@@ -94,7 +93,7 @@ export class GitHubPushService {
       const processedIssueRepo = new GenericRepository<any>('./data/db', 'processed_issues.json');
       await processedIssueRepo.add({
         id: created.id,
-        title: created.title || issue.title,
+        title: issue.title,
         number: created.number,
         uniqueKey: `${org}/${repo}/${created.id}`,
         org,
@@ -108,7 +107,7 @@ export class GitHubPushService {
         projectItemId
       };
     } catch (error: any) {
-      console.error(`❌ Erro ao processar issue ${issue.title || issue.id}:`, {
+      Logger.error(`❌ Erro ao processar issue ${issue.title || issue.id}:`, {
         error: error.message,
         issueId: issue.id,
         issueType: issue.type
@@ -195,7 +194,7 @@ export class GitHubPushService {
       const task = tasks[i];
       const taskResult = taskResults[i];
       const depends = Array.isArray(task.depends) ? task.depends : [];
-      const storyDep = depends.find(dep => storyIdToGitHubNumber.has(dep.id));
+      const storyDep = depends.find((dep: any) => storyIdToGitHubNumber.has(dep.id));
       if (storyDep) {
         const storyGitHubNumber = storyIdToGitHubNumber.get(storyDep.id)!;
         try {
@@ -222,7 +221,7 @@ export class GitHubPushService {
     for (let i = 0; i < stories.length; i++) {
       const story = stories[i];
       const depends = Array.isArray(story.depends) ? story.depends : [];
-      const epicDep = depends.find(dep => epicIdToGitHubNumber.has(dep.id));
+      const epicDep = depends.find((dep: any) => epicIdToGitHubNumber.has(dep.id));
       if (epicDep) {
         const epicGitHubNumber = epicIdToGitHubNumber.get(epicDep.id)!;
         const storyGitHubNumber = storyIdToGitHubNumber.get(story.id)!;
@@ -273,40 +272,19 @@ export class GitHubPushService {
     roadmaps?: Roadmap[]
   ) {
     // Cria as labels necessárias ANTES de processar qualquer coisa
-    console.log('🏷️ Criando labels necessárias...');
+    Logger.info('🏷️ Criando labels necessárias...');
     await this.ensureLabels(org, repo, backlogs, timeboxes, roadmaps);
     
-    // Sincroniza o cache local antes de fazer push
-    // Nota: Não abortar se a sincronização falhar - projeto pode ser novo
-    try {
-      await this.syncService.syncFromGitHub(org, project.name);
-    } catch (error: any) {
-      console.warn(`⚠️ Sincronização falhou (projeto pode ser novo): ${error.message}`);
-    }
-    
-    // Filtra apenas os itens que ainda não existem no GitHub (por título)
-    const newEpics = await this.syncService.filterNewIssues(epics);
-    const newStories = await this.syncService.filterNewIssues(stories);
-    const newTasks = await this.syncService.filterNewIssues(tasks);
-    let newTimeboxes: TimeBox[] = [];
-    if (timeboxes) {
-      newTimeboxes = await this.syncService.filterNewSprints(timeboxes);
-    }
+    // Process all valid issues without existence checking
+    const newEpics = epics.filter(issue => issue.title); // Only include issues with titles
+    const newStories = stories.filter(issue => issue.title);
+    const newTasks = tasks.filter(issue => issue.title);
+    const newTimeboxes = timeboxes || [];
 
     // Adiciona teams antes do restante do fluxo
     if (teams && teams.length > 0) {
-      const teamRepo = new GenericRepository<any>('./data/db', 'processed_teams.json');
-      
       for (const team of teams) {
-        // Cria um identificador único baseado no org/team para evitar duplicação
-        const uniqueKey = `${org}/${team.id}`;
-        
-        // Verifica se o team já foi processado para este org específico
-        if (teamRepo.exists(t => t.uniqueKey === uniqueKey)) {
-          console.log(`[GitHubPushService] Team ${team.id} já processado para ${org}. Ignorando envio.`);
-          continue;
-        }
-        
+        // Process team without checking if already exists
         await createOrEnsureTeam(org, team.name, team.description);
         if (team.teamMembers && team.teamMembers.length > 0) {
           for (const member of team.teamMembers) {
@@ -330,7 +308,7 @@ export class GitHubPushService {
       : [];
     const taskIdToGitHubId = new Map<string, string>();
     const taskIdToGitHubNumber = new Map<string, number>();
-    newTasks.forEach((task, idx) => {
+    newTasks.forEach((task: Issue, idx: number) => {
       if (task.id && taskResults[idx]) {
         taskIdToGitHubId.set(task.id, taskResults[idx].issueId);
         taskIdToGitHubNumber.set(task.id, taskResults[idx].issueNumber);
@@ -341,7 +319,7 @@ export class GitHubPushService {
       : [];
     const storyIdToGitHubId = new Map<string, string>();
     const storyIdToGitHubNumber = new Map<string, number>();
-    newStories.forEach((story, idx) => {
+    newStories.forEach((story: Issue, idx: number) => {
       if (story.id && storyResults[idx]) {
         storyIdToGitHubId.set(story.id, storyResults[idx].issueId);
         storyIdToGitHubNumber.set(story.id, storyResults[idx].issueNumber);
@@ -352,7 +330,7 @@ export class GitHubPushService {
       : [];
     const epicIdToGitHubId = new Map<string, string>();
     const epicIdToGitHubNumber = new Map<string, number>();
-    newEpics.forEach((epic, idx) => {
+    newEpics.forEach((epic: Issue, idx: number) => {
       if (epic.id && epicResults[idx]) {
         epicIdToGitHubId.set(epic.id, epicResults[idx].issueId);
         epicIdToGitHubNumber.set(epic.id, epicResults[idx].issueNumber);
@@ -397,34 +375,36 @@ export class GitHubPushService {
           })
           .filter(result => result !== null) as { issueId: string, issueNumber: number }[];
 
-        // Criar a issue de sprint usando a nova implementação REST
-        const sprintResult = await this.sprintPushService.createSprintIssue(
-          org,
-          repo,
-          timebox,
-          relatedTasks,
-          taskResults
-        );
+        // Sprint functionality is currently disabled
+        Logger.info(`ℹ️ Sprint functionality is disabled. Skipping sprint issue creation for: ${timebox.name}`);
+        
+        // TODO: Re-enable when sprint functionality is restored
+        // const sprintResult = await this.sprintPushService.createSprintIssue(
+        //   org,
+        //   repo,
+        //   timebox,
+        //   relatedTasks,
+        //   taskResults
+        // );
 
-        // Adicionar labels de sprint às tasks relacionadas
-        const taskNumbers = taskResults.map(result => result.issueNumber);
-        if (taskNumbers.length > 0) {
-          await this.sprintPushService.addSprintLabelsToTasks(
-            org,
-            repo,
-            timebox.name,
-            taskNumbers
-          );
-        }
+        // const taskNumbers = taskResults.map(result => result.issueNumber);
+        // if (taskNumbers.length > 0) {
+        //   await this.sprintPushService.addSprintLabelsToTasks(
+        //     org,
+        //     repo,
+        //     timebox.name,
+        //     taskNumbers
+        //   );
+        // }
 
       } catch (error: any) {
-        console.error(`❌ Erro ao processar timebox "${timebox.name}":`, error.message);
+        Logger.error(`❌ Erro ao processar timebox "${timebox.name}":`, error.message);
         // Não interrompe o processo para outras sprints
         continue;
       }
     }
 
-    console.log(`🎉 Processamento de timeboxes concluído!`);
+    Logger.success(`🎉 Processamento de timeboxes concluído!`);
   }
 
   /**
@@ -445,7 +425,7 @@ export class GitHubPushService {
         const roadmapResult = await this.roadmapPushService.createRoadmap(org, repo, roadmap);
 
       } catch (error: any) {
-        console.error(`❌ Erro ao processar roadmap "${roadmap.name}":`, error.message);
+        Logger.error(`❌ Erro ao processar roadmap "${roadmap.name}":`, error.message);
         // Não interrompe o processo para outros roadmaps
         continue;
       }
@@ -453,50 +433,43 @@ export class GitHubPushService {
   }
 
   public async ensureLabels(org: string, repo: string, backlogs?: Backlog[], timeboxes?: TimeBox[], roadmaps?: Roadmap[]) {
-    await ensureLabelExists(org, repo, { name: 'Feature', color: '1d76db', description: 'Funcionalidade' });
-    await ensureLabelExists(org, repo, { name: 'Task', color: 'cccccc', description: 'Tarefa' });
-    await ensureLabelExists(org, repo, { name: 'Epic', color: '5319e7', description: 'Epic' });
+    Logger.info('🏷️ Criando labels necessárias...');
+    await ensureLabelExists(org, repo, { name: ISSUE_TYPES.FEATURE, color: LABEL_COLORS.FEATURE, description: 'Funcionalidade' });
+    await ensureLabelExists(org, repo, { name: ISSUE_TYPES.TASK, color: LABEL_COLORS.TASK, description: 'Tarefa' });
+    await ensureLabelExists(org, repo, { name: ISSUE_TYPES.EPIC, color: LABEL_COLORS.EPIC, description: 'Epic' });
 
     // Cria uma label para cada backlog, se houver
-    if (backlogs && backlogs.length > 0) {
-      for (const backlog of backlogs) {
-        await ensureLabelExists(org, repo, { name: backlog.name, color: 'ededed', description: `Backlog: ${backlog.description || ''}` });
-      }
-    }
-
-    // Cria labels para as sprints/timeboxes, se houver
+        if (backlogs && backlogs.length > 0) {
+          for (const backlog of backlogs) {
+            await ensureLabelExists(org, repo, { name: backlog.name, color: LABEL_COLORS.BACKLOG, description: `Backlog: ${backlog.description || ''}` });
+          }
+        }    // Cria labels para as sprints/timeboxes, se houver
     if (timeboxes && timeboxes.length > 0) {
       for (const timebox of timeboxes) {
         // Label do nome da sprint
         await ensureLabelExists(org, repo, { 
           name: `sprint: ${timebox.name}`, 
-          color: '0052CC', 
+          color: LABEL_COLORS.SPRINT, 
           description: `Sprint ${timebox.name}` 
         });
 
         // Label do status da sprint
-        const statusColors: { [key: string]: string } = {
-          'PLANNED': 'FEF2C0',
-          'IN_PROGRESS': '0E8A16',
-          'CLOSED': '5319E7'
-        };
-        
         await ensureLabelExists(org, repo, { 
           name: `status: ${timebox.status || 'PLANNED'}`, 
-          color: statusColors[timebox.status || 'PLANNED'] || 'CCCCCC', 
+          color: STATUS_COLORS[timebox.status as keyof typeof STATUS_COLORS] || LABEL_COLORS.DEFAULT, 
           description: `Status: ${timebox.status || 'PLANNED'}` 
         });
       }
       
       // Label genérica para tipo sprint
-      await ensureLabelExists(org, repo, { name: 'type: sprint', color: 'B60205', description: 'Sprint issue type' });
+      await ensureLabelExists(org, repo, { name: 'type: sprint', color: LABEL_COLORS.SPRINT, description: 'Sprint issue type' });
     }
 
     // Cria labels para roadmaps, se houver
     if (roadmaps && roadmaps.length > 0) {
       // Labels genéricas para roadmap
-      await ensureLabelExists(org, repo, { name: 'type: roadmap', color: '8B5CF6', description: 'Roadmap' });
-      await ensureLabelExists(org, repo, { name: 'type: milestone', color: '6366F1', description: 'Milestone' });
+      await ensureLabelExists(org, repo, { name: 'type: roadmap', color: LABEL_COLORS.ROADMAP, description: 'Roadmap' });
+      await ensureLabelExists(org, repo, { name: 'type: milestone', color: LABEL_COLORS.MILESTONE, description: 'Milestone' });
       
       for (const roadmap of roadmaps) {
         // Chama o serviço específico para criar todas as labels do roadmap
@@ -533,15 +506,15 @@ export class GitHubPushService {
         // Delay entre batches para evitar rate limiting
         if (i + batchSize < issues.length) {
           const delay = 1000; // 1 segundo entre batches
-          console.log(`⏳ Aguardando ${delay}ms antes do próximo batch...`);
+          Logger.info(`⏳ Aguardando ${delay}ms antes do próximo batch...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
         
       } catch (error: any) {
-        console.error(`❌ Erro no batch ${Math.floor(i / batchSize) + 1}:`, error.message);
+        Logger.error(`❌ Erro no batch ${Math.floor(i / batchSize) + 1}:`, error.message);
         
         // Tentar processar individualmente em caso de erro no batch
-        console.log(`🔄 Tentando processar issues individualmente...`);
+        Logger.info(`🔄 Tentando processar issues individualmente...`);
         for (const issue of batch) {
           try {
             const result = await this.pushIssue(org, repo, projectId, issue, allTasks, allStories, taskResults, storyResults);
@@ -550,14 +523,14 @@ export class GitHubPushService {
             // Delay entre issues individuais
             await new Promise(resolve => setTimeout(resolve, 500));
           } catch (individualError: any) {
-            console.error(`❌ Falha ao processar issue individual ${issue.title || issue.id}:`, individualError.message);
+            Logger.error(`❌ Falha ao processar issue individual ${issue.title || issue.id}:`, individualError.message);
             // Continuar com as outras issues
           }
         }
       }
     }
     
-    console.log(`✅ Processamento concluído: ${results.length}/${issues.length} issues processadas com sucesso`);
+    Logger.success(`✅ Processamento concluído: ${results.length}/${issues.length} issues processadas com sucesso`);
     return results;
   }
 }

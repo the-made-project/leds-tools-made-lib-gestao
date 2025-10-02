@@ -1,12 +1,14 @@
 import { axiosInstance } from '../../util/axiosInstance';
 import { GitHubTokenManager } from '../../service/GitHubTokenManager';
+import { Logger } from '../../util/logger';
+import { GitHubLabel, GitHubAPIResponse } from '../../model/models';
 import axios from 'axios';
 
 // Garante que a label exista no repositório, criando se necessário
 export async function ensureLabelExists(
   organizationName: string,
   repositoryName: string,
-  label: { name: string; color?: string; description?: string }
+  label: Omit<GitHubLabel, 'id'>
 ): Promise<void> {
   // Busca as labels existentes
   const query = `
@@ -20,22 +22,41 @@ export async function ensureLabelExists(
   `;
   const variables = { repositoryName, organization: organizationName };
   const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
-  const response = await axios_instance.post('', { query, variables });
-  const allLabels = response.data.data.repository.labels.nodes;
-  const exists = allLabels.some((l: any) => l.name === label.name);
+  
+  let labelExists = false;
+  
+  try {
+    const response = await axios_instance.post('', { query, variables });
+    
+    // Add null checks for API response
+    if (!response.data?.data?.repository?.labels?.nodes) {
+      throw new Error(`❌ Failed to fetch labels for repository ${organizationName}/${repositoryName}. Repository may not exist or insufficient permissions.`);
+    }
+    
+    const allLabels: GitHubLabel[] = response.data.data.repository.labels.nodes;
+    labelExists = allLabels.some((l) => l.name === label.name);
+    
+    if (labelExists) {
+      Logger.info(`ℹ️ Label "${label.name}" já existe (verificado via GraphQL)`);
+      return;
+    }
+  } catch (graphqlError: any) {
+    Logger.warn(`⚠️ Erro ao verificar labels via GraphQL, tentando criar diretamente: ${graphqlError.message}`);
+    // Continue to creation attempt - might be a GraphQL permission issue
+  }
 
-  if (!exists) {
-    // Cria a label via REST API
-    const token = GitHubTokenManager.getInstance().getToken();
-    const restAxios = axios.create({
-      baseURL: 'https://api.github.com',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/vnd.github+json'
-      },
-    });
+  // Try to create the label (either because it doesn't exist or GraphQL check failed)
+  const token = GitHubTokenManager.getInstance().getToken();
+  const restAxios = axios.create({
+    baseURL: 'https://api.github.com',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/vnd.github+json'
+    },
+  });
 
+  try {
     await restAxios.post(
       `/repos/${organizationName}/${repositoryName}/labels`,
       {
@@ -44,6 +65,15 @@ export async function ensureLabelExists(
         description: label.description || ''
       }
     );
+    Logger.success(`✅ Label "${label.name}" criada com sucesso`);
+  } catch (error: any) {
+    if (error.response?.status === 422) {
+      Logger.info(`ℹ️ Label "${label.name}" já existe no repositório (confirmado via REST API)`);
+      // Label already exists, this is fine - don't throw error
+    } else {
+      Logger.error(`❌ Erro ao criar label "${label.name}":`, error.response?.data || error.message);
+      throw error;
+    }
   }
 }
 
@@ -69,7 +99,7 @@ export async function getOrganizationId(organizationName: string): Promise<strin
         const organizationId = response.data.data.organization.id;
         return organizationId;
     } catch (error: any) {
-        console.error('❌ Erro ao obter o ID da organização:', error.response?.data || error.message);
+        Logger.error('❌ Erro ao obter o ID da organização:', error.response?.data || error.message);
         throw error;
     }
 }
@@ -103,10 +133,10 @@ export async function getRepositoryId(organizationName: string, repositoryName: 
         }
 
         const repositoryId = repository.id;
-        console.log(`✅ ID do repositório obtido: ${repositoryId}`);
+        Logger.success(`✅ ID do repositório obtido: ${repositoryId}`);
         return repositoryId;
     } catch (error: any) {
-        console.error('❌ Erro ao obter o ID do repositório:', error.response?.data || error.message);
+        Logger.error('❌ Erro ao obter o ID do repositório:', error.response?.data || error.message);
         throw error;
     }
 }
@@ -128,16 +158,27 @@ export async function getLabelIds(organizationName: string, repositoryName: stri
     const variables = { repositoryName, organization: organizationName };
     const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
     const response = await axios_instance.post('', { query, variables });
-    const allLabels = response.data.data.repository.labels.nodes;
+    
+    // Add null checks for API response
+    if (!response.data?.data?.repository?.labels?.nodes) {
+      throw new Error(`❌ Failed to fetch labels for repository ${organizationName}/${repositoryName}. Repository may not exist or insufficient permissions.`);
+    }
+    
+    const allLabels: GitHubLabel[] = response.data.data.repository.labels.nodes;
     return labels.map(label => {
-      const foundLabel = allLabels.find((l: any) => l.name === label);
-      if (!foundLabel) throw new Error(`Label "${label}" não encontrado no repositório.`);
+      const foundLabel = allLabels.find((l) => l.name === label);
+      if (!foundLabel) throw new Error(`❌ Label "${label}" não encontrado no repositório ${organizationName}/${repositoryName}.`);
       return foundLabel.id;
     });
 }
 
 // Adiciona labels a um item (issue, PR, etc)
 export async function addLabelsToLabelable(labelableId: string, labelIds: string[]): Promise<void> {
+    // Skip if no labels to add
+    if (!labelIds || labelIds.length === 0) {
+      Logger.info('ℹ️ No labels to add, skipping addLabelsToLabelable');
+      return;
+    }
 
     const query = `
       mutation($labelableId: ID!, $labelIds: [ID!]!) {
@@ -149,7 +190,13 @@ export async function addLabelsToLabelable(labelableId: string, labelIds: string
     // Corrigido: usar labelableId, não issueId
     const variables = { labelableId, labelIds };
     const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
-    await axios_instance.post('', { query, variables });
+    
+    try {
+      await axios_instance.post('', { query, variables });
+    } catch (error: any) {
+      Logger.error(`❌ Error adding labels to labelable ${labelableId}:`, error.response?.data || error.message);
+      throw error;
+    }
 }
 
 // Adiciona assignees a uma issue
@@ -175,11 +222,20 @@ export async function addAssigneesToIssue(
 }
 
 // Executa uma query/mutação GraphQL genérica
-export async function githubGraphQL<T>(query: string, variables: any): Promise<T> {
+export async function githubGraphQL<T>(query: string, variables: Record<string, any>): Promise<T> {
   const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
   const response = await axios_instance.post('', { query, variables });
-  if (response.data.errors) throw new Error(JSON.stringify(response.data.errors));
-  return response.data.data;
+  
+  const apiResponse: GitHubAPIResponse<T> = response.data;
+  if (apiResponse.errors && apiResponse.errors.length > 0) {
+    throw new Error(`GraphQL errors: ${apiResponse.errors.map(e => e.message).join(', ')}`);
+  }
+  
+  if (!apiResponse.data) {
+    throw new Error('No data returned from GraphQL query');
+  }
+  
+  return apiResponse.data;
 }
 
 // Busca o ID do campo "Type" no projeto
@@ -288,9 +344,9 @@ export async function ensureProjectBacklogField(projectId: string, options: stri
       }
     };
     await axios_instance.post('', { query: mutation, variables });
-    console.log('✅ Campo "Backlog" criado no projeto.');
+    Logger.success('✅ Campo "Backlog" criado no projeto.');
   } else {
-    console.log('ℹ️ Campo "Backlog" já existe no projeto.');
+    Logger.info('ℹ️ Campo "Backlog" já existe no projeto.');
   }
 }
 

@@ -9,6 +9,7 @@ export class GitHubSyncService {
 
   constructor() {
     this.githubService = new GitHubService();
+    this.pushService = new GitHubPushService();
   }
 
   /**
@@ -46,23 +47,6 @@ export class GitHubSyncService {
     } catch (error: any) {
       console.error(`❌ Erro na sincronização: ${error.message}`);
       throw error;
-    }
-  }
-
-  /**
-   * Verifica se uma issue já existe no GitHub baseada no título
-   */
-  async issueExistsInGitHub(issueTitle: string): Promise<boolean> {
-    try {
-      const issueRepo = new GenericRepository<Issue>('./data/db', 'processed_issues.json');
-      
-      return issueRepo.exists(issue => 
-        issue.title?.trim().toLowerCase() === issueTitle.trim().toLowerCase()
-      );
-    } catch (error) {
-      // Se o arquivo não existir ou houver erro, assumir que a issue não existe
-      console.warn(`⚠️ Erro ao verificar existência da issue "${issueTitle}": ${error}`);
-      return false;
     }
   }
 
@@ -123,22 +107,18 @@ export class GitHubSyncService {
    * Filtra issues que não existem no GitHub
    */
   async filterNewIssues(issues: Issue[]): Promise<Issue[]> {
-    const newIssues: Issue[] = [];
+    const validIssues: Issue[] = [];
     
     for (const issue of issues) {
       if (issue.title) {
-        const exists = await this.issueExistsInGitHub(issue.title);
-        if (!exists) {
-          newIssues.push(issue);
-        } else {
-          console.log(`⚠️ Issue "${issue.title}" já existe no GitHub, pulando...`);
-        }
+        // Remove verification - always add issues with valid titles
+        validIssues.push(issue);
       } else {
         console.warn(`⚠️ Issue sem título encontrada: ${JSON.stringify(issue)}`);
       }
     }
     
-    return newIssues;
+    return validIssues;
   }
 
   /**

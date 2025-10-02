@@ -19,13 +19,20 @@ export async function createOrEnsureTeam(
   } catch (error: any) {
     if (error.response && error.response.status === 404) {
       // Create the team if it doesn't exist
-      await axios_instance.post(
-        `https://api.github.com/orgs/${org}/teams`,
-        {
-          name: teamName,
-          description: description || '',
+      try {
+        await axios_instance.post(
+          `https://api.github.com/orgs/${org}/teams`,
+          {
+            name: teamName,
+            description: description || '',
+          }
+        );
+      } catch (createError: any) {
+        if (createError.response?.status === 404) {
+          throw new Error(`❌ Cannot create team "${teamName}". Organization "${org}" not found or insufficient permissions. Ensure you have admin:org scope and are an organization owner.`);
         }
-      );
+        throw createError;
+      }
     } else {
       throw error;
     }

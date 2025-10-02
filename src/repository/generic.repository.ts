@@ -37,8 +37,8 @@ import {
       try {
         const parsed = JSON.parse(fileContent) as { data: T[] };
         return parsed.data || [];
-      } catch (error) {
-        console.error('Erro ao ler o arquivo JSON:', error);
+      } catch (parseError) {
+        console.error(`Erro ao fazer parse do arquivo JSON ${this.filePath}:`, parseError instanceof Error ? parseError.message : parseError);
         return [];
       }
     }

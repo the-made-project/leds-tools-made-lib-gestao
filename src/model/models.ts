@@ -48,8 +48,28 @@ export type Release = {
 
  
 export type IssuesDTO = {
-  data: any[];
+  data: Issue[];
 };
+
+// GitHub API types
+export interface GitHubLabel {
+  id: string;
+  name: string;
+  color?: string;
+  description?: string;
+}
+
+export interface GitHubError {
+  message: string;
+  type?: string;
+  path?: string[];
+  extensions?: Record<string, any>;
+}
+
+export interface GitHubAPIResponse<T> {
+  data?: T;
+  errors?: GitHubError[];
+}
 
 
 export type Team = {
