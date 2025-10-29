@@ -1,16 +1,6 @@
-Componente MADE   | Componente Jira   | Observações
-------------------|------------------|-------------------------------
-Epic              | Epic             | [Link para o Epic do Jira](https://www.atlassian.com/software/jira/guides/issues/overview#what-is-an-work%20item)
-Story             | Story            | [Create issue usando Parents para Story](https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issues/#api-rest-api-3-issue-post)
-Task              | Task/Subtask     | Decidir se usa Task ou Subtask
-Sprint            | Sprint           | API do Jira Board
-Dependencies      | Issue Links      | Tipo "blocks/is blocked by"
-Process           | ???              | Verificar se existe equivalente
-
-
 # Tipos de issue no Jira
 
-![AnVIL Image](https://wac-cdn.atlassian.com/dam/jcr:9ad770b4-f380-40b8-a802-05abe4e4ebee/issue-hierarchy-v2.png?cdnVersion=3040 "AnVIL Portal Image!")
+![Jira Issue Types](https://wac-cdn.atlassian.com/dam/jcr:9ad770b4-f380-40b8-a802-05abe4e4ebee/issue-hierarchy-v2.png?cdnVersion=3040 "Jira Issue Types Image!")
 ## Epic
 [Link para o Epic do Jira](https://www.atlassian.com/software/jira/guides/issues/overview#what-is-an-work%20item)
 
