@@ -10,9 +10,12 @@ export function axiosInstance(domain: string, userName: string, apiToken: string
     return axios.create({
         baseURL: JIRA_API_URL.replace('{{domain}}', domain).replace('{{entity}}', entity),
         headers: {
-            User: `${userName}:${apiToken}`,
             'Content-Type': 'application/json',
             Accept: 'application/json'
         },
+        auth: {
+            username: userName,
+            password: apiToken
+        }
     });
 } 

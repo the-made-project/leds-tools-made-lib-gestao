@@ -35,7 +35,7 @@ export class JiraIssueTypePushService {
     try {
       const response = await axios_instance.get('');
 
-      // Check for GraphQL errors
+      // Check for request errors
       if (!response.data) {
         const errorMessages = response.data.errors.map((err: any) => err.message).join(', ');
         throw new Error(`❌ Jira API errors: ${errorMessages}`);

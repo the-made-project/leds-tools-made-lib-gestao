@@ -53,13 +53,7 @@ export class JiraProjectPushService {
     try {
       const response = await axios_instance.get('');
 
-      console.log(response.data);
-      console.log(response.status);
-      console.log(response.statusText);
-      console.log(response.headers);
-      console.log(response.config);
-
-      // Check for GraphQL errors
+      // Check for request errors
       if (!response.data) {
         const errorMessages = response.data.errors.map((err: any) => err.message).join(', ');
         throw new Error(`❌ Jira API errors: ${errorMessages}`);
