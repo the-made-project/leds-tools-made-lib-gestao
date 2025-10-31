@@ -10,13 +10,13 @@ Identificamos algo que pode ser uma possível limitação.
 
 Lendo a documentação, percebemos que o componente Sprint não está documentado no Jira REST API V3. Não conseguimos encontrá-lo por meio da documentação disponibilizada acima.
 
-Pesquisando na web encontramos uma outra documentação disponibilizada pelo Jira que temos o CRUDL do componente Sprint Jira. E diferente da documentação do Jira REST API V3, o Sprint usa uma outra REST API.
+Pesquisando na web encontramos uma outra documentação disponibilizada pelo Jira que temos o CRUDL do componente [Sprint Jira](#sprints). E diferente da documentação do Jira REST API V3, o Sprint usa uma outra REST API.
 
 [Clique aqui e acesse a documentação do Sprint do Jira](https://developer.atlassian.com/cloud/jira/software/rest/api-group-sprint/#api-group-sprint)
 
 E como se trata de uma outra api, ela necessita de uma outra forma de autenticação das requisições. Ao invés do `username` e `api_token`, nesta api precisa de uma `access_token`.
 
-Pesquisamos sobre esse mode de autenticação e, pelo que encontramos, precisamos criar uma aplicação na plataforma [Atlassian Developer Console](https://developer.atlassian.com/console/myapps/) e configurar o OAuth 2.0 para obter uma `access token` para as autenticações.
+Pesquisamos sobre esse modo de autenticação e, pelo que encontramos, precisamos criar uma aplicação na plataforma [Atlassian Developer Console](https://developer.atlassian.com/console/myapps/) e configurar o OAuth 2.0 para obter uma `access token` para as autenticações.
 
 ## Componentes do Jira
 
@@ -47,9 +47,9 @@ curl --request POST \
 
 #### Project Issue Types
 
-Como o Jira já possui os seus tipos de issue, quando tentamos criar as nossas issues com estes tipos de issues, a api responde 400 nos informando que não é válido criar uma issue com o tipo selecionado.
+Como o Jira já possui os seus tipos de issues padrão(sendo eles Epic, Story, Task, Bug, Sub-Task), quando tentamos criar as nossas issues com estes tipos de issues, a api responde 400 nos informando que não é válido criar uma issue com o tipo selecionado.
 
-Mas quando criamos nosso projeto, o Jira criou os mesmos tipos de issue mas com escopo no nosso projeto. E, aí sim, conseguimos criar as nossas issues no projeto.
+Mas quando criamos nosso projeto, o Jira cria também os mesmos tipos de issues mas com escopo no nosso projeto. E, aí sim, conseguimos criar as nossas issues no projeto.
 
 ### Issue Fields
 
@@ -87,6 +87,16 @@ curl --request GET \
 ### Issues
 
 Agora sim, com os principais elementos definidos para compor nossa issue vamos criá-la de fato.
+
+Lembrando que as issues são categorizadas por tipo, sendo eles:
+
+- Epic
+- Sprint
+- Task
+- Bug
+- Sub-Task
+
+E há também a possibilizada de criarmos os nossos próprios tipos de issues, aumentando ainda mais os tipos de issues pertencentes so nosso projeto.
 
 ```bash
 curl --request POST \
