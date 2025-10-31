@@ -1,8 +1,24 @@
 # Jira Endpoints
 
+Com a lista de mapeamento de componentes do Made para componentes do Jira montada, precisamos identificar o CRUDL dos componentes usando o Jira REST API.
+
+[Clique aqui e acesse a documentação do Jira REST API V3](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/#about)
+
 ## Limitações
 
-Estudando o Jira API REST, identificamos que não é posível criar issues sem ter um projeto principal. Portanto, também precisamos criar um novo projeto.
+Identificamos algo que pode ser uma possível limitação.
+
+Lendo a documentação, percebemos que o componente Sprint não está documentado no Jira REST API V3. Não conseguimos encontrá-lo por meio da documentação disponibilizada acima.
+
+Pesquisando na web encontramos uma outra documentação disponibilizada pelo Jira que temos o CRUDL do componente Sprint Jira. E diferente da documentação do Jira REST API V3, o Sprint usa uma outra REST API.
+
+[Clique aqui e acesse a documentação do Sprint do Jira](https://developer.atlassian.com/cloud/jira/software/rest/api-group-sprint/#api-group-sprint)
+
+E como se trata de uma outra api, ela necessita de uma outra forma de autenticação das requisições. Ao invés do `username` e `api_token`, nesta api precisa de uma `access_token`.
+
+Pesquisamos sobre esse mode de autenticação e, pelo que encontramos, precisamos criar uma aplicação na plataforma [Atlassian Developer Console](https://developer.atlassian.com/console/myapps/) e configurar o OAuth 2.0 para obter uma `access token` para as autenticações.
+
+## Componentes do Jira
 
 ### Projects
 
@@ -29,13 +45,13 @@ curl --request POST \
 }'
 ```
 
-### Project Issue Types
+#### Project Issue Types
 
 Como o Jira já possui os seus tipos de issue, quando tentamos criar as nossas issues com estes tipos de issues, a api responde 400 nos informando que não é válido criar uma issue com o tipo selecionado.
 
 Mas quando criamos nosso projeto, o Jira criou os mesmos tipos de issue mas com escopo no nosso projeto. E, aí sim, conseguimos criar as nossas issues no projeto.
 
-## Issue Fields
+### Issue Fields
 
 Para criar uma issue precisamos definir os campos que irá compor nossa issue.
 
@@ -46,7 +62,7 @@ curl --request GET \
   --header 'Accept: application/json'
 ```
 
-## Issue Types
+### Issue Types
 
 Também para criar uma isue precisamor definir o tipo da issue.
 
@@ -57,7 +73,7 @@ curl --request GET \
   --header 'Accept: application/json'
 ```
 
-## Issue Links
+### Issue Links
 
 Importante também definir se nossa issue estará relacionada a uma outra issue. Para isso precisamos definir as issues relacionadas com o tipo de link.
 
@@ -68,7 +84,7 @@ curl --request GET \
   --header 'Accept: application/json'
 ```
 
-## Issues
+### Issues
 
 Agora sim, com os principais elementos definidos para compor nossa issue vamos criá-la de fato.
 
@@ -111,26 +127,7 @@ curl --request POST \
 }'
 ```
 
-## Sprints
-
-Cria as sprints futuras do projeto.
-
-```bash
-curl --request POST \
-  --url 'https://your-domain.atlassian.net/rest/agile/1.0/sprint' \
-  --header 'Authorization: Bearer <access_token>' \
-  --header 'Accept: application/json' \
-  --header 'Content-Type: application/json' \
-  --data '{
-  "endDate": "2015-04-20T01:22:00.000+10:00",
-  "goal": "sprint 1 goal",
-  "name": "sprint 1",
-  "originBoardId": 5,
-  "startDate": "2015-04-11T15:22:00.000+10:00"
-}'
-```
-
-## Workflows
+### Workflows
 
 Cria o workflow e status relacionados.
 
@@ -256,5 +253,24 @@ curl --request POST \
       ]
     }
   ]
+}'
+```
+
+### Sprints
+
+Cria as sprints futuras do projeto.
+
+```bash
+curl --request POST \
+  --url 'https://your-domain.atlassian.net/rest/agile/1.0/sprint' \
+  --header 'Authorization: Bearer <access_token>' \
+  --header 'Accept: application/json' \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "endDate": "2015-04-20T01:22:00.000+10:00",
+  "goal": "sprint 1 goal",
+  "name": "sprint 1",
+  "originBoardId": 5,
+  "startDate": "2015-04-11T15:22:00.000+10:00"
 }'
 ```
