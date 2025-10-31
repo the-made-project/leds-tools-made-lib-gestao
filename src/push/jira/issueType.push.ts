@@ -1,9 +1,10 @@
-import { JiraTokenManager } from '../service/JiraTokenManager';
-import { axiosInstance } from '../util/axiosInstance';
+import { AxiosInstance } from 'axios';
+
+import { JiraTokenManager } from '../../service/JiraTokenManager';
+import { axiosJiraInstance } from '../../util/axiosInstance';
 
 export interface JiraIssueType {
   id: string;
-  self: string;
   name: string;
   description: string;
   iconUrl: string;
@@ -11,6 +12,13 @@ export interface JiraIssueType {
   subtask: boolean;
   avatarId: number;
   hierarchyLevel: number;
+  scope: {
+    type: "PROJECT";
+    project: {
+      id: string;
+    }
+  }
+  self: string;
 }
 
 export interface JiraIssueTypeInput {
@@ -18,22 +26,49 @@ export interface JiraIssueTypeInput {
   description?: string;
 }
 
-// Interface para resposta da criação
 export interface JiraIssueTypeCreated {
   id: string;
-  number: number;
+  name: string;
+  description: string;
+  entityId: string;
+  avatarId: number;
+  hierarchyLevel: number;
+  iconUrl: string;
+  scope: {
+    project: {
+      id: string;
+      key: string;
+      name: string;
+      self: string;
+      projectTypeKey: string;
+      projectCategory: {},
+      avatarUrls: {},
+      simplified: boolean
+    },
+    type: "PROJECT";
+  },
+  self: string;
+  subtask: boolean
 }
 
 export class JiraIssueTypePushService {
+  private axiosInstance: AxiosInstance;
+
+  constructor() {
+    const jiraTokenManager = JiraTokenManager.getInstance();
+    this.axiosInstance = axiosJiraInstance(jiraTokenManager.getDomain(), jiraTokenManager.getUserName(), jiraTokenManager.getApiToken(), 'issuetype');
+  }
+
   /**
-   * 
+   * @description Get all Jira issue types
+   * @author Douglas Lima
+   * @date 29/10/2025
+   * @return {*}  {Promise<JiraIssueType[]>}
+   * @memberof JiraIssueTypePushService
    */
   async getIssueTypes(): Promise<JiraIssueType[]> {
-    const jiraTokenManager = JiraTokenManager.getInstance();
-    const axios_instance = axiosInstance(jiraTokenManager.getDomain(), jiraTokenManager.getUserName(), jiraTokenManager.getApiToken(), 'issuetype');
-
     try {
-      const response = await axios_instance.get('');
+      const response = await this.axiosInstance.get('');
 
       // Check for request errors
       if (!response.data) {
