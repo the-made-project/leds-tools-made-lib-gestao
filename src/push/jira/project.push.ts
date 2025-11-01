@@ -60,7 +60,7 @@ export class JiraProjectPushService {
    */
   async getProject(projectIdOrKey: string): Promise<JiraProject> {
     try {
-      const response = await this.axiosInstance.get(`/${projectIdOrKey}}`);
+      const response = await this.axiosInstance.get(`/${projectIdOrKey}`);
 
       // Check for request errors
       if (!response.data) {
@@ -89,20 +89,14 @@ export class JiraProjectPushService {
    * @description Get all Jira projects
    * @author Douglas Lima
    * @date 29/10/2025
-   * @return {*}  {Promise<JiraProjectCreated>}
+   * @return {*}  {Promise<JiraProject[]>}
    * @memberof JiraProjectPushService
    */
-  async getProjects(): Promise<JiraProjectCreated> {
+  async getProjects(): Promise<JiraProject[]> {
     try {
-      const response = await this.axiosInstance.get('');
+      const response = await this.axiosInstance.get('/search');
 
-      // Check for request errors
-      if (!response.data) {
-        const errorMessages = response.data.errors.map((err: any) => err.message).join(', ');
-        throw new Error(`❌ Jira API errors: ${errorMessages}`);
-      }
-
-      const projectData = response.data;
+      const projectData = response.data?.values;
 
       if (!projectData) {
         throw new Error('❌ A resposta da API não contém os dados esperados.');
