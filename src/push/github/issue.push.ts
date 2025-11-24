@@ -36,6 +36,50 @@ export class GitHubIssuePushService {
     return [];
   }
 
+    // 🔍 NOVO: verifica se a issue já existe pelo título
+  async issueAlreadyExists(
+    organizationName: string,
+    repositoryName: string,
+    title: string
+  ): Promise<{ id: string; number: number } | null> {
+
+    const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+
+    const query = `
+      query($queryString: String!) {
+        search(
+          query: $queryString,
+          type: ISSUE,
+          first: 20
+        ) {
+          nodes {
+            ... on Issue {
+              id
+              number
+              title
+            }
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      queryString: `repo:${organizationName}/${repositoryName} is:issue "${title}"`
+    };
+
+    const response = await axios_instance.post('', { query, variables });
+    const nodes = response.data?.data?.search?.nodes ?? [];
+
+    const found = nodes.find((i: any) => i.title === title);
+
+    if (found) {
+      Logger.info(`✔ Issue já existe no GitHub: ${title} (#${found.number})`);
+      return { id: found.id, number: found.number };
+    }
+
+    return null;
+  }
+
   private buildFeatureBody(issue: Issue, allTasks: Issue[], allTasksResults: { issueId: string, issueNumber: number }[] = []): string {
     const idToNumber = new Map<string, number>();
     allTasksResults.forEach(res => idToNumber.set(res.issueId, res.issueNumber));
@@ -177,8 +221,8 @@ ${observation}
     };
   }
 
-  /**
-   * Cria uma issue no GitHub
+    /**
+   * Cria uma issue no GitHub **somente se ela ainda não existir**
    */
   async createIssue(
     organizationName: string,
@@ -190,8 +234,42 @@ ${observation}
     taskResults: { issueId: string, issueNumber: number }[] = [],
     storyResults: { issueId: string, issueNumber: number }[] = []
   ): Promise<GitHubIssueCreated> {
-    const input = this.mapIssueToGitHubInput(issue, allTasks, allStories, taskResults, storyResults);
 
+    /**
+     * 🔍 1. NOVO: Antes de criar, verificar se já existe issue com o mesmo título
+     * Usamos a função issueAlreadyExists() que você deve implementar.
+     */
+    const existing = await this.issueAlreadyExists(
+      organizationName,
+      repositoryName,
+      issue.title ?? ""
+    );
+
+    if (existing) {
+      // ✔  Encontrou issue — retorna ela e pula a criação
+      return {
+        id: existing.id,
+        number: existing.number,
+
+      };
+    }
+
+
+    /**
+     * 2. Mapeia a issue em formato GraphQL
+     */
+    const input = this.mapIssueToGitHubInput(
+      issue,
+      allTasks,
+      allStories,
+      taskResults,
+      storyResults
+    );
+
+
+    /**
+     * 3. Prepara mutation GraphQL
+     */
     const query = `
       mutation($repositoryId: ID!, $title: String!, $body: String!) {
         createIssue(input: {repositoryId: $repositoryId, title: $title, body: $body}) {
@@ -203,7 +281,7 @@ ${observation}
       }
     `;
 
-    // Obtém o ID do repositório
+    // Obtém o repositório
     const repositoryId = await getRepositoryId(organizationName, repositoryName);
 
     const variables = {
@@ -212,33 +290,55 @@ ${observation}
       body: input.body,
     };
 
-    // Cria a issue
-    const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
-    
+    const axios_instance = axiosInstance(
+      GitHubTokenManager.getInstance().getToken()
+    );
+
     try {
-      const response = await axios_instance.post('', { query, variables });
-      
-      // Check for GraphQL errors
+      /**
+       * 4. Cria a issue
+       */
+      const response = await axios_instance.post("", { query, variables });
+
       if (response.data?.errors) {
-        const errorMessages = response.data.errors.map((err: any) => err.message).join(', ');
+        const errorMessages = response.data.errors
+          .map((err: any) => err.message)
+          .join(", ");
         throw new Error(`❌ GraphQL errors: ${errorMessages}`);
       }
-      
+
       const issueData = response.data?.data?.createIssue?.issue;
+
       if (!issueData) {
-        throw new Error('❌ A resposta da API não contém os dados esperados.');
+        throw new Error(
+          "❌ A resposta da API não contém os dados esperados."
+        );
       }
-      
-      // Process labels and assignees
-      return await this.processIssueLabelsAndAssignees(issueData, input, organizationName, repositoryName, assignees);
+
+      /**
+       * 5. Aplica labels e assignees como antes
+       */
+      return await this.processIssueLabelsAndAssignees(
+        issueData,
+        input,
+        organizationName,
+        repositoryName,
+        assignees
+      );
+
     } catch (error: any) {
       if (error.response?.status === 422) {
         const errorData = error.response.data;
-        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+        throw new Error(
+          `❌ Validation error (422): ${JSON.stringify(
+            errorData
+          )}. Check issue title, body length, or repository permissions.`
+        );
       }
       throw error;
     }
   }
+
 
   private async processIssueLabelsAndAssignees(
     issueData: any,
