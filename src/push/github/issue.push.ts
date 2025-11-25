@@ -76,8 +76,10 @@ export class GitHubIssuePushService {
       Logger.info(`✔ Issue já existe no GitHub: ${title} (#${found.number})`);
       return { id: found.id, number: found.number };
     }
-
-    return null;
+    else {
+      Logger.info(`ℹ️ Issue não encontrada no GitHub: ${title}`);
+      return null;
+    }
   }
 
   private buildFeatureBody(issue: Issue, allTasks: Issue[], allTasksResults: { issueId: string, issueNumber: number }[] = []): string {
@@ -378,3 +380,4 @@ ${observation}
       number: issueData.number
     };
   };
+};
