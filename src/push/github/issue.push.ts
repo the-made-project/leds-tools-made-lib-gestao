@@ -38,47 +38,64 @@ export class GitHubIssuePushService {
 
     // 🔍 NOVO: verifica se a issue já existe pelo título
   async issueAlreadyExists(
-    organizationName: string,
-    repositoryName: string,
-    title: string
-  ): Promise<{ id: string; number: number } | null> {
+  organizationName: string,
+  repositoryName: string,
+  title: string
+): Promise<{ id: string; number: number } | null> {
 
-    const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
+  const axios_instance = axiosInstance(
+    GitHubTokenManager.getInstance().getToken()
+  );
 
-    const query = `
-      query($queryString: String!) {
-        search(
-          query: $queryString,
-          type: ISSUE,
-          first: 20
-        ) {
-          nodes {
-            ... on Issue {
-              id
-              number
-              title
-            }
+  const query = `
+    query($queryString: String!) {
+      search(
+        query: $queryString,
+        type: ISSUE,
+        first: 50
+      ) {
+        nodes {
+          ... on Issue {
+            id
+            number
+            title
           }
         }
       }
-    `;
-
-    const variables = {
-      queryString: `repo:${organizationName}/${repositoryName} is:issue "${title}"`
-    };
-
-    const response = await axios_instance.post('', { query, variables });
-    const nodes = response.data?.data?.search?.nodes ?? [];
-
-    const found = nodes.find((i: any) => i.title === title);
-
-    if (found) {
-      Logger.info(`✔ Issue já existe no GitHub: ${title} (#${found.number})`);
-      return { id: found.id, number: found.number };
     }
+  `;
 
-    return null;
+  const safeTitle = title.replace(/"/g, '\\"');
+
+  const variables = {
+    queryString: `repo:${organizationName}/${repositoryName} is:issue in:title "${safeTitle}"`
+  };
+
+  const response = await axios_instance.post(
+    "https://api.github.com/graphql",
+    { query, variables }
+  );
+
+  const nodes = response.data?.data?.search?.nodes ?? [];
+
+  const norm = (s: string) => s.trim().toLowerCase();
+
+  const found = nodes.find((i: any) =>
+    norm(i.title) === norm(title)
+  );
+
+  console.log("🔍 DEBUG SEARCH QUERY:", variables.queryString);
+  console.log("🔍 TITULO BUSCADO:", JSON.stringify(title));
+  console.log("🔍 TITULOS RETORNADOS PELO GITHUB:");
+  console.log(nodes.map((n: any) => ">" + n.title + "<"));
+
+  if (found) {
+    Logger.info(`✔ Issue já existe: ${title} (#${found.number})`);
+    return { id: found.id, number: found.number };
   }
+  return null;
+}
+
 
   private buildFeatureBody(issue: Issue, allTasks: Issue[], allTasksResults: { issueId: string, issueNumber: number }[] = []): string {
     const idToNumber = new Map<string, number>();

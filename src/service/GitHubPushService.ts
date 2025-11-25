@@ -11,6 +11,7 @@ import { addMemberToTeam } from '../push/github/teamMember.push';
 import { GenericRepository } from '../repository/generic.repository';
 import { Logger } from '../util/logger';
 import { ISSUE_TYPES, PROJECT_FIELDS, LABEL_COLORS, STATUS_COLORS, DATA_PATHS, ERROR_MESSAGES } from '../util/constants';
+import { stat } from 'fs';
 
 // Serviço para enviar modelos MADE para o GitHub
 export class GitHubPushService {
@@ -107,11 +108,16 @@ export class GitHubPushService {
         projectItemId
       };
     } catch (error: any) {
-      Logger.error(`❌ Erro ao processar issue ${issue.title || issue.id}:`, {
-        error: error.message,
-        issueId: issue.id,
-        issueType: issue.type
+      Logger.error(`❌ Erro ao processar issue ${issue.title || issue.id}`);
+      if (error.response) {
+        Logger.error("📡 GitHub API Response Error:", {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
       });
+    } else {
+        Logger.error("⚠️ Erro desconhecido:", error.message);
+      }
       throw error;
     }
   }
