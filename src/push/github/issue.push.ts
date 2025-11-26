@@ -37,64 +37,64 @@ export class GitHubIssuePushService {
   }
 
     // 🔍 NOVO: verifica se a issue já existe pelo título
-  async issueAlreadyExists(
-  organizationName: string,
-  repositoryName: string,
-  title: string
-): Promise<{ id: string; number: number } | null> {
+    async issueAlreadyExists(
+    organizationName: string,
+    repositoryName: string,
+    title: string
+  ): Promise<boolean> {
 
-  const axios_instance = axiosInstance(
+    const axios_instance = axiosInstance(
     GitHubTokenManager.getInstance().getToken()
-  );
+    );
 
-  const query = `
+    const query = `
     query($queryString: String!) {
       search(
-        query: $queryString,
-        type: ISSUE,
-        first: 50
+      query: $queryString,
+      type: ISSUE,
+      first: 50
       ) {
-        nodes {
-          ... on Issue {
-            id
-            number
-            title
-          }
+      nodes {
+        ... on Issue {
+        id
+        number
+        title
         }
       }
+      }
     }
-  `;
+    `;
 
-  const safeTitle = title.replace(/"/g, '\\"');
+    const safeTitle = title.replace(/"/g, '\\"');
 
-  const variables = {
+    const variables = {
     queryString: `repo:${organizationName}/${repositoryName} is:issue in:title "${safeTitle}"`
-  };
+    };
 
-  const response = await axios_instance.post(
+    const response = await axios_instance.post(
     "https://api.github.com/graphql",
     { query, variables }
-  );
+    );
 
-  const nodes = response.data?.data?.search?.nodes ?? [];
+    const nodes = response.data?.data?.search?.nodes ?? [];
 
-  const norm = (s: string) => s.trim().toLowerCase();
+    const norm = (s: string) => s.trim().toLowerCase();
 
-  const found = nodes.find((i: any) =>
+    const found = nodes.find((i: any) =>
     norm(i.title) === norm(title)
-  );
+    );
 
-  console.log("🔍 DEBUG SEARCH QUERY:", variables.queryString);
-  console.log("🔍 TITULO BUSCADO:", JSON.stringify(title));
-  console.log("🔍 TITULOS RETORNADOS PELO GITHUB:");
-  console.log(nodes.map((n: any) => ">" + n.title + "<"));
+    console.log("🔍 DEBUG SEARCH QUERY:", variables.queryString);
+    console.log("🔍 TITULO BUSCADO:", JSON.stringify(title));
+    console.log("🔍 TITULOS RETORNADOS PELO GITHUB:");
+    console.log(nodes.map((n: any) => ">" + n.title + "<"));
 
-  if (found) {
+    if (found) {
     Logger.info(`✔ Issue já existe: ${title} (#${found.number})`);
-    return { id: found.id, number: found.number };
+    return true;
+    }
+    return false;
   }
-  return null;
-}
 
 
   private buildFeatureBody(issue: Issue, allTasks: Issue[], allTasksResults: { issueId: string, issueNumber: number }[] = []): string {
@@ -263,12 +263,9 @@ ${observation}
     );
 
     if (existing) {
-      // ✔  Encontrou issue — retorna ela e pula a criação
-      return {
-        id: existing.id,
-        number: existing.number,
-
-      };
+      // ✔ Encontrou issue — pula a criação e retorna com os dados disponíveis
+      Logger.info(`✔ Issue já existe com o título: ${issue.title}`);
+      throw new Error(`Issue já existe: ${issue.title}. Operação cancelada.`);
     }
 
 
