@@ -3,8 +3,9 @@ import { AxiosInstance } from 'axios';
 import { JiraTokenManager } from '../../service/JiraTokenManager';
 import { axiosJiraInstance } from '../../util/axiosInstance';
 import { JiraIssueLinkType } from './issueLinkType.push'
-import { JiraIssueType } from './issueType.push'
+import { JiraIssueType, JiraIssueTypePushService } from './issueType.push'
 import { JiraProject } from './project.push'
+import { Logger } from '../../util/logger';
 
 /**
  * Known types of MARKS that define inline text formatting and interface
@@ -164,7 +165,28 @@ export interface JiraIssue extends JiraIssueBase {
   fields: JiraIssueFields
 }
 
-export interface JiraIssueInput {
+export interface JiraIssueUpdateInput {
+  update: {
+    labels?: {
+      [key: string]: string | string[];
+    },
+    issuelinks?: {
+      add: {
+        type: {
+          id: string
+        };
+        inwardIssue?: {
+          key: string;
+        };
+        outwardIssue?: {
+          key: string;
+        }
+      }
+    }
+  }
+}
+
+export interface JiraIssueInput extends JiraIssueUpdateInput {
   fields: {
     summary: string;
     project: {
@@ -206,21 +228,6 @@ export interface JiraIssueInput {
       remainingEstimate: string;
     };
   };
-  update: {
-    issuelinks?: {
-      add: {
-        type: {
-          id: string
-        };
-        inwardIssue?: {
-          key: string;
-        };
-        outwardIssue?: {
-          key: string;
-        }
-      }
-    }
-  };
 }
 
 export interface JiraIssueCreated {
@@ -246,10 +253,146 @@ export interface JiraIssueBulkCreate {
 
 export class JiraIssuePushService {
   private axiosInstance: AxiosInstance;
+  private axiosLabelInstance: AxiosInstance;
+  private issueTypeInstance: JiraIssueTypePushService = new JiraIssueTypePushService();
 
   constructor() {
     const jiraTokenManager = JiraTokenManager.getInstance();
     this.axiosInstance = axiosJiraInstance(jiraTokenManager.getDomain(), jiraTokenManager.getUserName(), jiraTokenManager.getApiToken(), 'issue');
+    this.axiosLabelInstance = axiosJiraInstance(jiraTokenManager.getDomain(), jiraTokenManager.getUserName(), jiraTokenManager.getApiToken(), 'label');
+  }
+
+  /**
+   * @description Get all Jira labels
+   * @author Douglas Lima
+   * @date 25/11/2025
+   * @param {number} [startAt=0]
+   * @param {number} [maxResults=100]
+   * @return {*}  {Promise<string[]>}
+   * @memberof JiraIssuePushService
+   */
+  async getAllLabels(startAt: number = 0, maxResults: number = 100): Promise<string[]> {
+    try {
+      return this.getLabelsPaginated(`?startAt=${startAt}&maxResults=${maxResults}`)
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      throw error;
+    }
+  }
+
+  private async getLabelsPaginated(urlSearch: string): Promise<string[]> {
+    try {
+      const response = await this.axiosLabelInstance.get(urlSearch);
+
+      if (!response.data) {
+        throw new Error('❌ A resposta da API não contém os dados esperados.');
+      }
+
+      const nextPage = response.data.isLast ? [] : await this.getLabelsPaginated(response.data.nextPage);
+      return [...response.data.values, ...nextPage];
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * @description Ensure a Jira label exists, creating it if necessary
+   * @author Douglas Lima
+   * @date 25/11/2025
+   * @param {string} label
+   * @return {*}  {Promise<any>}
+   * @memberof JiraIssuePushService
+   */
+  async ensureLabelExists(projectId: string, label: string): Promise<any> {
+    try {
+      const labels = await this.getAllLabels();
+
+      if (labels.includes(label)) {
+        Logger.info(`ℹ️ Label "${label}" já existe`);
+        return;
+      }
+
+      const issueTypes = await this.issueTypeInstance.getIssueTypes();
+      const issueTypeId = issueTypes.find(type => type.name.toLowerCase() === 'task' && type.scope?.project?.id === projectId)?.id;
+
+      if (!issueTypeId) {
+        Logger.info(`ℹ️ Não foi possível criar a label "${label}";`);
+        return;
+      }
+
+      // Criando issue temporária para adicionar o label
+      const issue: JiraIssueInput = {
+        fields: {
+          summary: `Temporary issue to create label ${label}`,
+          project: {
+            id: projectId
+          },
+          issuetype: {
+            id: issueTypeId
+          },
+          labels: [label]
+        },
+        update: {}
+      };
+      const response = await this.createIssue(issue);
+      Logger.success(`✅ Label "${label}" criada com sucesso`);
+
+      // Removendo issue temporária
+      await this.deleteIssue(response.key);
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * @description Ensure a Jira label exists, creating it if necessary
+   * @author Douglas Lima
+   * @date 25/11/2025
+   * @param {string} issueIdOrKey
+   * @param {string[]} labels
+   * @return {*}  {Promise<void>}
+   * @memberof JiraIssuePushService
+   */
+  async addLabelsToIssue(issueIdOrKey: string, labels: string[]): Promise<void> {
+    try {
+      if (!issueIdOrKey) {
+        throw new Error('❌ Issue id or key is not defined');
+      }
+      if (!labels || labels.length === 0) {
+        throw new Error('❌ Labels are not defined');
+      }
+
+      const issue: JiraIssueUpdateInput = {
+        update: {
+          labels: {
+            add: labels
+          }
+        }
+      };
+
+      await this.updateIssue(issueIdOrKey, issue);
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      throw error;
+    }
   }
 
   /**
@@ -396,6 +539,61 @@ export class JiraIssuePushService {
       }
 
       return issueData
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * @description Update a Jira issue
+   * @author Douglas Lima
+   * @date 25/11/2025
+   * @param {string} issueIdOrKey
+   * @param {JiraIssueUpdateInput} issue
+   * @return {*}  {Promise<void>}
+   * @memberof JiraIssuePushService
+   */
+  async updateIssue(issueIdOrKey: string, issue: JiraIssueUpdateInput): Promise<void> {
+    try {
+      if (!issueIdOrKey) {
+        throw new Error('❌ Issue id or key is not defined');
+      }
+      if (!issue || !issue.update) {
+        throw new Error('❌ Issue data is not defined');
+      }
+
+      await this.axiosInstance.put(`/${issueIdOrKey}`, issue);
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * @description Delete Jira issue
+   * @author Douglas Lima
+   * @date 25/11/2025
+   * @param {string} issueIdOrKey
+   * @return {*}  {Promise<any>}
+   * @memberof JiraIssuePushService
+   */
+  async deleteIssue(issueIdOrKey: string): Promise<any> {
+    try {
+      // Check for input errors
+      if (!issueIdOrKey) {
+        throw new Error(`❌ Jira API errors: Issue id or key does not defined`);
+      }
+
+      return this.axiosInstance.delete(`/${issueIdOrKey}`);
     } catch (error: any) {
       if (error.response?.status === 422) {
         const errorData = error.response.data;

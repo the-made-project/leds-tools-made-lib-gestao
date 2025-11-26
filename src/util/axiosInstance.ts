@@ -22,7 +22,8 @@ export function axiosJiraInstance(domain: string, userName: string, apiToken: st
         baseURL: JIRA_API_URL.replace('{domain}', domain).replace('{resource}', resource),
         headers: {
             'Content-Type': 'application/json',
-            Accept: 'application/json'
+            Accept: 'application/json',
+            // Authorization: `Basic ${Buffer.from(`${userName}:${apiToken}`).toString('base64')}`,
         },
         auth: {
             username: userName,
