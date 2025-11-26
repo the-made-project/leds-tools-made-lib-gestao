@@ -3,6 +3,8 @@ export * from './model/models';
 import { GitHubService } from "./service/GitHubService";
 import { GitHubPushService } from "./service/GitHubPushService";
 import { GitHubTokenManager } from "./service/GitHubTokenManager";
+import { JiraTokenManager } from "./service/JiraTokenManager";
+import { JiraPushService } from "./service/JiraPushService";
 import type { Project, Issue, Backlog, Team, TimeBox, Roadmap } from './model/models';
 
 export class ReportManager {
@@ -38,6 +40,31 @@ export class ReportManager {
             await pushService.fullPush(org, repo, project, epics, stories, tasks, backlogs, teams, timeboxes, roadmaps);
         } catch (error) {
             console.error("Erro durante o push para o GitHub:", error);
+            throw error;
+        }
+    }
+
+    public async jiraPush(
+        domain: string,
+        userName: string, 
+        apiToken: string,
+        org: string,
+        repo: string,
+        project: Project,
+        epics: Issue[],
+        stories: Issue[],
+        tasks: Issue[],
+        backlogs?: Backlog[],
+        teams?: Team[],
+        timeboxes?: TimeBox[],
+        roadmaps?: Roadmap[]
+    ) {
+        JiraTokenManager.initialize(domain, userName, apiToken);
+        const pushService = new JiraPushService();
+        try {
+            await pushService.fullPush(org, repo, project, epics, stories, tasks, backlogs, teams, timeboxes, roadmaps);
+        } catch (error) {
+            console.error("Erro durante o push para o Jira:", error);
             throw error;
         }
     }

@@ -92,23 +92,45 @@ export class JiraProjectPushService {
    * @return {*}  {Promise<JiraProject[]>}
    * @memberof JiraProjectPushService
    */
-  async getProjects(): Promise<JiraProject[]> {
+  async getProjects(projectName: string='', startAt: number=0, maxResults: number=5): Promise<JiraProject[]> {
     try {
-      const response = await this.axiosInstance.get('/search');
-
-      const projectData = response.data?.values;
-
-      if (!projectData) {
-        throw new Error('❌ A resposta da API não contém os dados esperados.');
-      }
-
-      return projectData
+      return this.getProjectsPaginated(`/search?startAt=${startAt}&maxResults=${maxResults}&query=${encodeURIComponent(`name ~ "${projectName}"`)}`);
+     
     } catch (error: any) {
       if (error.response?.status === 422) {
         const errorData = error.response.data;
         throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
       }
 
+      throw error;
+    }
+  }
+
+  private async getProjectsPaginated(urlSearch: string): Promise<JiraProject[]> {
+    try {
+      const response = await this.axiosInstance.get(urlSearch); 
+
+      if (!response.data) {
+        throw new Error('❌ A resposta da API não contém os dados esperados.');
+      }
+      const nextPage = (!response.data.isLast ? [] : await this.getProjectsPaginated(response.data.nextPage));
+      return [...response.data.values, ...nextPage];
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+      throw error;
+    }
+  }
+
+  async getProjectIdByName(projectName: string): Promise<string> {
+    try {
+      const projects = await this.getProjects(projectName);
+      const project = projects.find(proj => proj.name.toLowerCase() === projectName.toLowerCase());
+      return project ? project.id : '';
+    } catch (error) {
+      console.error('❌ Erro ao buscar projeto pelo nome:', error);
       throw error;
     }
   }
