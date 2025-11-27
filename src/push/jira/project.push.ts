@@ -38,7 +38,7 @@ export interface JiraProjectInput {
 }
 
 export interface JiraProjectCreated {
-  id: number;
+  id: string;
   key: string;
   self: string
 }
@@ -92,10 +92,10 @@ export class JiraProjectPushService {
    * @return {*}  {Promise<JiraProject[]>}
    * @memberof JiraProjectPushService
    */
-  async getProjects(projectName: string='', startAt: number=0, maxResults: number=5): Promise<JiraProject[]> {
+  async getProjects(projectName: string = '', startAt: number = 0, maxResults: number = 5): Promise<JiraProject[]> {
     try {
       return this.getProjectsPaginated(`/search?startAt=${startAt}&maxResults=${maxResults}&query=${encodeURIComponent(`name ~ "${projectName}"`)}`);
-     
+
     } catch (error: any) {
       if (error.response?.status === 422) {
         const errorData = error.response.data;
@@ -108,7 +108,7 @@ export class JiraProjectPushService {
 
   private async getProjectsPaginated(urlSearch: string): Promise<JiraProject[]> {
     try {
-      const response = await this.axiosInstance.get(urlSearch); 
+      const response = await this.axiosInstance.get(urlSearch);
 
       if (!response.data) {
         throw new Error('❌ A resposta da API não contém os dados esperados.');
@@ -154,27 +154,38 @@ export class JiraProjectPushService {
         throw new Error(`❌ Jira API errors: Project key does not defined`);
       }
 
-      const response = await this.axiosInstance.post('', project);
+      try {
+        // Verificando se o projeto existe
+        const response = await this.axiosInstance.get(`/${project.key}`);
+        const projectData = response.data;
 
-      // Check for request errors
-      if (!response.data) {
-        const errorMessages = response.data.errors.map((err: any) => err.message).join(', ');
-        throw new Error(`❌ Jira API errors: ${errorMessages}`);
+        // Check for request errors
+        if (!projectData) {
+          throw new Error('❌ A resposta da API não contém os dados esperados.');
+        }
+
+        return projectData
+      } catch (error: any) {
+        if (error.response?.status === 422) {
+          const errorData = error.response.data;
+          throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+        }
+
+        if (error.response?.status === 404) {
+          const response = await this.axiosInstance.post('', project);
+          const projectData = response.data;
+
+          // Check for request errors
+          if (!projectData) {
+            throw new Error('❌ A resposta da API não contém os dados esperados.');
+          }
+
+          return projectData
+        }
+
+        throw error;
       }
-
-      const projectData = response.data;
-
-      if (!projectData) {
-        throw new Error('❌ A resposta da API não contém os dados esperados.');
-      }
-
-      return projectData
     } catch (error: any) {
-      if (error.response?.status === 422) {
-        const errorData = error.response.data;
-        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
-      }
-
       throw error;
     }
   }

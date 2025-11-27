@@ -5,6 +5,7 @@ import { axiosJiraInstance } from '../../util/axiosInstance';
 import { JiraIssueLinkType } from './issueLinkType.push'
 import { JiraIssueType, JiraIssueTypePushService } from './issueType.push'
 import { JiraProject } from './project.push'
+import { JiraUser, JiraUserPushService } from './user.push'
 import { Logger } from '../../util/logger';
 
 /**
@@ -44,19 +45,6 @@ export interface JiraADFNode extends JiraADFGenericNode {
   content: JiraADFGenericNode[];
   type: 'doc';
   version: 1;
-}
-
-export interface JiraUser {
-  self: string;
-  accountId: string;
-  emailAddress: string;
-  avatarUrls: {
-    [key: string]: string;
-  };
-  active: boolean;
-  displayName: string;
-  timeZone: string;
-  accountType: string;
 }
 
 export interface JiraIssueStatusCategory {
@@ -165,29 +153,8 @@ export interface JiraIssue extends JiraIssueBase {
   fields: JiraIssueFields
 }
 
-export interface JiraIssueUpdateInput {
-  update: {
-    labels?: {
-      [key: string]: string | string[];
-    },
-    issuelinks?: {
-      add: {
-        type: {
-          id: string
-        };
-        inwardIssue?: {
-          key: string;
-        };
-        outwardIssue?: {
-          key: string;
-        }
-      }
-    }
-  }
-}
-
-export interface JiraIssueInput extends JiraIssueUpdateInput {
-  fields: {
+export interface JiraIssueInput {
+  fields?: {
     summary: string;
     project: {
       id: string;
@@ -199,7 +166,7 @@ export interface JiraIssueInput extends JiraIssueUpdateInput {
       key: string
     };
     assignee?: {
-      id: string
+      accountId: string
     };
     description?: JiraADFNode;
     priority?: {
@@ -228,6 +195,24 @@ export interface JiraIssueInput extends JiraIssueUpdateInput {
       remainingEstimate: string;
     };
   };
+  update?: {
+    labels?: {
+      [key: string]: string | string[];
+    }[],
+    issuelinks?: {
+      add: {
+        type: {
+          id: string
+        };
+        inwardIssue?: {
+          key: string;
+        };
+        outwardIssue?: {
+          key: string;
+        }
+      }
+    }
+  }
 }
 
 export interface JiraIssueCreated {
@@ -255,6 +240,7 @@ export class JiraIssuePushService {
   private axiosInstance: AxiosInstance;
   private axiosLabelInstance: AxiosInstance;
   private issueTypeInstance: JiraIssueTypePushService = new JiraIssueTypePushService();
+  private userInstance: JiraUserPushService = new JiraUserPushService();
 
   constructor() {
     const jiraTokenManager = JiraTokenManager.getInstance();
@@ -308,43 +294,51 @@ export class JiraIssuePushService {
    * @description Ensure a Jira label exists, creating it if necessary
    * @author Douglas Lima
    * @date 25/11/2025
-   * @param {string} label
+   * @param {string[]} labels
    * @return {*}  {Promise<any>}
    * @memberof JiraIssuePushService
    */
-  async ensureLabelExists(projectId: string, label: string): Promise<any> {
+  async ensureLabelExists(projectId: string, labels: string[]): Promise<any> {
     try {
-      const labels = await this.getAllLabels();
+      const allLabels = await this.getAllLabels();
+      const labelAlreadyExists = labels.filter(label => allLabels.includes(label))
+      const labelNotExistsYet = labels.filter(label => !allLabels.includes(label))
 
-      if (labels.includes(label)) {
-        Logger.info(`ℹ️ Label "${label}" já existe`);
+      if (labelAlreadyExists) {
+        for (const label of labelAlreadyExists) {
+          Logger.info(`ℹ️ Label "${label}" já existe`);
+        }
+      }
+
+      if (labelNotExistsYet.length === 0) {
         return;
       }
 
+      const newLabelsExpression = labelNotExistsYet.join(', ')
       const issueTypes = await this.issueTypeInstance.getIssueTypes();
       const issueTypeId = issueTypes.find(type => type.name.toLowerCase() === 'task' && type.scope?.project?.id === projectId)?.id;
 
       if (!issueTypeId) {
-        Logger.info(`ℹ️ Não foi possível criar a label "${label}";`);
+        Logger.info(`ℹ️ Não foi possível criar a(s) label(s) "${newLabelsExpression}";`);
         return;
       }
 
       // Criando issue temporária para adicionar o label
       const issue: JiraIssueInput = {
         fields: {
-          summary: `Temporary issue to create label ${label}`,
+          summary: `Temporary issue to create labels ${newLabelsExpression}`,
           project: {
             id: projectId
           },
           issuetype: {
             id: issueTypeId
           },
-          labels: [label]
+          labels: labelNotExistsYet
         },
         update: {}
       };
       const response = await this.createIssue(issue);
-      Logger.success(`✅ Label "${label}" criada com sucesso`);
+      Logger.success(`✅ Label(s) "${newLabelsExpression}" criada(s) com sucesso`);
 
       // Removendo issue temporária
       await this.deleteIssue(response.key);
@@ -376,11 +370,11 @@ export class JiraIssuePushService {
         throw new Error('❌ Labels are not defined');
       }
 
-      const issue: JiraIssueUpdateInput = {
+      const issue: JiraIssueInput = {
         update: {
-          labels: {
+          labels: [{
             add: labels
-          }
+          }]
         }
       };
 
@@ -550,20 +544,53 @@ export class JiraIssuePushService {
   }
 
   /**
-   * @description Update a Jira issue
+   * @description Assignee a Jira issue
    * @author Douglas Lima
-   * @date 25/11/2025
+   * @date 26/11/2025
    * @param {string} issueIdOrKey
-   * @param {JiraIssueUpdateInput} issue
+   * @param {string} user
    * @return {*}  {Promise<void>}
    * @memberof JiraIssuePushService
    */
-  async updateIssue(issueIdOrKey: string, issue: JiraIssueUpdateInput): Promise<void> {
+  async assigneeIssue(issueIdOrKey: string, user: string): Promise<void> {
     try {
       if (!issueIdOrKey) {
         throw new Error('❌ Issue id or key is not defined');
       }
-      if (!issue || !issue.update) {
+
+      const accountId = await this.userInstance.getAccountId(user);
+      const issue: JiraIssueInput = {
+        fields: {
+          assignee: accountId ? { accountId } : null
+        } as any
+      };
+
+      await this.updateIssue(issueIdOrKey, issue)
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * @description Update a Jira issue
+   * @author Douglas Lima
+   * @date 25/11/2025
+   * @param {string} issueIdOrKey
+   * @param {JiraIssueInput} issue
+   * @return {*}  {Promise<void>}
+   * @memberof JiraIssuePushService
+   */
+  async updateIssue(issueIdOrKey: string, issue: JiraIssueInput): Promise<void> {
+    try {
+      if (!issueIdOrKey) {
+        throw new Error('❌ Issue id or key is not defined');
+      }
+      if (!issue || !(issue.update || issue.fields)) {
         throw new Error('❌ Issue data is not defined');
       }
 

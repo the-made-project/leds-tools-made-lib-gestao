@@ -1,47 +1,6 @@
 import { axiosInstance } from '../../util/axiosInstance';
 import { GitHubTokenManager } from '../../service/GitHubTokenManager';
 import { Logger } from '../../util/logger';
-import { GitHubLabel, GitHubAPIResponse } from '../../model/models';
-import axios from 'axios';
-
-// Adiciona assignees a uma issue
-export async function addAssigneesToIssue(
-  organizationName: string,
-  repositoryName: string,
-  issueNumber: number,
-  assignees: string[]
-): Promise<void> {
-  const token = GitHubTokenManager.getInstance().getToken();
-  const restAxios = axios.create({
-    baseURL: 'https://api.github.com',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-  
-  await restAxios.post(
-    `/repos/${organizationName}/${repositoryName}/issues/${issueNumber}/assignees`,
-    { assignees }
-  );
-}
-
-// Executa uma query/mutação GraphQL genérica
-export async function githubGraphQL<T>(query: string, variables: Record<string, any>): Promise<T> {
-  const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
-  const response = await axios_instance.post('', { query, variables });
-  
-  const apiResponse: GitHubAPIResponse<T> = response.data;
-  if (apiResponse.errors && apiResponse.errors.length > 0) {
-    throw new Error(`GraphQL errors: ${apiResponse.errors.map(e => e.message).join(', ')}`);
-  }
-  
-  if (!apiResponse.data) {
-    throw new Error('No data returned from GraphQL query');
-  }
-  
-  return apiResponse.data;
-}
 
 // Busca o ID do campo "Type" no projeto
 export async function getProjectFieldIdByName(projectId: string, fieldName: string): Promise<string | null> {
@@ -153,62 +112,4 @@ export async function ensureProjectBacklogField(projectId: string, options: stri
   } else {
     Logger.info('ℹ️ Campo "Backlog" já existe no projeto.');
   }
-}
-
-// Cria ou garante um time na organização
-export async function ensureTeamExists(
-  org: string,
-  teamName: string,
-  description?: string
-): Promise<void> {
-  const slug = teamName.toLowerCase().replace(/ /g, '-');
-  const token = GitHubTokenManager.getInstance().getToken();
-  const restAxios = axios.create({
-    baseURL: 'https://api.github.com',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  try {
-    // Tenta buscar o time
-    await restAxios.get(`/orgs/${org}/teams/${encodeURIComponent(slug)}`);
-    // Se não lançar erro, o time já existe
-  } catch (error: any) {
-    if (error.response && error.response.status === 404) {
-      // Cria o time se não existir
-      await restAxios.post(
-        `/orgs/${org}/teams`,
-        {
-          name: teamName,
-          description: description || '',
-        }
-      );
-    } else {
-      throw error;
-    }
-  }
-}
-
-// Adiciona um membro ao time
-export async function addMemberToTeam(
-  org: string,
-  teamName: string,
-  username: string
-): Promise<void> {
-  const slug = teamName.toLowerCase().replace(/ /g, '-');
-  const token = GitHubTokenManager.getInstance().getToken();
-  const restAxios = axios.create({
-    baseURL: 'https://api.github.com',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-  
-  await restAxios.put(
-    `/orgs/${org}/teams/${encodeURIComponent(slug)}/memberships/${encodeURIComponent(username)}`,
-    { role: "member" }
-  );
 }
