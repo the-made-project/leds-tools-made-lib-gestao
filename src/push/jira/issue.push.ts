@@ -1,4 +1,5 @@
 import { AxiosInstance } from 'axios';
+import fs from "fs";
 
 import { JiraTokenManager } from '../../service/JiraTokenManager';
 import { axiosJiraInstance } from '../../util/axiosInstance';
@@ -7,6 +8,13 @@ import { JiraIssueType, JiraIssueTypePushService } from './issueType.push'
 import { JiraProject } from './project.push'
 import { JiraUser, JiraUserPushService } from './user.push'
 import { Logger } from '../../util/logger';
+import { Issue } from '../../model/models';
+import { ISSUE_TYPES } from '../../util/constants';
+
+// Templates
+const epicBody = fs.readFileSync("JIRA_TEMPLATES/epic.txt", "utf-8");
+const storyBody = fs.readFileSync("JIRA_TEMPLATES/story", "utf-8");
+const subtaskBody = fs.readFileSync("JIRA_TEMPLATES/subtask.txt", "utf-8");
 
 /**
  * Known types of MARKS that define inline text formatting and interface
@@ -166,9 +174,9 @@ export interface JiraIssueInput {
       key: string
     };
     assignee?: {
-      accountId: string
+      id: string
     };
-    description?: JiraADFNode;
+    description?: JiraADFNode | string;
     priority?: {
       id: string;
     };
@@ -468,14 +476,43 @@ export class JiraIssuePushService {
   }
 
   /**
+   * @description Prepare and Create a Jira issue
+   * @author Douglas Lima
+   * @date 28/11/2025
+   * @private
+   * @param {string} projectId
+   * @param {Issue} issue
+   * @param {JiraIssueType[]} issueTypes
+   * @param {Map<string, string>} parentIssues
+   * @param {Map<string, string>} members
+   * @return {*}  {Promise<JiraIssueCreated>}
+   * @memberof JiraIssuePushService
+   */
+  async prepareAndCreateIssue(projectId: string, issue: Issue, issueTypes: JiraIssueType[], parentIssues: Map<string, string>, members: Map<string, string>): Promise<JiraIssueCreated> {
+    try {
+      const issueData = this.prepareIssueToCreate(projectId, issue, issueTypes, parentIssues, members)
+
+      return this.createIssue(issueData)
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      throw error;
+    }
+  }
+
+  /**
    * @description Create a Jira issue
    * @author Douglas Lima
    * @date 31/10/2025
+   * @private
    * @param {JiraIssueInput} issue
    * @return {*}  {Promise<JiraIssueCreated>}
    * @memberof JiraIssuePushService
    */
-  async createIssue(issue: JiraIssueInput): Promise<JiraIssueCreated> {
+  private async createIssue(issue: JiraIssueInput): Promise<JiraIssueCreated> {
     try {
       // Check for input errors
       if (!issue.fields) {
@@ -504,21 +541,97 @@ export class JiraIssuePushService {
   }
 
   /**
+   * @description Prepare and Create many Jira issues
+   * @author Douglas Lima
+   * @date 28/11/2025
+   * @param {string} projectId
+   * @param {Issue[]} issues
+   * @param {JiraIssueType[]} issueTypes
+   * @param {Map<string, string>} parentIssues
+   * @param {Map<string, string>} members
+   * @return {*}  {Promise<JiraIssueCreated[]>}
+   * @memberof JiraIssuePushService
+   */
+  async bulkPrepareAndCreateIssues(projectId: string, issues: Issue[], issueTypes: JiraIssueType[], parentIssues: Map<string, string>, members: Map<string, string>): Promise<JiraIssueCreated[]> {
+    try {
+      // Check for input errors
+      if (!issues || issues?.length === 0) {
+        throw new Error(`❌ Jira API errors: Issues does not defined`);
+      }
+
+      const batchIssues = issues.map(issue => this.prepareIssueToCreate(projectId, issue, issueTypes, parentIssues, members))
+
+      return this.bulkCreateIssues(batchIssues)
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * @description Prepare a Jira issue to create
+   * @author Douglas Lima
+   * @date 28/11/2025
+   * @private
+   * @param {string} projectId
+   * @param {Issue} issue
+   * @param {JiraIssueType[]} issueTypes
+   * @param {Map<string, string>} parentIssues
+   * @param {Map<string, string>} members
+   * @return {*}  {JiraIssueInput}
+   * @memberof JiraIssuePushService
+   */
+  private prepareIssueToCreate(projectId: string, issue: Issue, issueTypes: JiraIssueType[], parentIssues: Map<string, string>, members: Map<string, string>): JiraIssueInput {
+    const issueType = issueTypes.find(type => type.name === issue.type)
+    const assigneeId = members.get(issue.assignee?.email || '')
+    const parentKey = parentIssues.get((issue.depends || [])[0]?.id || '')
+
+    return {
+      fields: {
+        summary: issue.title || '',
+        project: {
+          id: projectId,
+        },
+        issuetype: {
+          id: issueType?.id || ''
+        },
+        description: this.buildDescription(issue),
+        labels: issue.labels || [],
+        ...(assigneeId ? {
+          assignee: {
+            id: assigneeId
+          }
+        } : {}),
+        ...(parentKey ? {
+          parent: {
+            key: parentKey
+          }
+        } : {})
+      }
+    }
+  }
+
+  /**
    * @description Create many Jira issues
    * @author Douglas Lima
    * @date 31/10/2025
+   * @private
    * @param {JiraIssueInput[]} issueUpdates
    * @return {*}  {Promise<JiraIssueCreated[]>}
    * @memberof JiraIssuePushService
    */
-  async bulkCreateIssues(issueUpdates: JiraIssueInput[]): Promise<JiraIssueCreated[]> {
+  private async bulkCreateIssues(issueUpdates: JiraIssueInput[]): Promise<JiraIssueCreated[]> {
     try {
       // Check for input errors
       if (!issueUpdates || issueUpdates?.length === 0) {
         throw new Error(`❌ Jira API errors: Issues does not defined`);
       }
 
-      const response = await this.axiosInstance.post('', { issueUpdates });
+      const response = await this.axiosInstance.post('/bulk', { issueUpdates });
 
       // Check for request errors
       if (response.data?.errors && response.data?.errors?.length > 0) {
@@ -629,5 +742,86 @@ export class JiraIssuePushService {
 
       throw error;
     }
+  }
+
+  /**
+   * @description Build the Story Issue body description
+   * @author Douglas Lima
+   * @date 28/11/2025
+   * @private
+   * @param {Issue} issue
+   * @return {*}  {string}
+   * @memberof JiraIssuePushService
+   */
+  private buildDescription(issue: Issue): string{
+    if (issue.type === ISSUE_TYPES.EPIC) return this.buildEpicBody(issue)
+    if (issue.type === ISSUE_TYPES.STORY) return this.buildStoryBody(issue)
+    if (issue.type === ISSUE_TYPES.SUBTASK) return this.buildSubtaskBody(issue)
+
+    return ''
+  }
+  /**
+   * @description Build the Epic Issue body description
+   * @author Douglas Lima
+   * @date 28/11/2025
+   * @private
+   * @param {Issue} issue
+   * @return {*}  {string}
+   * @memberof JiraIssuePushService
+   */
+  private buildEpicBody(issue: Issue): string {
+    // Checklist de stories melhorado
+    const storiesMarkdown = '- [ ] (Feature/Story Associada)';
+    const criterions = (issue.criterions || []).map(c => `- ${c}`).join('\n') || '- [Adicione critérios de aceitação]';
+    const observation = issue.observation ? `\n## Observações\n${issue.observation}` : '';
+
+    return epicBody
+      .replace('{{description}}', issue.description || '[Descreva de forma clara e sucinta o propósito da Epic.]')
+      .replace('{{storiesMarkdown}}', storiesMarkdown)
+      .replace('{{criterions}}', criterions)
+      .replace('{{observation}}', observation);
+  }
+
+  /**
+   * @description Build the Story Issue body description
+   * @author Douglas Lima
+   * @date 28/11/2025
+   * @private
+   * @param {Issue} issue
+   * @return {*}  {string}
+   * @memberof JiraIssuePushService
+   */
+  private buildStoryBody(issue: Issue): string {
+    // Checklist de tasks melhorado
+    const requirements = (issue.requirements || []).map(r => `- ${r}`).join('\n') || '- [Adicione requisitos]';
+    const tasksMarkdown = '- [ ] (Subtask associada)';
+    const criterions = (issue.criterions || []).map(c => `- ${c}`).join('\n') || '- [Adicione critérios de aceitação]';
+    const observation = issue.observation ? `\n## Observações\n${issue.observation}` : '';
+
+    return storyBody
+      .replace('{{description}}', issue.description || '[Descreva de forma clara e sucinta o propósito da funcionalidade.]')
+      .replace('{{requirements}}', requirements)
+      .replace('{{tasksMarkdown}}', tasksMarkdown)
+      .replace('{{criterions}}', criterions)
+      .replace('{{observation}}', observation);
+  }
+
+  /**
+   * @description Build the Subtask Issue body description
+   * @author Douglas Lima
+   * @date 28/11/2025
+   * @private
+   * @param {Issue} issue
+   * @return {*}  {string}
+   * @memberof JiraIssuePushService
+   */
+  private buildSubtaskBody(issue: Issue): string {
+    const deliverables = (issue.deliverables || []).map(d => `- ${d}`).join('\n') || '- [Adicione entregáveis]';
+    const observation = issue.observation ? `\n## Observações\n${issue.observation}` : '';
+
+    return subtaskBody
+      .replace('{{description}}', issue.description || '[Descreva de forma clara e sucinta o propósito da tarefa.]')
+      .replace('{{deliverables}}', deliverables)
+      .replace('{{observation}}', observation);
   }
 }

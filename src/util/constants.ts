@@ -15,6 +15,7 @@ export const ISSUE_TYPES = {
   STORY: 'Story', 
   TASK: 'Task',
   BUG: 'Bug',
+  SUBTASK: 'Subtask',
 } as const;
 
 // Project field names
@@ -30,6 +31,7 @@ export const PROJECT_FIELDS = {
 export const LABEL_COLORS = {
   FEATURE: '1d76db',
   TASK: 'cccccc',
+  SUBTASK: 'cccccc',
   EPIC: '5319e7',
   BUG: 'd73a4a',
   ENHANCEMENT: 'a2eeef',

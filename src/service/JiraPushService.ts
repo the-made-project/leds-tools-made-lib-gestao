@@ -10,10 +10,12 @@ import { axiosInstance } from '../util/axiosInstance';
 import { GenericRepository } from '../repository/generic.repository';
 import { Logger } from '../util/logger';
 import { ISSUE_TYPES, PROJECT_FIELDS, LABEL_COLORS, STATUS_COLORS, DATA_PATHS, ERROR_MESSAGES } from '../util/constants';
+import { JiraIssueType, JiraIssueTypePushService } from '../push/jira/issueType.push';
 
 // Serviço para enviar modelos MADE para o Jira
 export class JiraPushService {
   private issuePushService: JiraIssuePushService;
+  private issueTypePushService: JiraIssueTypePushService;
   private projectPushService: JiraProjectPushService;
   private userPushService: JiraUserPushService;
   // private sprintPushService: JiraSprintPushService;
@@ -21,6 +23,7 @@ export class JiraPushService {
 
   constructor() {
     this.issuePushService = new JiraIssuePushService();
+    this.issueTypePushService = new JiraIssueTypePushService();
     this.projectPushService = new JiraProjectPushService();
     this.userPushService = new JiraUserPushService();
     // this.sprintPushService = new JiraSprintPushService();
@@ -39,112 +42,6 @@ export class JiraPushService {
     return projectData.id;
   }
 
-  // Cria uma issue no Jira a partir do modelo MADE Issue e adiciona ao projeto
-  async pushIssue(
-    org: string,
-    repo: string,
-    projectId: string,
-    issue: Issue,
-    allTasks: Issue[] = [],
-    allStories: Issue[] = [],
-    taskResults: { issueId: string, issueNumber: number }[] = [],
-    storyResults: { issueId: string, issueNumber: number }[] = []
-  ): Promise<{ issueId: string; issueNumber: number; projectItemId: string }> {
-    try {
-      // Validate issue before processing
-      this.validateIssue(issue);
-
-      // Verifica se a issue já foi processada para este org/repo/projeto específico
-      const issueRepo = new GenericRepository<any>('./data/db', 'processed_issues.json');
-
-      const assignees = this.issuePushService.getAssigneesForIssue(issue);
-      let created;
-
-      if (issue.type === 'Epic') {
-        created = await this.issuePushService.createIssue(org, repo, issue, assignees, [], allStories, [], storyResults);
-      } else if (issue.type === 'Feature' || issue.type === 'Story') {
-        created = await this.issuePushService.createIssue(org, repo, issue, assignees, allTasks, [], taskResults, []);
-      } else {
-        created = await this.issuePushService.createIssue(org, repo, issue, assignees);
-      }
-
-      const projectItemId = await addIssueToProject(projectId, created.id);
-
-      if (issue.type) {
-        try {
-          const typeFieldId = await getProjectFieldIdByName(projectId, 'Type');
-          if (typeFieldId) {
-            await setProjectItemField(projectId, projectItemId, typeFieldId, issue.type);
-          }
-        } catch (error: any) {
-          Logger.warn(`⚠️ Falha ao definir campo 'Type': ${error.message}`);
-        }
-      }
-
-      if (issue.backlog) {
-        try {
-          const backlogFieldId = await getProjectFieldIdByName(projectId, 'Backlog');
-          if (backlogFieldId) {
-            await setProjectItemField(projectId, projectItemId, backlogFieldId, issue.backlog);
-          }
-        } catch (error: any) {
-          Logger.warn(`⚠️ Falha ao definir campo 'Backlog': ${error.message}`);
-        }
-      }
-
-      // Add the successfully created issue to the processed issues repository
-      const processedIssueRepo = new GenericRepository<any>('./data/db', 'processed_issues.json');
-      await processedIssueRepo.add({
-        id: created.id,
-        title: issue.title,
-        number: created.number,
-        uniqueKey: `${org}/${repo}/${created.id}`,
-        org,
-        repo,
-        processedAt: new Date().toISOString()
-      });
-
-      return {
-        issueId: created.id,
-        issueNumber: created.number,
-        projectItemId
-      };
-    } catch (error: any) {
-      Logger.error(`❌ Erro ao processar issue ${issue.title || issue.id}:`, {
-        error: error.message,
-        issueId: issue.id,
-        issueType: issue.type
-      });
-      throw error;
-    }
-  }
-
-  // Exemplo: envia um projeto e suas issues
-  async pushProjectWithIssues(
-    org: string,
-    repo: string,
-    project: Project,
-    issues: Issue[],
-    allTasks: Issue[] = []
-  ): Promise<{ issueId: string; issueNumber: number; projectItemId: string }[]> {
-    const projectId = await this.pushProject(project);
-    const results: { issueId: string; issueNumber: number; projectItemId: string }[] = [];
-    for (const issue of issues) {
-      const result = await this.pushIssue(
-        org,
-        repo,
-        projectId,
-        issue,
-        allTasks,
-        [],
-        [],
-        []
-      );
-      results.push(result);
-    }
-    return results;
-  }
-
   // Normaliza e valida issues
   public prepareIssues(issues: any[], type: string) {
     for (const issue of issues) {
@@ -157,9 +54,9 @@ export class JiraPushService {
   private normalizeType(type: string): string {
     if (!type) return '';
     const t = type.toLowerCase();
-    if (t === 'epic') return 'Epic';
-    if (t === 'feature' || t === 'story') return 'Feature';
-    if (t === 'task') return 'Task';
+    if (t === 'epic') return ISSUE_TYPES.EPIC;
+    if (t === 'feature' || t === 'story') return ISSUE_TYPES.STORY;
+    if (t === 'subtask') return ISSUE_TYPES.SUBTASK;
     return type;
   }
 
@@ -169,42 +66,26 @@ export class JiraPushService {
     if (!issue.id) throw new Error(`Issue sem id detectada: ${JSON.stringify(issue)}`);
   }
 
-  // Cria issues no Jira
-  public async pushIssues(org: string, repo: string, project: any, issues: any[], allTasks: Issue[] = []) {
-    return await this.pushProjectWithIssues(org, repo, project, issues, allTasks);
-  }
-
-  // Mapeia id MADE -> issueNumber Jira
-  public mapIdToJiraNumber(issues: any[], results: any[]) {
-    const map = new Map<string, number>();
-    issues.forEach((issue, idx) => {
-      if (issue.id && results[idx]) {
-        map.set(issue.id, results[idx].issueNumber);
-      }
-    });
-    return map;
-  }
-
   // Relaciona tasks com suas stories
   public async linkTasksToStories(
     org: string,
     repo: string,
     tasks: any[],
     taskResults: any[],
-    storyIdToJiraNumber: Map<string, number>
+    storyIdToJiraIssueKey: Map<string, number>
   ) {
     for (let i = 0; i < tasks.length; i++) {
       const task = tasks[i];
       const taskResult = taskResults[i];
       const depends = Array.isArray(task.depends) ? task.depends : [];
-      const storyDep = depends.find((dep: any) => storyIdToJiraNumber.has(dep.id));
+      const storyDep = depends.find((dep: any) => storyIdToJiraIssueKey.has(dep.id));
       if (storyDep) {
-        const storyJiraNumber = storyIdToJiraNumber.get(storyDep.id)!;
+        const storyJiraNumber = storyIdToJiraIssueKey.get(storyDep.id)!;
         try {
           await this.linkIssues(
             org,
             repo,
-            taskResult.issueNumber,
+            taskResult.issueKey,
             storyJiraNumber,
             'blocks'
           );
@@ -218,16 +99,16 @@ export class JiraPushService {
     org: string,
     repo: string,
     stories: any[],
-    storyIdToJiraNumber: Map<string, number>,
-    epicIdToJiraNumber: Map<string, number>
+    storyIdToJiraIssueKey: Map<string, number>,
+    epicIdToJiraIssueKey: Map<string, number>
   ) {
     for (let i = 0; i < stories.length; i++) {
       const story = stories[i];
       const depends = Array.isArray(story.depends) ? story.depends : [];
-      const epicDep = depends.find((dep: any) => epicIdToJiraNumber.has(dep.id));
+      const epicDep = depends.find((dep: any) => epicIdToJiraIssueKey.has(dep.id));
       if (epicDep) {
-        const epicJiraNumber = epicIdToJiraNumber.get(epicDep.id)!;
-        const storyJiraNumber = storyIdToJiraNumber.get(story.id)!;
+        const epicJiraNumber = epicIdToJiraIssueKey.get(epicDep.id)!;
+        const storyJiraNumber = storyIdToJiraIssueKey.get(story.id)!;
         try {
           await this.linkIssues(
             org,
@@ -245,18 +126,18 @@ export class JiraPushService {
   async linkIssues(
     organizationName: string,
     repositoryName: string,
-    parentIssueNumber: number,
-    childIssueNumber: number,
+    parentIssueKey: number,
+    childIssueKey: number,
     relation: 'blocks' | 'is blocked by' | 'relates to' = 'blocks'
   ): Promise<void> {
-    const url = `https://api.jira.com/repos/${organizationName}/${repositoryName}/issues/${childIssueNumber}/comments`;
+    const url = `https://api.jira.com/repos/${organizationName}/${repositoryName}/issues/${childIssueKey}/comments`;
     let body = '';
     if (relation === 'blocks') {
-      body = `Depende de #${parentIssueNumber}`;
+      body = `Depende de #${parentIssueKey}`;
     } else if (relation === 'is blocked by') {
-      body = `Bloqueado por #${parentIssueNumber}`;
+      body = `Bloqueado por #${parentIssueKey}`;
     } else {
-      body = `Relacionado a #${parentIssueNumber}`;
+      body = `Relacionado a #${parentIssueKey}`;
     }
     const axios_instance = axiosInstance(JiraTokenManager.getInstance().getToken());
     await axios_instance.post(url, { body });
@@ -287,6 +168,7 @@ export class JiraPushService {
     const newTimeboxes = timeboxes || [];
 
     // Adiciona teams antes do restante do fluxo
+    const memberToJiraAccountId = new Map<string, string>();
     if (teams && teams.length > 0) {
       for (const team of teams) {
         // Process team without checking if already exists
@@ -295,59 +177,69 @@ export class JiraPushService {
           for (const member of team.teamMembers) {
             if (member.email) {
               const accountId = await this.userPushService.getAccountId(member.email)
-              if (accountId) await this.userPushService.addUserToGroup(group.groupId, accountId);
+              if (accountId) {
+                memberToJiraAccountId.set(member.email, accountId);
+                await this.userPushService.addUserToGroup(group.groupId, accountId);
+              }
             }
           }
         }
       }
     }
 
-    // Normaliza e valida issues
-    this.prepareIssues(newTasks, 'Task');
-    this.prepareIssues(newStories, 'Feature');
-    this.prepareIssues(newEpics, 'Epic');
+    // Normaliza e valida as issues
+    this.prepareIssues(newTasks, ISSUE_TYPES.SUBTASK);
+    this.prepareIssues(newStories, ISSUE_TYPES.STORY);
+    this.prepareIssues(newEpics, ISSUE_TYPES.EPIC);
 
-    // 1. Crie Tasks primeiro (são as folhas da árvore de dependências)
-    const taskResults = newTasks.length > 0
-      ? await this.processIssuesInBatches(org, repo, projectId, newTasks, [], [], [], [])
-      : [];
-    const taskIdToJiraId = new Map<string, string>();
-    const taskIdToJiraNumber = new Map<string, number>();
-    newTasks.forEach((task: Issue, idx: number) => {
-      if (task.id && taskResults[idx]) {
-        taskIdToJiraId.set(task.id, taskResults[idx].issueId);
-        taskIdToJiraNumber.set(task.id, taskResults[idx].issueNumber);
-      }
-    });
-    const storyResults = newStories.length > 0
-      ? await this.processIssuesInBatches(org, repo, projectId, newStories, newTasks, [], taskResults, [])
-      : [];
-    const storyIdToJiraId = new Map<string, string>();
-    const storyIdToJiraNumber = new Map<string, number>();
-    newStories.forEach((story: Issue, idx: number) => {
-      if (story.id && storyResults[idx]) {
-        storyIdToJiraId.set(story.id, storyResults[idx].issueId);
-        storyIdToJiraNumber.set(story.id, storyResults[idx].issueNumber);
-      }
-    });
+    // Buscando todas issueTypes
+    const issueTypes = await this.issueTypePushService.getIssueTypes();
+    const projectIssueTypes = issueTypes.filter(type => type.scope && type.scope.project && type.scope.project.id);
+
+    // 1. Criando as Epics (1º nível na hierarquia de Issues)
     const epicResults = newEpics.length > 0
-      ? await this.processIssuesInBatches(org, repo, projectId, newEpics, [], newStories, [], storyResults)
+      ? await this.processIssuesInBatches(projectId, newEpics, projectIssueTypes, new Map<string, string>(), memberToJiraAccountId)
       : [];
-    const epicIdToJiraId = new Map<string, string>();
-    const epicIdToJiraNumber = new Map<string, number>();
+    const epicIdToJiraIssueKey = new Map<string, string>();
     newEpics.forEach((epic: Issue, idx: number) => {
       if (epic.id && epicResults[idx]) {
-        epicIdToJiraId.set(epic.id, epicResults[idx].issueId);
-        epicIdToJiraNumber.set(epic.id, epicResults[idx].issueNumber);
+        epicIdToJiraIssueKey.set(epic.id, epicResults[idx].issueKey);
       }
     });
-    await this.linkTasksToStories(org, repo, newTasks, taskResults, storyIdToJiraNumber);
-    await this.linkStoriesToEpics(org, repo, newStories, storyIdToJiraNumber, epicIdToJiraNumber);
+
+    // 2. Criando as Stories (2º nível na hierarquia de Issues)
+    const storyResults = newStories.length > 0
+      ? await this.processIssuesInBatches(projectId, newStories, projectIssueTypes, epicIdToJiraIssueKey, memberToJiraAccountId)
+      : [];
+    const storyIdToJiraIssueKey = new Map<string, string>();
+    newStories.forEach((story: Issue, idx: number) => {
+      if (story.id && storyResults[idx]) {
+        storyIdToJiraIssueKey.set(story.id, storyResults[idx].issueKey);
+      }
+    });
+
+    // 3. Criando as Tasks (3º nível na hierarquia de Issues)
+    const taskResults = newTasks.length > 0
+      ? await this.processIssuesInBatches(projectId, newTasks, projectIssueTypes, storyIdToJiraIssueKey, memberToJiraAccountId)
+      : [];
+    const taskIdToJiraIssueKey = new Map<string, string>();
+    newTasks.forEach((task: Issue, idx: number) => {
+      if (task.id && taskResults[idx]) {
+        taskIdToJiraIssueKey.set(task.id, taskResults[idx].issueKey);
+      }
+    });
+
+    // 4. Realizando os links entre as issues de acordo com a hierarquia
+    await this.linkTasksToStories(org, repo, newTasks, taskResults, storyIdToJiraIssueKey);
+    await this.linkStoriesToEpics(org, repo, newStories, storyIdToJiraIssueKey, epicIdToJiraIssueKey);
+
+    // Processando os roadmaps
     if (roadmaps && roadmaps.length > 0) {
       await this.processRoadmaps(org, repo, roadmaps);
     }
+    // Processando os timeboxes
     if (newTimeboxes && newTimeboxes.length > 0) {
-      await this.processTimeboxes(org, repo, projectId, newTimeboxes, newTasks, taskIdToJiraNumber);
+      await this.processTimeboxes(org, repo, projectId, newTimeboxes, newTasks, taskIdToJiraIssueKey);
     }
   }
 
@@ -360,7 +252,7 @@ export class JiraPushService {
     projectId: string,
     timeboxes: TimeBox[],
     allTasks: Issue[],
-    taskIdToJiraNumber: Map<string, number>
+    taskIdToJiraIssueKey: Map<string, number>
   ) {
     const timeboxRepo = new GenericRepository<any>('./data/db', 'processed_timeboxes.json');
 
@@ -375,10 +267,10 @@ export class JiraPushService {
         // Criar array de resultados das tasks para referência
         const taskResults = relatedTasks
           .map(task => {
-            const taskNumber = taskIdToJiraNumber.get(task.id);
-            return taskNumber ? { issueId: task.id, issueNumber: taskNumber } : null;
+            const taskNumber = taskIdToJiraIssueKey.get(task.id);
+            return taskNumber ? { issueId: task.id, issueKey: taskNumber } : null;
           })
-          .filter(result => result !== null) as { issueId: string, issueNumber: number }[];
+          .filter(result => result !== null) as { issueId: string, issueKey: number }[];
 
         // Sprint functionality is currently disabled
         Logger.info(`ℹ️ Sprint functionality is disabled. Skipping sprint issue creation for: ${timebox.name}`);
@@ -392,7 +284,7 @@ export class JiraPushService {
         //   taskResults
         // );
 
-        // const taskNumbers = taskResults.map(result => result.issueNumber);
+        // const taskNumbers = taskResults.map(result => result.issueKey);
         // if (taskNumbers.length > 0) {
         //   await this.sprintPushService.addSprintLabelsToTasks(
         //     org,
@@ -440,7 +332,7 @@ export class JiraPushService {
   public async ensureLabels(projectId: string, backlogs?: Backlog[], timeboxes?: TimeBox[], roadmaps?: Roadmap[]) {
     Logger.info('🏷️ Criando labels necessárias...');
     // Label dos tipos de issues
-    const issueTypeLabels = [ISSUE_TYPES.FEATURE, ISSUE_TYPES.TASK, ISSUE_TYPES.EPIC];
+    const issueTypeLabels = Object.values(ISSUE_TYPES);
 
     // Cria labels para cada backlog, se houver
     // Label dos backlog, se houver
@@ -478,26 +370,25 @@ export class JiraPushService {
    * Processa issues em batches para reduzir sobrecarga na API
    */
   private async processIssuesInBatches(
-    org: string,
-    repo: string,
     projectId: string,
     issues: Issue[],
-    allTasks: Issue[] = [],
-    allStories: Issue[] = [],
-    taskResults: { issueId: string, issueNumber: number }[] = [],
-    storyResults: { issueId: string, issueNumber: number }[] = [],
-    batchSize: number = 3 // Reduzir tamanho do batch
-  ): Promise<{ issueId: string; issueNumber: number; projectItemId: string }[]> {
-    const results: { issueId: string; issueNumber: number; projectItemId: string }[] = [];
+    issueTypes: JiraIssueType[],
+    parentIssues: Map<string, string>,
+    members: Map<string, string>,
+    batchSize: number = 3
+  ): Promise<{ issueId: string; issueKey: string; }[]> {
+    const results: { issueId: string; issueKey: string; }[] = [];
 
     for (let i = 0; i < issues.length; i += batchSize) {
       const batch = issues.slice(i, i + batchSize);
 
       try {
-        const batchResults = await Promise.all(
-          batch.map(issue => this.pushIssue(org, repo, projectId, issue, allTasks, allStories, taskResults, storyResults))
-        );
-        results.push(...batchResults);
+        const batchResults = await this.issuePushService.bulkPrepareAndCreateIssues(projectId, issues, issueTypes, parentIssues, members)
+        issues.forEach((issue: Issue, idx: number) => {
+          if (issue.id && batchResults[idx]) {
+            results.push({ issueId: issue.id, issueKey: batchResults[idx].key });
+          }
+        });
 
         // Delay entre batches para evitar rate limiting
         if (i + batchSize < issues.length) {
@@ -505,7 +396,6 @@ export class JiraPushService {
           Logger.info(`⏳ Aguardando ${delay}ms antes do próximo batch...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
-
       } catch (error: any) {
         Logger.error(`❌ Erro no batch ${Math.floor(i / batchSize) + 1}:`, error.message);
 
@@ -513,8 +403,8 @@ export class JiraPushService {
         Logger.info(`🔄 Tentando processar issues individualmente...`);
         for (const issue of batch) {
           try {
-            const result = await this.pushIssue(org, repo, projectId, issue, allTasks, allStories, taskResults, storyResults);
-            results.push(result);
+            const result = await this.issuePushService.prepareAndCreateIssue(projectId, issue, issueTypes, parentIssues, members);
+            results.push({ issueId: issue.id, issueKey: result.key });
 
             // Delay entre issues individuais
             await new Promise(resolve => setTimeout(resolve, 500));

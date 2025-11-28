@@ -146,17 +146,22 @@ export class JiraProjectPushService {
   async createProject(project: JiraProjectInput): Promise<JiraProjectCreated> {
     try {
       // Check for input errors
-      if (!project.name) {
+      if (!project || !project.name) {
         throw new Error(`❌ Jira API errors: Project name does not defined`);
       }
 
-      if (!project.key) {
+      if (!project || !project.key) {
         throw new Error(`❌ Jira API errors: Project key does not defined`);
+      }
+
+      const projectToCreate = {
+        ...project,
+        key: project.key.toUpperCase()
       }
 
       try {
         // Verificando se o projeto existe
-        const response = await this.axiosInstance.get(`/${project.key}`);
+        const response = await this.axiosInstance.get(`/${projectToCreate.key}`);
         const projectData = response.data;
 
         // Check for request errors
@@ -172,7 +177,7 @@ export class JiraProjectPushService {
         }
 
         if (error.response?.status === 404) {
-          const response = await this.axiosInstance.post('', project);
+          const response = await this.axiosInstance.post('', projectToCreate);
           const projectData = response.data;
 
           // Check for request errors
