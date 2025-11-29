@@ -1,4 +1,7 @@
 import { JiraIssuePushService } from '../push/jira/issue.push';
+import { JiraIssueLinkPushService } from '../push/jira/issueLink.push';
+import { JiraIssueLinkTypePushService } from '../push/jira/issueLinkType.push';
+import { JiraIssueType, JiraIssueTypePushService } from '../push/jira/issueType.push';
 import { JiraProjectPushService } from '../push/jira/project.push';
 import { JiraUserPushService } from '../push/jira/user.push';
 // import { JiraSprintPushService } from '../push/jira/sprint.push';
@@ -10,11 +13,12 @@ import { axiosInstance } from '../util/axiosInstance';
 import { GenericRepository } from '../repository/generic.repository';
 import { Logger } from '../util/logger';
 import { ISSUE_TYPES, PROJECT_FIELDS, LABEL_COLORS, STATUS_COLORS, DATA_PATHS, ERROR_MESSAGES } from '../util/constants';
-import { JiraIssueType, JiraIssueTypePushService } from '../push/jira/issueType.push';
 
 // Serviço para enviar modelos MADE para o Jira
 export class JiraPushService {
   private issuePushService: JiraIssuePushService;
+  private issueLinkPushService: JiraIssueLinkPushService;
+  private issueLinkTypePushService: JiraIssueLinkTypePushService;
   private issueTypePushService: JiraIssueTypePushService;
   private projectPushService: JiraProjectPushService;
   private userPushService: JiraUserPushService;
@@ -23,6 +27,8 @@ export class JiraPushService {
 
   constructor() {
     this.issuePushService = new JiraIssuePushService();
+    this.issueLinkPushService = new JiraIssueLinkPushService();
+    this.issueLinkTypePushService = new JiraIssueLinkTypePushService();
     this.issueTypePushService = new JiraIssueTypePushService();
     this.projectPushService = new JiraProjectPushService();
     this.userPushService = new JiraUserPushService();
@@ -64,83 +70,6 @@ export class JiraPushService {
   private validateIssue(issue: any) {
     if (!issue.title) throw new Error(`Issue sem título detectada: ${JSON.stringify(issue)}`);
     if (!issue.id) throw new Error(`Issue sem id detectada: ${JSON.stringify(issue)}`);
-  }
-
-  // Relaciona tasks com suas stories
-  public async linkTasksToStories(
-    org: string,
-    repo: string,
-    tasks: any[],
-    taskResults: any[],
-    storyIdToJiraIssueKey: Map<string, number>
-  ) {
-    for (let i = 0; i < tasks.length; i++) {
-      const task = tasks[i];
-      const taskResult = taskResults[i];
-      const depends = Array.isArray(task.depends) ? task.depends : [];
-      const storyDep = depends.find((dep: any) => storyIdToJiraIssueKey.has(dep.id));
-      if (storyDep) {
-        const storyJiraNumber = storyIdToJiraIssueKey.get(storyDep.id)!;
-        try {
-          await this.linkIssues(
-            org,
-            repo,
-            taskResult.issueKey,
-            storyJiraNumber,
-            'blocks'
-          );
-        } catch { }
-      }
-    }
-  }
-
-  // Relaciona stories com suas epics
-  public async linkStoriesToEpics(
-    org: string,
-    repo: string,
-    stories: any[],
-    storyIdToJiraIssueKey: Map<string, number>,
-    epicIdToJiraIssueKey: Map<string, number>
-  ) {
-    for (let i = 0; i < stories.length; i++) {
-      const story = stories[i];
-      const depends = Array.isArray(story.depends) ? story.depends : [];
-      const epicDep = depends.find((dep: any) => epicIdToJiraIssueKey.has(dep.id));
-      if (epicDep) {
-        const epicJiraNumber = epicIdToJiraIssueKey.get(epicDep.id)!;
-        const storyJiraNumber = storyIdToJiraIssueKey.get(story.id)!;
-        try {
-          await this.linkIssues(
-            org,
-            repo,
-            storyJiraNumber,
-            epicJiraNumber,
-            'blocks'
-          );
-        } catch { }
-      }
-    }
-  }
-
-  // Relaciona duas issues (ex: task -> story)
-  async linkIssues(
-    organizationName: string,
-    repositoryName: string,
-    parentIssueKey: number,
-    childIssueKey: number,
-    relation: 'blocks' | 'is blocked by' | 'relates to' = 'blocks'
-  ): Promise<void> {
-    const url = `https://api.jira.com/repos/${organizationName}/${repositoryName}/issues/${childIssueKey}/comments`;
-    let body = '';
-    if (relation === 'blocks') {
-      body = `Depende de #${parentIssueKey}`;
-    } else if (relation === 'is blocked by') {
-      body = `Bloqueado por #${parentIssueKey}`;
-    } else {
-      body = `Relacionado a #${parentIssueKey}`;
-    }
-    const axios_instance = axiosInstance(JiraTokenManager.getInstance().getToken());
-    await axios_instance.post(url, { body });
   }
 
   public async fullPush(
@@ -192,9 +121,12 @@ export class JiraPushService {
     this.prepareIssues(newStories, ISSUE_TYPES.STORY);
     this.prepareIssues(newEpics, ISSUE_TYPES.EPIC);
 
-    // Buscando todas issueTypes
+    // Buscando todas issueTypes e issueLinkTypes
     const issueTypes = await this.issueTypePushService.getIssueTypes();
     const projectIssueTypes = issueTypes.filter(type => type.scope && type.scope.project && type.scope.project.id);
+    const issueLinkTypes = await this.issueLinkTypePushService.getIssueLinkTypes();
+    const issueLinkType = issueLinkTypes.find(link => link.outward === "blocks")!
+    const issueLinksToCreate: { issueLinkTypeId: string; issueKey: string; parentKey: string }[] = []
 
     // 1. Criando as Epics (1º nível na hierarquia de Issues)
     const epicResults = newEpics.length > 0
@@ -214,7 +146,11 @@ export class JiraPushService {
     const storyIdToJiraIssueKey = new Map<string, string>();
     newStories.forEach((story: Issue, idx: number) => {
       if (story.id && storyResults[idx]) {
-        storyIdToJiraIssueKey.set(story.id, storyResults[idx].issueKey);
+        const issueKey = storyResults[idx].issueKey
+        const parentKey = epicIdToJiraIssueKey.get((story.depends || [])[0]?.id || '')!
+
+        storyIdToJiraIssueKey.set(story.id, issueKey);
+        issueLinksToCreate.push({ issueLinkTypeId: issueLinkType.id, issueKey, parentKey })
       }
     });
 
@@ -225,21 +161,24 @@ export class JiraPushService {
     const taskIdToJiraIssueKey = new Map<string, string>();
     newTasks.forEach((task: Issue, idx: number) => {
       if (task.id && taskResults[idx]) {
-        taskIdToJiraIssueKey.set(task.id, taskResults[idx].issueKey);
+        const issueKey = taskResults[idx].issueKey
+        const parentKey = storyIdToJiraIssueKey.get((task.depends || [])[0]?.id || '')!
+
+        taskIdToJiraIssueKey.set(task.id, issueKey);
+        issueLinksToCreate.push({ issueLinkTypeId: issueLinkType.id, issueKey, parentKey })
       }
     });
 
     // 4. Realizando os links entre as issues de acordo com a hierarquia
-    await this.linkTasksToStories(org, repo, newTasks, taskResults, storyIdToJiraIssueKey);
-    await this.linkStoriesToEpics(org, repo, newStories, storyIdToJiraIssueKey, epicIdToJiraIssueKey);
+    await this.processIssueLinksInBatches(issueLinksToCreate)
 
-    // Processando os roadmaps
-    if (roadmaps && roadmaps.length > 0) {
-      await this.processRoadmaps(org, repo, roadmaps);
-    }
     // Processando os timeboxes
     if (newTimeboxes && newTimeboxes.length > 0) {
       await this.processTimeboxes(org, repo, projectId, newTimeboxes, newTasks, taskIdToJiraIssueKey);
+    }
+    // Processando os roadmaps
+    if (roadmaps && roadmaps.length > 0) {
+      await this.processRoadmaps(org, repo, roadmaps);
     }
   }
 
@@ -314,10 +253,6 @@ export class JiraPushService {
   ) {
     for (const roadmap of roadmaps) {
       try {
-
-        // Criar labels específicas do roadmap
-        await this.roadmapPushService.createRoadmapLabels(org, repo, roadmap);
-
         // Criar milestones do roadmap
         const roadmapResult = await this.roadmapPushService.createRoadmap(org, repo, roadmap);
 
@@ -350,7 +285,7 @@ export class JiraPushService {
     // Labels genéricas para roadmap
     const roadmapGenericLabels = ['type: roadmap', 'type: milestone'];
     // Labels para status de milestones
-    const statusesLabelable = ['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'DELAYED'].map(status => `milestone: ${status.toLowerCase()}`);
+    const milestoneStatusesLabelable = ['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'DELAYED'].map(status => `milestone: ${status.toLowerCase()}`);
     // Labels para status de releases
     const releaseStatuses = ['PLANNED', 'IN_DEVELOPMENT', 'TESTING', 'RELEASED'].map(status => `release: ${status.toLowerCase()}`);
     // Label para o roadmap
@@ -359,7 +294,7 @@ export class JiraPushService {
     const roadmapNameExpressions = roadmapNames.join(', ')
 
     // Criando todas as labels de uma vez
-    await this.issuePushService.ensureLabelExists(projectId, [...issueTypeLabels, ...backlogLabels, ...timeboxLabels, ...timeboxStatusLabels, ...timeboxGenericLabels, ...roadmapGenericLabels, ...roadmapLabels, ...statusesLabelable, ...releaseStatuses]);
+    await this.issuePushService.ensureLabelExists(projectId, [...issueTypeLabels, ...backlogLabels, ...timeboxLabels, ...timeboxStatusLabels, ...timeboxGenericLabels, ...roadmapGenericLabels, ...roadmapLabels, ...milestoneStatusesLabelable, ...releaseStatuses]);
 
     if (roadmapNameExpressions) {
       console.log(`✅ Labels do(s) roadmap(s) "${roadmapNameExpressions}" criadas com sucesso`);
@@ -418,5 +353,52 @@ export class JiraPushService {
 
     Logger.success(`✅ Processamento concluído: ${results.length}/${issues.length} issues processadas com sucesso`);
     return results;
+  }
+
+  /**
+   * Processa issues em batches para reduzir sobrecarga na API
+   */
+  private async processIssueLinksInBatches(
+    issueLinks: { issueLinkTypeId: string; issueKey: string; parentKey: string }[],
+    batchSize: number = 3
+  ): Promise<void> {
+    const results = []
+
+    for (let i = 0; i < issueLinks.length; i += batchSize) {
+      const batch = issueLinks.slice(i, i + batchSize);
+
+      try {
+        const batchResults = await Promise.all(
+          batch.map(issueLink => this.issueLinkPushService.createIssueLink(issueLink.issueLinkTypeId, issueLink.issueKey, issueLink.parentKey))
+        );
+        results.push(...batchResults);
+
+        // Delay entre batches para evitar rate limiting
+        if (i + batchSize < issueLinks.length) {
+          const delay = 1000; // 1 segundo entre batches
+          Logger.info(`⏳ Aguardando ${delay}ms antes do próximo batch...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      } catch (error: any) {
+        Logger.error(`❌ Erro no batch ${Math.floor(i / batchSize) + 1}:`, error.message);
+
+        // Tentar processar individualmente em caso de erro no batch
+        Logger.info(`🔄 Tentando processar os issue links individualmente...`);
+        for (const issue of batch) {
+          try {
+            const result = await this.issueLinkPushService.createIssueLink(issue.issueLinkTypeId, issue.issueKey, issue.parentKey);
+            results.push(result);
+
+            // Delay entre issues individuais
+            await new Promise(resolve => setTimeout(resolve, 500));
+          } catch (individualError: any) {
+            Logger.error(`❌ Falha ao processar o link individual entre as issues ${issue.issueKey} e ${issue.parentKey}:`, individualError.message);
+            // Continuar com as outras issues
+          }
+        }
+      }
+    }
+
+    Logger.success(`✅ Processamento concluído: ${results.length}/${issueLinks.length} issue links processados com sucesso`);
   }
 }

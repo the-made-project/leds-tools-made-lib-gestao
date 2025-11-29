@@ -753,7 +753,7 @@ export class JiraIssuePushService {
    * @return {*}  {string}
    * @memberof JiraIssuePushService
    */
-  private buildDescription(issue: Issue): string{
+  private buildDescription(issue: Issue): string {
     if (issue.type === ISSUE_TYPES.EPIC) return this.buildEpicBody(issue)
     if (issue.type === ISSUE_TYPES.STORY) return this.buildStoryBody(issue)
     if (issue.type === ISSUE_TYPES.SUBTASK) return this.buildSubtaskBody(issue)
