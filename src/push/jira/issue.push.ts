@@ -8,7 +8,7 @@ import { JiraIssueType, JiraIssueTypePushService } from './issueType.push'
 import { JiraProject } from './project.push'
 import { JiraUser, JiraUserPushService } from './user.push'
 import { Logger } from '../../util/logger';
-import { Issue } from '../../model/models';
+import { Issue, Release } from '../../model/models';
 import { ISSUE_TYPES } from '../../util/constants';
 
 // Templates
@@ -741,6 +741,112 @@ export class JiraIssuePushService {
       }
 
       throw error;
+    }
+  }
+
+  /**
+   * @description Assign release issues to a milestone
+   * @author Douglas Lima
+   * @date 29/11/2025
+   * @param {string} projectId
+   * @param {string} versionId
+   * @param {Release[]} releases
+   * @return {*}  {Promise<any>}
+   * @memberof JiraIssuePushService
+   */
+  async assignIssuesToVersion(projectId: string, versionId: string, releases: Release[], issueIdToJiraIssueKey: Map<string, string>): Promise<any> {
+    try {
+      // Check for input errors
+      if (!projectId) {
+        throw new Error(`❌ Jira API errors: Project id not defined`);
+      }
+      if (!versionId) {
+        throw new Error(`❌ Jira API errors: Version id not defined`);
+      }
+      if (!releases || !releases.length) {
+        return;
+      }
+      const delayToAssignReleaseIssues = 500
+
+      for (const release of releases) {
+        console.log(`📎 Atribuindo issues da release "${release.name} - ${release.version}" ao milestone`);
+
+        if (!release.issues || !release.issues.length) {
+          console.log(`ℹ️ Nenhuma issue na release "${release.name} - ${release.version}" para ser assinada ao milestone`);
+          return;
+        }
+
+        const batchResults = await Promise.all(
+          release.issues.map(releaseIssue => {
+            const issueKey = issueIdToJiraIssueKey.get(releaseIssue.id || '');
+
+            if (!issueKey) {
+              console.warn(`⚠️ Issue "${releaseIssue.id} - ${releaseIssue.title}" não encontrada para adicioná-la ao milestone`);
+              return false;
+            }
+
+            return this.assignIssueToVersion(projectId, issueKey, versionId);
+          })
+        );
+
+        const processedIssues = batchResults.reduce((acc, processed) => processed ? acc + 1 : acc, 0)
+        console.log(`✅ Atribuído ${processedIssues} issues da release "${release.name} - ${release.version}" ao milestone`);
+
+        // Apply depay to process issues for each release
+        await new Promise(resolve => setTimeout(resolve, delayToAssignReleaseIssues));
+      }
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * @description Assign release issues to a milestone
+   * @author Douglas Lima
+   * @date 29/11/2025
+   * @private
+   * @param {string} projectId
+   * @param {string} issueKey
+   * @param {string} versionId
+   * @return {*}  {Promise<boolean>}
+   * @memberof JiraIssuePushService
+   */
+  private async assignIssueToVersion(projectId: string, issueKey: string, versionId: string): Promise<boolean> {
+    try {
+      // Check for input errors
+      if (!projectId) {
+        console.error(`❌ Jira API errors: Project id not defined to assign issue to milestone`);
+        return false;
+      }
+      if (!issueKey) {
+        console.error(`❌ Jira API errors: Issue key not defined to assign issue to milestone`);
+        return false;
+      }
+      if (!versionId) {
+        console.error(`❌ Jira API errors: Version id not defined to assign issue to milestone`);
+        return false;
+      }
+
+      const payload = {
+        fields: {
+          fixVersions: [
+            { id: issueKey }
+          ]
+        }
+      };
+      await this.axiosInstance.put(`/${issueKey}`, payload);
+      console.log(`✅ Issue ${issueKey} atribuído ao milestone`);
+
+      return true;
+    } catch (error: any) {
+      console.error(`❌ Erro ao atribuir milestone à issue "${issueKey}":`, error.response?.data || error.message);
+
+      return false;
     }
   }
 

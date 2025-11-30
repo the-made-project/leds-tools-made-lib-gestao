@@ -3,12 +3,11 @@ import { JiraIssueLinkPushService } from '../push/jira/issueLink.push';
 import { JiraIssueLinkTypePushService } from '../push/jira/issueLinkType.push';
 import { JiraIssueType, JiraIssueTypePushService } from '../push/jira/issueType.push';
 import { JiraProjectPushService } from '../push/jira/project.push';
+import { JiraRoadmapPushService } from '../push/jira/roadmap.push';
 import { JiraUserPushService } from '../push/jira/user.push';
 // import { JiraSprintPushService } from '../push/jira/sprint.push';
-// import { JiraRoadmapPushService } from '../push/jira/roadmap.push';
 import { JiraTokenManager } from './JiraTokenManager';
-import { Project, Issue, Backlog, Team, TimeBox, Roadmap } from '../model/models';
-import { getProjectFieldIdByName, setProjectItemField } from '../push/jira/jiraApi';
+import { Project, Issue, Backlog, Team, TimeBox, Roadmap, Release } from '../model/models';
 import { axiosInstance } from '../util/axiosInstance';
 import { GenericRepository } from '../repository/generic.repository';
 import { Logger } from '../util/logger';
@@ -21,9 +20,9 @@ export class JiraPushService {
   private issueLinkTypePushService: JiraIssueLinkTypePushService;
   private issueTypePushService: JiraIssueTypePushService;
   private projectPushService: JiraProjectPushService;
+  private roadmapPushService: JiraRoadmapPushService;
   private userPushService: JiraUserPushService;
   // private sprintPushService: JiraSprintPushService;
-  // private roadmapPushService: JiraRoadmapPushService;
 
   constructor() {
     this.issuePushService = new JiraIssuePushService();
@@ -31,9 +30,9 @@ export class JiraPushService {
     this.issueLinkTypePushService = new JiraIssueLinkTypePushService();
     this.issueTypePushService = new JiraIssueTypePushService();
     this.projectPushService = new JiraProjectPushService();
+    this.roadmapPushService = new JiraRoadmapPushService();
     this.userPushService = new JiraUserPushService();
     // this.sprintPushService = new JiraSprintPushService();
-    // this.roadmapPushService = new JiraRoadmapPushService();
   }
 
   // Cria um projeto no Jira a partir do modelo MADE Project
@@ -98,11 +97,11 @@ export class JiraPushService {
 
     // Adiciona teams antes do restante do fluxo
     const memberToJiraAccountId = new Map<string, string>();
-    if (teams && teams.length > 0) {
+    if (teams && teams.length) {
       for (const team of teams) {
         // Process team without checking if already exists
         const group = await this.userPushService.createOrEnsureUserGroup({ name: team.name, description: team.description });
-        if (team.teamMembers && team.teamMembers.length > 0) {
+        if (team.teamMembers && team.teamMembers.length) {
           for (const member of team.teamMembers) {
             if (member.email) {
               const accountId = await this.userPushService.getAccountId(member.email)
@@ -129,7 +128,7 @@ export class JiraPushService {
     const issueLinksToCreate: { issueLinkTypeId: string; issueKey: string; parentKey: string }[] = []
 
     // 1. Criando as Epics (1º nível na hierarquia de Issues)
-    const epicResults = newEpics.length > 0
+    const epicResults = newEpics.length
       ? await this.processIssuesInBatches(projectId, newEpics, projectIssueTypes, new Map<string, string>(), memberToJiraAccountId)
       : [];
     const epicIdToJiraIssueKey = new Map<string, string>();
@@ -140,7 +139,7 @@ export class JiraPushService {
     });
 
     // 2. Criando as Stories (2º nível na hierarquia de Issues)
-    const storyResults = newStories.length > 0
+    const storyResults = newStories.length
       ? await this.processIssuesInBatches(projectId, newStories, projectIssueTypes, epicIdToJiraIssueKey, memberToJiraAccountId)
       : [];
     const storyIdToJiraIssueKey = new Map<string, string>();
@@ -155,7 +154,7 @@ export class JiraPushService {
     });
 
     // 3. Criando as Tasks (3º nível na hierarquia de Issues)
-    const taskResults = newTasks.length > 0
+    const taskResults = newTasks.length
       ? await this.processIssuesInBatches(projectId, newTasks, projectIssueTypes, storyIdToJiraIssueKey, memberToJiraAccountId)
       : [];
     const taskIdToJiraIssueKey = new Map<string, string>();
@@ -172,13 +171,14 @@ export class JiraPushService {
     // 4. Realizando os links entre as issues de acordo com a hierarquia
     await this.processIssueLinksInBatches(issueLinksToCreate)
 
-    // Processando os timeboxes
-    if (newTimeboxes && newTimeboxes.length > 0) {
-      await this.processTimeboxes(org, repo, projectId, newTimeboxes, newTasks, taskIdToJiraIssueKey);
-    }
     // Processando os roadmaps
-    if (roadmaps && roadmaps.length > 0) {
-      await this.processRoadmaps(org, repo, roadmaps);
+    if (roadmaps && roadmaps.length) {
+      await this.processRoadmaps(projectId, roadmaps, new Map([...epicIdToJiraIssueKey, ...storyIdToJiraIssueKey, ...taskIdToJiraIssueKey]));
+    }
+
+    // Processando os timeboxes
+    if (newTimeboxes && newTimeboxes.length) {
+      await this.processTimeboxes(newTimeboxes, taskIdToJiraIssueKey);
     }
   }
 
@@ -186,12 +186,8 @@ export class JiraPushService {
    * Processa timeboxes (sprints) criando as issues de sprint usando REST API
    */
   public async processTimeboxes(
-    org: string,
-    repo: string,
-    projectId: string,
     timeboxes: TimeBox[],
-    allTasks: Issue[],
-    taskIdToJiraIssueKey: Map<string, number>
+    taskIdToJiraIssueKey: Map<string, string>
   ) {
     const timeboxRepo = new GenericRepository<any>('./data/db', 'processed_timeboxes.json');
 
@@ -209,25 +205,21 @@ export class JiraPushService {
             const taskNumber = taskIdToJiraIssueKey.get(task.id);
             return taskNumber ? { issueId: task.id, issueKey: taskNumber } : null;
           })
-          .filter(result => result !== null) as { issueId: string, issueKey: number }[];
+          .filter(result => result !== null) as { issueId: string, issueKey: string }[];
 
         // Sprint functionality is currently disabled
         Logger.info(`ℹ️ Sprint functionality is disabled. Skipping sprint issue creation for: ${timebox.name}`);
 
         // TODO: Re-enable when sprint functionality is restored
         // const sprintResult = await this.sprintPushService.createSprintIssue(
-        //   org,
-        //   repo,
         //   timebox,
         //   relatedTasks,
         //   taskResults
         // );
 
         // const taskNumbers = taskResults.map(result => result.issueKey);
-        // if (taskNumbers.length > 0) {
+        // if (taskNumbers.length) {
         //   await this.sprintPushService.addSprintLabelsToTasks(
-        //     org,
-        //     repo,
         //     timebox.name,
         //     taskNumbers
         //   );
@@ -247,14 +239,14 @@ export class JiraPushService {
    * Processa roadmaps criando milestones e labels correspondentes
    */
   public async processRoadmaps(
-    org: string,
-    repo: string,
-    roadmaps: Roadmap[]
+    projectId: string,
+    roadmaps: Roadmap[],
+    issueIdToJiraIssueKey: Map<string, string>
   ) {
     for (const roadmap of roadmaps) {
       try {
         // Criar milestones do roadmap
-        const roadmapResult = await this.roadmapPushService.createRoadmap(org, repo, roadmap);
+        const roadmapResult = await this.roadmapPushService.createRoadmap(projectId, roadmap, issueIdToJiraIssueKey);
 
       } catch (error: any) {
         Logger.error(`❌ Erro ao processar roadmap "${roadmap.name}":`, error.message);
@@ -271,15 +263,15 @@ export class JiraPushService {
 
     // Cria labels para cada backlog, se houver
     // Label dos backlog, se houver
-    const backlogLabels = (backlogs && backlogs.length > 0) ? backlogs.map(backlog => backlog.name) : [];
+    const backlogLabels = (backlogs && backlogs.length) ? backlogs.map(backlog => backlog.name) : [];
 
     // Cria labels para as sprints/timeboxes, se houver
     // Label do nome da sprint
-    const timeboxLabels = (timeboxes && timeboxes.length > 0) ? timeboxes.map(timebox => `sprint: ${timebox.name}`) : [];
+    const timeboxLabels = (timeboxes && timeboxes.length) ? timeboxes.map(timebox => `sprint: ${timebox.name}`) : [];
     // Label do status da sprint
-    const timeboxStatusLabels = (timeboxes && timeboxes.length > 0) ? timeboxes.map(timebox => `status: ${timebox.status || 'PLANNED'}`) : [];
+    const timeboxStatusLabels = (timeboxes && timeboxes.length) ? timeboxes.map(timebox => `status: ${timebox.status || 'PLANNED'}`) : [];
     // Label genérica para tipo sprint
-    const timeboxGenericLabels = (timeboxes && timeboxes.length > 0) ? ['type: sprint'] : [];
+    const timeboxGenericLabels = (timeboxes && timeboxes.length) ? ['type: sprint'] : [];
 
     // Cria labels para roadmaps, se houver
     // Labels genéricas para roadmap
@@ -289,12 +281,22 @@ export class JiraPushService {
     // Labels para status de releases
     const releaseStatuses = ['PLANNED', 'IN_DEVELOPMENT', 'TESTING', 'RELEASED'].map(status => `release: ${status.toLowerCase()}`);
     // Label para o roadmap
-    const roadmapNames = (roadmaps && roadmaps.length > 0) ? roadmaps.map(roadmap => roadmap.name ? roadmap.name : '').filter(label => !!label) : [];
+    const roadmapNames = (roadmaps && roadmaps.length) ? roadmaps.map(roadmap => roadmap.name ? roadmap.name : '').filter(label => !!label) : [];
     const roadmapLabels = roadmapNames.map(roadmapName => `roadmap: ${roadmapName}`);
     const roadmapNameExpressions = roadmapNames.join(', ')
 
+    // Label para as releases
+    const roadmapMilestoneReleases = (roadmaps ?? []).reduce((acc: Release[], roadmap) => {
+      (roadmap.milestones ?? []).forEach(milestone => {
+        // Concatena o array de releases deste milestone no acumulador (acc)
+        acc = acc.concat(milestone.releases ?? []);
+      });
+      return acc;
+    }, []);
+    const releaseLabelable = roadmapMilestoneReleases.filter(release => !!release && release.version).map(release => `release: ${release.version}`)
+
     // Criando todas as labels de uma vez
-    await this.issuePushService.ensureLabelExists(projectId, [...issueTypeLabels, ...backlogLabels, ...timeboxLabels, ...timeboxStatusLabels, ...timeboxGenericLabels, ...roadmapGenericLabels, ...roadmapLabels, ...milestoneStatusesLabelable, ...releaseStatuses]);
+    await this.issuePushService.ensureLabelExists(projectId, [...issueTypeLabels, ...backlogLabels, ...timeboxLabels, ...timeboxStatusLabels, ...timeboxGenericLabels, ...roadmapGenericLabels, ...roadmapLabels, ...milestoneStatusesLabelable, ...releaseStatuses, ...releaseLabelable]);
 
     if (roadmapNameExpressions) {
       console.log(`✅ Labels do(s) roadmap(s) "${roadmapNameExpressions}" criadas com sucesso`);
