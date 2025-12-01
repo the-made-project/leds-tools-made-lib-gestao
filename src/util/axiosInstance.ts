@@ -5,7 +5,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const GITHUB_API_URL = 'https://api.github.com/graphql';
-const JIRA_API_URL = 'https://{domain}.atlassian.net/rest/api/3/{resource}';
+const JIRA_API_V3_URL = 'https://{domain}.atlassian.net/rest/api/3/{resource}';
+const JIRA_API_AGILE_URL = 'https://{domain}.atlassian.net/rest/agile/1.0/{resource}';
+
 
 export function axiosInstance(github_token: string) {
     return axios.create({
@@ -17,17 +19,14 @@ export function axiosInstance(github_token: string) {
     });
 }
 
-export function axiosJiraInstance(domain: string, userName: string, apiToken: string, resource: string) {
+export function axiosJiraInstance(domain: string, userName: string, apiToken: string, resource: string, apiAgile: boolean = false) {
+    const jiraApiUrl = apiAgile ? JIRA_API_AGILE_URL : JIRA_API_V3_URL
     return axios.create({
-        baseURL: JIRA_API_URL.replace('{domain}', domain).replace('{resource}', resource),
+        baseURL: jiraApiUrl.replace('{domain}', domain).replace('{resource}', resource),
         headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json',
-            // Authorization: `Basic ${Buffer.from(`${userName}:${apiToken}`).toString('base64')}`,
-        },
-        auth: {
-            username: userName,
-            password: apiToken
+            Authorization: `Basic ${Buffer.from(`${userName}:${apiToken}`).toString('base64')}`,
         }
     });
 }

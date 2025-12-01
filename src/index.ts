@@ -48,8 +48,6 @@ export class ReportManager {
         domain: string,
         userName: string, 
         apiToken: string,
-        org: string,
-        repo: string,
         project: Project,
         epics: Issue[],
         stories: Issue[],
@@ -62,7 +60,7 @@ export class ReportManager {
         JiraTokenManager.initialize(domain, userName, apiToken);
         const pushService = new JiraPushService();
         try {
-            await pushService.fullPush(org, repo, project, epics, stories, tasks, backlogs, teams, timeboxes, roadmaps);
+            await pushService.fullPush(project, epics, stories, tasks, backlogs, teams, timeboxes, roadmaps);
         } catch (error) {
             console.error("Erro durante o push para o Jira:", error);
             throw error;

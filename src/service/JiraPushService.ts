@@ -5,13 +5,10 @@ import { JiraIssueType, JiraIssueTypePushService } from '../push/jira/issueType.
 import { JiraProjectPushService } from '../push/jira/project.push';
 import { JiraRoadmapPushService } from '../push/jira/roadmap.push';
 import { JiraUserPushService } from '../push/jira/user.push';
-// import { JiraSprintPushService } from '../push/jira/sprint.push';
-import { JiraTokenManager } from './JiraTokenManager';
+import { JiraBoardType, JiraSprintPushService } from '../push/jira/sprint.push';
 import { Project, Issue, Backlog, Team, TimeBox, Roadmap, Release } from '../model/models';
-import { axiosInstance } from '../util/axiosInstance';
-import { GenericRepository } from '../repository/generic.repository';
 import { Logger } from '../util/logger';
-import { ISSUE_TYPES, PROJECT_FIELDS, LABEL_COLORS, STATUS_COLORS, DATA_PATHS, ERROR_MESSAGES } from '../util/constants';
+import { ISSUE_TYPES } from '../util/constants';
 
 // Serviço para enviar modelos MADE para o Jira
 export class JiraPushService {
@@ -21,8 +18,8 @@ export class JiraPushService {
   private issueTypePushService: JiraIssueTypePushService;
   private projectPushService: JiraProjectPushService;
   private roadmapPushService: JiraRoadmapPushService;
+  private sprintPushService: JiraSprintPushService;
   private userPushService: JiraUserPushService;
-  // private sprintPushService: JiraSprintPushService;
 
   constructor() {
     this.issuePushService = new JiraIssuePushService();
@@ -31,13 +28,19 @@ export class JiraPushService {
     this.issueTypePushService = new JiraIssueTypePushService();
     this.projectPushService = new JiraProjectPushService();
     this.roadmapPushService = new JiraRoadmapPushService();
+    this.sprintPushService = new JiraSprintPushService();
     this.userPushService = new JiraUserPushService();
-    // this.sprintPushService = new JiraSprintPushService();
   }
 
-  // Cria um projeto no Jira a partir do modelo MADE Project
+  /**
+   * @description Cria um projeto no Jira a partir do modelo MADE Project
+   * @author Douglas Lima
+   * @date 30/11/2025
+   * @param {Project} project
+   * @return {*}  {Promise<string>}
+   * @memberof JiraPushService
+   */
   async pushProject(project: Project): Promise<string> {
-
     // Verifica se o projeto já foi processado para este org específico
     // const projectRepo = new GenericRepository<any>('./data/db', 'processed_projects.json');
 
@@ -47,7 +50,14 @@ export class JiraPushService {
     return projectData.id;
   }
 
-  // Normaliza e valida issues
+  /**
+   * @description Normaliza e valida issues
+   * @author Douglas Lima
+   * @date 30/11/2025
+   * @param {any[]} issues
+   * @param {string} type
+   * @memberof JiraPushService
+   */
   public prepareIssues(issues: any[], type: string) {
     for (const issue of issues) {
       issue.type = this.normalizeType(type);
@@ -55,7 +65,15 @@ export class JiraPushService {
     }
   }
 
-  // Normaliza o campo type
+  /**
+   * @description Normaliza o campo type
+   * @author Douglas Lima
+   * @date 30/11/2025
+   * @private
+   * @param {string} type
+   * @return {*}  {string}
+   * @memberof JiraPushService
+   */
   private normalizeType(type: string): string {
     if (!type) return '';
     const t = type.toLowerCase();
@@ -65,15 +83,36 @@ export class JiraPushService {
     return type;
   }
 
-  // Valida campos obrigatórios
+  /**
+   * @description Valida campos obrigatórios
+   * @author Douglas Lima
+   * @date 30/11/2025
+   * @private
+   * @param {*} issue
+   * @memberof JiraPushService
+   */
   private validateIssue(issue: any) {
     if (!issue.title) throw new Error(`Issue sem título detectada: ${JSON.stringify(issue)}`);
     if (!issue.id) throw new Error(`Issue sem id detectada: ${JSON.stringify(issue)}`);
   }
 
+  /**
+   * @description Apply the process to all Made data
+   * @author Douglas Lima
+   * @date 30/11/2025
+   * @param {string} org
+   * @param {string} repo
+   * @param {Project} project
+   * @param {Issue[]} epics
+   * @param {Issue[]} stories
+   * @param {Issue[]} tasks
+   * @param {Backlog[]} [backlogs]
+   * @param {Team[]} [teams]
+   * @param {TimeBox[]} [timeboxes]
+   * @param {Roadmap[]} [roadmaps]
+   * @memberof JiraPushService
+   */
   public async fullPush(
-    org: string,
-    repo: string,
     project: Project,
     epics: Issue[],
     stories: Issue[],
@@ -178,7 +217,7 @@ export class JiraPushService {
 
     // Processando os timeboxes
     if (newTimeboxes && newTimeboxes.length) {
-      await this.processTimeboxes(newTimeboxes, taskIdToJiraIssueKey);
+      await this.processTimeboxes(projectId, newTimeboxes, taskIdToJiraIssueKey);
     }
   }
 
@@ -186,48 +225,28 @@ export class JiraPushService {
    * Processa timeboxes (sprints) criando as issues de sprint usando REST API
    */
   public async processTimeboxes(
+    projectKey: string,
     timeboxes: TimeBox[],
     taskIdToJiraIssueKey: Map<string, string>
-  ) {
-    const timeboxRepo = new GenericRepository<any>('./data/db', 'processed_timeboxes.json');
+  ): Promise<void> {
+    // const timeboxRepo = new GenericRepository<any>('./data/db', 'processed_timeboxes.json');
 
     for (const timebox of timeboxes) {
       try {
 
-        // Obter as tasks relacionadas a esta sprint
-        const relatedTasks = timebox.sprintItems
-          ? timebox.sprintItems.map(item => item.issue)
-          : [];
+        // Obter as task keys relacionadas a esta sprint
+        const relatedTaskKeys = ((timebox && timebox.sprintItems) ?? []).map(item => item.issue)
+          .map(task => taskIdToJiraIssueKey.get(task.id))
+          .filter(result => !!result) as string[]
 
-        // Criar array de resultados das tasks para referência
-        const taskResults = relatedTasks
-          .map(task => {
-            const taskNumber = taskIdToJiraIssueKey.get(task.id);
-            return taskNumber ? { issueId: task.id, issueKey: taskNumber } : null;
-          })
-          .filter(result => result !== null) as { issueId: string, issueKey: string }[];
+        // Criando a sprint se não houver ainda
+        const sprintId = await this.sprintPushService.createSprint(projectKey, JiraBoardType.scrum, timebox);
 
-        // Sprint functionality is currently disabled
-        Logger.info(`ℹ️ Sprint functionality is disabled. Skipping sprint issue creation for: ${timebox.name}`);
-
-        // TODO: Re-enable when sprint functionality is restored
-        // const sprintResult = await this.sprintPushService.createSprintIssue(
-        //   timebox,
-        //   relatedTasks,
-        //   taskResults
-        // );
-
-        // const taskNumbers = taskResults.map(result => result.issueKey);
-        // if (taskNumbers.length) {
-        //   await this.sprintPushService.addSprintLabelsToTasks(
-        //     timebox.name,
-        //     taskNumbers
-        //   );
-        // }
-
+        if (relatedTaskKeys.length) {
+          await this.sprintPushService.addIssuesToSprint(sprintId, relatedTaskKeys)
+        }
       } catch (error: any) {
         Logger.error(`❌ Erro ao processar timebox "${timebox.name}":`, error.message);
-        // Não interrompe o processo para outras sprints
         continue;
       }
     }
@@ -246,8 +265,7 @@ export class JiraPushService {
     for (const roadmap of roadmaps) {
       try {
         // Criar milestones do roadmap
-        const roadmapResult = await this.roadmapPushService.createRoadmap(projectId, roadmap, issueIdToJiraIssueKey);
-
+        await this.roadmapPushService.createRoadmap(projectId, roadmap, issueIdToJiraIssueKey);
       } catch (error: any) {
         Logger.error(`❌ Erro ao processar roadmap "${roadmap.name}":`, error.message);
         // Não interrompe o processo para outros roadmaps
