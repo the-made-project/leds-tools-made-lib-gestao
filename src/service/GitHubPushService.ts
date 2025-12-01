@@ -11,6 +11,7 @@ import { addMemberToTeam } from '../push/github/teamMember.push';
 import { GenericRepository } from '../repository/generic.repository';
 import { Logger } from '../util/logger';
 import { ISSUE_TYPES, PROJECT_FIELDS, LABEL_COLORS, STATUS_COLORS, DATA_PATHS, ERROR_MESSAGES } from '../util/constants';
+import { IssueAlredyExistsError } from '../push/github/issue.checker';
 
 // Serviço para enviar modelos MADE para o GitHub
 export class GitHubPushService {
@@ -36,8 +37,30 @@ export class GitHubPushService {
     return projectId;
   }
 
-  // Cria uma issue no GitHub a partir do modelo MADE Issue e adiciona ao projeto
   async pushIssue(
+    org: string,
+    repo: string,
+    projectId: string,
+    issue: Issue,
+    allTasks: Issue[] = [],
+    allStories: Issue[] = [],
+    taskResults: { issueId: string, issueNumber: number }[] = [],
+    storyResults: { issueId: string, issueNumber: number }[] = []
+  ): Promise<{ issueId: string; issueNumber: number; projectItemId: string }> {
+    try {
+      return await this._pushIssue(org, repo, projectId, issue, allTasks, allStories, taskResults, storyResults)
+    } catch(e) {
+      if(e instanceof IssueAlredyExistsError) {
+        return {issueId: e.issue_data.number.toString(), issueNumber: e.issue_data.number, projectItemId: e.issue_data.node_id}
+      }
+      else {
+        throw e
+      }
+    }
+  }
+
+  // Cria uma issue no GitHub a partir do modelo MADE Issue e adiciona ao projeto
+  private async _pushIssue(
     org: string,
     repo: string,
     projectId: string,

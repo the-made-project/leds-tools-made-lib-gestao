@@ -3,6 +3,7 @@ import { axiosInstance } from '../../util/axiosInstance';
 import { getRepositoryId, addAssigneesToIssue, addLabelsToLabelable, getLabelIds } from './githubApi';
 import { Issue } from '../../model/models';
 import { Logger } from '../../util/logger';
+import { IssueChecker } from './issue.checker';
 
 // Interface para representar uma Issue no GitHub (resumida para criação)
 export interface GitHubIssueInput {
@@ -20,12 +21,26 @@ export interface GitHubIssueCreated {
 
 export class GitHubIssuePushService {
   private token: string;
+  private issueChecker: IssueChecker;
 
   constructor(token: string) {
     this.token = token;
     if (!this.token) {
       throw new Error('❌ GITHUB_TOKEN não está definido. Configure-o como uma variável de ambiente.');
     }
+
+    const ghorg = process.env.GITHUB_ORG
+    if (!ghorg) {
+      throw new Error('❌ GITHUB_ORG não está definido. Configure-o como uma variável de ambiente.')
+    }
+
+    const repo = process.env.GITHUB_REPO
+    if (!repo) {
+      throw new Error('❌ GITHUB_REPO não está definido. Configure-o como uma variável de ambiente.')
+    }
+
+    this.issueChecker = new IssueChecker(ghorg, repo, token)
+    this.issueChecker.getGitHubIssues()
   }
 
   // Retorna o username do assignee da issue, se existir. Caso contrário, retorna vazio.
@@ -191,6 +206,9 @@ ${observation}
     storyResults: { issueId: string, issueNumber: number }[] = []
   ): Promise<GitHubIssueCreated> {
     const input = this.mapIssueToGitHubInput(issue, allTasks, allStories, taskResults, storyResults);
+    if (this.issueChecker.IssueExistsOnGithub(input)){
+      return this.issueChecker.Issue
+    }
 
     const query = `
       mutation($repositoryId: ID!, $title: String!, $body: String!) {
