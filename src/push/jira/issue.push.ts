@@ -13,7 +13,7 @@ import { ISSUE_TYPES } from '../../util/constants';
 
 // Templates
 const epicBody = fs.readFileSync("JIRA_TEMPLATES/epic.txt", "utf-8");
-const storyBody = fs.readFileSync("JIRA_TEMPLATES/story", "utf-8");
+const storyBody = fs.readFileSync("JIRA_TEMPLATES/story.txt", "utf-8");
 const subtaskBody = fs.readFileSync("JIRA_TEMPLATES/subtask.txt", "utf-8");
 
 /**
@@ -879,7 +879,7 @@ export class JiraIssuePushService {
     // Checklist de stories melhorado
     const storiesMarkdown = '- [ ] (Feature/Story Associada)';
     const criterions = (issue.criterions || []).map(c => `- ${c}`).join('\n') || '- [Adicione critérios de aceitação]';
-    const observation = issue.observation ? `\n## Observações\n${issue.observation}` : '';
+    const observation = issue.observation ? `\nh2. Observações\n${issue.observation}` : '';
 
     return epicBody
       .replace('{{description}}', issue.description || '[Descreva de forma clara e sucinta o propósito da Epic.]')
@@ -902,7 +902,7 @@ export class JiraIssuePushService {
     const requirements = (issue.requirements || []).map(r => `- ${r}`).join('\n') || '- [Adicione requisitos]';
     const tasksMarkdown = '- [ ] (Subtask associada)';
     const criterions = (issue.criterions || []).map(c => `- ${c}`).join('\n') || '- [Adicione critérios de aceitação]';
-    const observation = issue.observation ? `\n## Observações\n${issue.observation}` : '';
+    const observation = issue.observation ? `\nh2. Observações\n${issue.observation}` : '';
 
     return storyBody
       .replace('{{description}}', issue.description || '[Descreva de forma clara e sucinta o propósito da funcionalidade.]')
@@ -923,7 +923,7 @@ export class JiraIssuePushService {
    */
   private buildSubtaskBody(issue: Issue): string {
     const deliverables = (issue.deliverables || []).map(d => `- ${d}`).join('\n') || '- [Adicione entregáveis]';
-    const observation = issue.observation ? `\n## Observações\n${issue.observation}` : '';
+    const observation = issue.observation ? `\nh2. Observações\n${issue.observation}` : '';
 
     return subtaskBody
       .replace('{{description}}', issue.description || '[Descreva de forma clara e sucinta o propósito da tarefa.]')
