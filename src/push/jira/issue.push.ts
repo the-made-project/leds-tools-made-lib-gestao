@@ -8,7 +8,7 @@ import { JiraProject } from './project.push'
 import { JiraUser, JiraUserPushService } from './user.push'
 import { Logger } from '../../util/logger';
 import { Issue, Release } from '../../model/models';
-import { ISSUE_TYPES } from '../../util/constants';
+import { ISSUE_TYPES, ISSUE_TYPES_TRANSLATED } from '../../util/constants';
 import { epicBody, storyBody, subtaskBody } from '../../templates/jira/index'
 
 /**
@@ -635,7 +635,7 @@ export class JiraIssuePushService {
    * @memberof JiraIssuePushService
    */
   private prepareIssueToCreate(projectId: string, issue: Issue, issueTypes: JiraIssueType[], parentIssues: Map<string, string>, members: Map<string, string>): JiraIssueInput {
-    const issueType = issueTypes.find(type => type.name === issue.type)
+    const issueType = issueTypes.find(type => type.untranslatedName === issue.type || ISSUE_TYPES_TRANSLATED[type.untranslatedName] === issue.type)
     const assigneeId = members.get(issue.assignee?.email || '')
     const parentKey = parentIssues.get((issue.depends || [])[0]?.id || '')
 

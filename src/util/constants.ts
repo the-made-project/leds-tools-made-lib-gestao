@@ -18,6 +18,16 @@ export const ISSUE_TYPES = {
   SUBTASK: 'Subtask',
 } as const;
 
+// Issue types translated
+export const ISSUE_TYPES_TRANSLATED: { [key: string]: string } = {
+  'Épico': 'Epic',
+  'Funcionalidade': 'Feature',
+  'História': 'Story', 
+  'Tarefa': 'Task',
+  'Erro': 'Bug',
+  'Subtarefa': 'Subtask',
+} as const;
+
 // Project field names
 export const PROJECT_FIELDS = {
   TYPE: 'Type',
