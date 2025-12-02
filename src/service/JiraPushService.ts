@@ -136,7 +136,7 @@ export class JiraPushService {
     console.log(`ℹ️ Buscando Jira Account Id para ser o Líder do projeto`);
     const userEmail = teams && teams.length && teams[0].teamMembers && teams[0].teamMembers.length ? teams[0].teamMembers[0].email : ''
     const accountId = await this.userPushService.getAccountId(userEmail);
-    console.log(`✅ Jira Account Id do Líder do projeto encontrado`);
+    console.log(`✅ Jira Account Id do Líder do projeto encontrado: userEmail=${userEmail} accountId=${accountId}`);
 
     // O projeto precisa ser criado antes de tudo
     const { key: projectKey, id: projectId } = await this.pushProject(project, accountId || '');

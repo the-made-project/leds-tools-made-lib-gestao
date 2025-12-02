@@ -551,12 +551,12 @@ export class JiraIssuePushService {
    * @memberof JiraIssuePushService
    */
   private async checkIssueExists(issue: JiraIssueInput): Promise<string> {
-    const projectKey = issue?.fields?.project.id;
+    const projectKey = issue?.fields?.project?.id;
     const summary = issue?.fields?.summary;
     const issueTypeId = issue?.fields?.issuetype?.id;
 
     if (!projectKey || !summary || !issueTypeId) {
-      console.error(`❌ Não foi possível verificar a existência da Issue '${summary}': dados insuficientes.`);
+      console.error(`❌ Não foi possível verificar a existência da Issue': dados insuficientes -> projectKey=${projectKey} summary=${summary} issueTypeId=${issueTypeId}.`);
       return '';
     }
 
