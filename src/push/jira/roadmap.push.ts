@@ -65,6 +65,12 @@ export class JiraRoadmapPushService {
     issueIdToJiraIssueKey: Map<string, string>
   ): Promise<JiraRoadmapCreated> {
     try {
+      // Check for input errors
+      if (!projectId) {
+        console.error(`❌ Jira API errors: PRoject Id not defined to create Roadmap`);
+        return { roadmapId: '', milestones: [] };
+      }
+
       console.log(`🗺️ Processando roadmap: ${roadmap.name || 'Unnamed Roadmap'}`);
 
       if (!roadmap.milestones?.length) {
@@ -111,7 +117,14 @@ export class JiraRoadmapPushService {
   }
 
   /**
-   * Cria ou atualiza um milestone
+   * @description Create or update a version/milestone
+   * @author Douglas Lima
+   * @date 02/12/2025
+   * @private
+   * @param {string} projectId
+   * @param {Milestone} version
+   * @return {*}  {Promise<JiraRoadmapProjectVersionCreated>}
+   * @memberof JiraRoadmapPushService
    */
   private async createOrUpdateVersion(projectId: string, version: Milestone): Promise<JiraRoadmapProjectVersionCreated> {
     try {
@@ -122,7 +135,7 @@ export class JiraRoadmapPushService {
       const versionData = versions.find(v => v.name === version.name);
 
       return versionData
-        ? this.updateVersion(projectId, version)
+        ? this.updateVersion(projectId, versionData.id, version)
         : this.createVersion(projectId, version);
     } catch (error: any) {
       console.error(`❌ Erro ao processar milestone "${version.name}":`, error.message);
@@ -130,6 +143,16 @@ export class JiraRoadmapPushService {
     }
   }
 
+  /**
+   * @description Create a version/milestone
+   * @author Douglas Lima
+   * @date 01/12/2025
+   * @private
+   * @param {string} projectId
+   * @param {Milestone} version
+   * @return {*}  {Promise<JiraRoadmapProjectVersionCreated>}
+   * @memberof JiraRoadmapPushService
+   */
   private async createVersion(projectId: string, version: Milestone): Promise<JiraRoadmapProjectVersionCreated> {
     try {
       // Check for input errors
@@ -169,7 +192,18 @@ export class JiraRoadmapPushService {
     }
   }
 
-  private async updateVersion(projectId: string, version: Milestone): Promise<JiraRoadmapProjectVersionCreated> {
+  /**
+   * @description Update version/milestone
+   * @author Douglas Lima
+   * @date 01/12/2025
+   * @private
+   * @param {string} projectId
+   * @param {string} versionId
+   * @param {Milestone} version
+   * @return {*}  {Promise<JiraRoadmapProjectVersionCreated>}
+   * @memberof JiraRoadmapPushService
+   */
+  private async updateVersion(projectId: string, versionId: string, version: Milestone): Promise<JiraRoadmapProjectVersionCreated> {
     try {
       // Check for input errors
       if (!projectId) {
@@ -187,7 +221,7 @@ export class JiraRoadmapPushService {
         released: false,
         startDate: version.startDate
       };
-      const response = await this.axiosVersionInstance.put(`/${version.id}`, payload);
+      const response = await this.axiosVersionInstance.put(`/${versionId}`, payload);
       const versionData = response.data as JiraRoadmapProjectVersionCreated;
 
       if (!versionData) {

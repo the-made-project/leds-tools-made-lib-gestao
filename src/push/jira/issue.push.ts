@@ -1,5 +1,4 @@
 import { AxiosInstance } from 'axios';
-import fs from "fs";
 
 import { JiraTokenManager } from '../../service/JiraTokenManager';
 import { axiosJiraInstance } from '../../util/axiosInstance';
@@ -10,11 +9,7 @@ import { JiraUser, JiraUserPushService } from './user.push'
 import { Logger } from '../../util/logger';
 import { Issue, Release } from '../../model/models';
 import { ISSUE_TYPES } from '../../util/constants';
-
-// Templates
-const epicBody = fs.readFileSync("JIRA_TEMPLATES/epic.txt", "utf-8");
-const storyBody = fs.readFileSync("JIRA_TEMPLATES/story.txt", "utf-8");
-const subtaskBody = fs.readFileSync("JIRA_TEMPLATES/subtask.txt", "utf-8");
+import { epicBody, storyBody, subtaskBody } from '../../templates/jira/index'
 
 /**
  * Known types of MARKS that define inline text formatting and interface
@@ -176,7 +171,7 @@ export interface JiraIssueInput {
     assignee?: {
       id: string
     };
-    description?: JiraADFNode | string;
+    description?: JiraADFNode | Object;
     priority?: {
       id: string;
     };
@@ -247,6 +242,7 @@ export interface JiraIssueBulkCreate {
 export class JiraIssuePushService {
   private axiosInstance: AxiosInstance;
   private axiosLabelInstance: AxiosInstance;
+  private axiosSearchInstance: AxiosInstance;
   private issueTypeInstance: JiraIssueTypePushService = new JiraIssueTypePushService();
   private userInstance: JiraUserPushService = new JiraUserPushService();
 
@@ -254,6 +250,7 @@ export class JiraIssuePushService {
     const jiraTokenManager = JiraTokenManager.getInstance();
     this.axiosInstance = axiosJiraInstance(jiraTokenManager.getDomain(), jiraTokenManager.getUserName(), jiraTokenManager.getApiToken(), 'issue');
     this.axiosLabelInstance = axiosJiraInstance(jiraTokenManager.getDomain(), jiraTokenManager.getUserName(), jiraTokenManager.getApiToken(), 'label');
+    this.axiosSearchInstance = axiosJiraInstance(jiraTokenManager.getDomain(), jiraTokenManager.getUserName(), jiraTokenManager.getApiToken(), 'search');
   }
 
   /**
@@ -334,14 +331,14 @@ export class JiraIssuePushService {
       // Criando issue temporária para adicionar o label
       const issue: JiraIssueInput = {
         fields: {
-          summary: `Temporary issue to create labels ${newLabelsExpression}`,
+          summary: 'Temporary issue to create labels not existing yet',
           project: {
             id: projectId
           },
           issuetype: {
             id: issueTypeId
           },
-          labels: labelNotExistsYet
+          labels: labelNotExistsYet.map(label => label.replace(/ /g, '-'))
         },
         update: {}
       };
@@ -351,7 +348,7 @@ export class JiraIssuePushService {
       // Removendo issue temporária
       await this.deleteIssue(response.key);
     } catch (error: any) {
-      if (error.response?.status === 422) {
+      if (error.response?.status === 422 || error.response?.status === 400) {
         const errorData = error.response.data;
         throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
       }
@@ -402,10 +399,10 @@ export class JiraIssuePushService {
    * @author Douglas Lima
    * @date 31/10/2025
    * @param {string} issueIdOrKey
-   * @return {*}  {Promise<JiraIssue[]>}
+   * @return {*}  {Promise<JiraIssue>}
    * @memberof JiraIssuePushService
    */
-  async getIssue(issueIdOrKey: string): Promise<JiraIssue[]> {
+  async getIssue(issueIdOrKey: string): Promise<JiraIssue> {
     try {
       // Check for input errors
       if (!issueIdOrKey) {
@@ -491,10 +488,9 @@ export class JiraIssuePushService {
   async prepareAndCreateIssue(projectId: string, issue: Issue, issueTypes: JiraIssueType[], parentIssues: Map<string, string>, members: Map<string, string>): Promise<JiraIssueCreated> {
     try {
       const issueData = this.prepareIssueToCreate(projectId, issue, issueTypes, parentIssues, members)
-
       return this.createIssue(issueData)
     } catch (error: any) {
-      if (error.response?.status === 422) {
+      if (error.response?.status === 422 || error.response?.status === 400) {
         const errorData = error.response.data;
         throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
       }
@@ -522,6 +518,11 @@ export class JiraIssuePushService {
         throw new Error(`❌ Jira API errors: Summary, project and issue type are required`);
       }
 
+      // Verifica se a issue ja existe antes de criar
+      const existingKey = await this.checkIssueExists(issue);
+
+      if (existingKey) return this.getIssue(existingKey);
+
       const response = await this.axiosInstance.post('', issue);
       const issueData = response.data;
 
@@ -537,6 +538,54 @@ export class JiraIssuePushService {
       }
 
       throw error;
+    }
+  }
+
+  /**
+   * @description Check issue exists
+   * @author Douglas Lima
+   * @date 01/12/2025
+   * @private
+   * @param {JiraIssueInput} issue
+   * @return {*}  {Promise<string>}
+   * @memberof JiraIssuePushService
+   */
+  private async checkIssueExists(issue: JiraIssueInput): Promise<string> {
+    const projectKey = issue?.fields?.project.id;
+    const summary = issue?.fields?.summary;
+    const issueTypeId = issue?.fields?.issuetype?.id;
+
+    if (!projectKey || !summary || !issueTypeId) {
+      console.error(`❌ Não foi possível verificar a existência da Issue '${summary}': dados insuficientes.`);
+      return '';
+    }
+
+    // 2. Construir a JQL com o Tipo de Issue
+    const jqlQuery = `project = ${projectKey} AND issuetype = ${issueTypeId} AND summary ~ '${summary}'`;
+
+    const searchPayload = {
+      jql: jqlQuery,
+      maxResults: 1
+    };
+
+    try {
+      const response = await this.axiosSearchInstance.post('/jql', searchPayload);
+      const searchData = response.data;
+
+      if (searchData.issues && searchData.issues.length) {
+        const existingIssueKey = searchData.issues[0].id;
+        console.log(`   ✅ Issue com id ${existingIssueKey} já existe. Pulando criação.`);
+        return existingIssueKey;
+      }
+
+      return '';
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        console.error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      return '';
     }
   }
 
@@ -592,7 +641,7 @@ export class JiraIssuePushService {
 
     return {
       fields: {
-        summary: issue.title || '',
+        summary: (issue.title || '').replace(/"/g, '\''),
         project: {
           id: projectId,
         },
@@ -769,10 +818,10 @@ export class JiraIssuePushService {
       const delayToAssignReleaseIssues = 500
 
       for (const release of releases) {
-        console.log(`📎 Atribuindo issues da release "${release.name} - ${release.version}" ao milestone`);
+        console.log(`📎 Atribuindo issues da release "${release.version} - ${release.name || release.description}" ao milestone`);
 
         if (!release.issues || !release.issues.length) {
-          console.log(`ℹ️ Nenhuma issue na release "${release.name} - ${release.version}" para ser assinada ao milestone`);
+          console.log(`ℹ️ Nenhuma issue na release "${release.version} - ${release.name || release.description}" para ser assinada ao milestone`);
           return;
         }
 
@@ -785,12 +834,12 @@ export class JiraIssuePushService {
               return false;
             }
 
-            return this.assignIssueToVersion(projectId, issueKey, versionId);
+            return this.assignIssueToVersion(issueKey, versionId);
           })
         );
 
         const processedIssues = batchResults.reduce((acc, processed) => processed ? acc + 1 : acc, 0)
-        console.log(`✅ Atribuído ${processedIssues} issues da release "${release.name} - ${release.version}" ao milestone`);
+        console.log(`✅ Atribuído ${processedIssues} issues da release "${release.version} - ${release.name || release.description}" ao milestone`);
 
         // Apply depay to process issues for each release
         await new Promise(resolve => setTimeout(resolve, delayToAssignReleaseIssues));
@@ -810,19 +859,14 @@ export class JiraIssuePushService {
    * @author Douglas Lima
    * @date 29/11/2025
    * @private
-   * @param {string} projectId
    * @param {string} issueKey
    * @param {string} versionId
    * @return {*}  {Promise<boolean>}
    * @memberof JiraIssuePushService
    */
-  private async assignIssueToVersion(projectId: string, issueKey: string, versionId: string): Promise<boolean> {
+  private async assignIssueToVersion(issueKey: string, versionId: string): Promise<boolean> {
     try {
       // Check for input errors
-      if (!projectId) {
-        console.error(`❌ Jira API errors: Project id not defined to assign issue to milestone`);
-        return false;
-      }
       if (!issueKey) {
         console.error(`❌ Jira API errors: Issue key not defined to assign issue to milestone`);
         return false;
@@ -835,7 +879,7 @@ export class JiraIssuePushService {
       const payload = {
         fields: {
           fixVersions: [
-            { id: issueKey }
+            { id: versionId }
           ]
         }
       };
@@ -856,10 +900,10 @@ export class JiraIssuePushService {
    * @date 28/11/2025
    * @private
    * @param {Issue} issue
-   * @return {*}  {string}
+   * @return {*}  {Object}
    * @memberof JiraIssuePushService
    */
-  private buildDescription(issue: Issue): string {
+  private buildDescription(issue: Issue): Object {
     if (issue.type === ISSUE_TYPES.EPIC) return this.buildEpicBody(issue)
     if (issue.type === ISSUE_TYPES.STORY) return this.buildStoryBody(issue)
     if (issue.type === ISSUE_TYPES.SUBTASK) return this.buildSubtaskBody(issue)
@@ -872,20 +916,27 @@ export class JiraIssuePushService {
    * @date 28/11/2025
    * @private
    * @param {Issue} issue
-   * @return {*}  {string}
+   * @return {*}  {Object}
    * @memberof JiraIssuePushService
    */
-  private buildEpicBody(issue: Issue): string {
-    // Checklist de stories melhorado
-    const storiesMarkdown = '- [ ] (Feature/Story Associada)';
-    const criterions = (issue.criterions || []).map(c => `- ${c}`).join('\n') || '- [Adicione critérios de aceitação]';
-    const observation = issue.observation ? `\nh2. Observações\n${issue.observation}` : '';
+  private buildEpicBody(issue: Issue): Object {
+    // Converte itens de lista para formato de texto simples (o ADF lidará com a lista se necessário)
+    const criterionsText = (issue.criterions || []).map(c => `* ${c}`).join('\n') || '[Adicione critérios de aceitação]';
+    const observationText = issue.observation || '';
 
-    return epicBody
-      .replace('{{description}}', issue.description || '[Descreva de forma clara e sucinta o propósito da Epic.]')
-      .replace('{{storiesMarkdown}}', storiesMarkdown)
-      .replace('{{criterions}}', criterions)
-      .replace('{{observation}}', observation);
+    // Copia o objeto do template em ADF
+    const adf = JSON.parse(JSON.stringify(epicBody));
+
+    // Substitui a variável {{description}} no primeiro parágrafo
+    adf.content[1].content[0].text = issue.description || '[Descreva de forma clara e sucinta o propósito da Epic.]';
+
+    // Substitui {{criterions}}
+    adf.content[3].content[0].text = criterionsText || adf.content[3].content[0].text;
+
+    // Substitui {{observation}}
+    adf.content[5].content[0].text = observationText || adf.content[5].content[0].text;
+
+    return adf;
   }
 
   /**
@@ -894,22 +945,33 @@ export class JiraIssuePushService {
    * @date 28/11/2025
    * @private
    * @param {Issue} issue
-   * @return {*}  {string}
+   * @return {*}  {Object}
    * @memberof JiraIssuePushService
    */
-  private buildStoryBody(issue: Issue): string {
-    // Checklist de tasks melhorado
-    const requirements = (issue.requirements || []).map(r => `- ${r}`).join('\n') || '- [Adicione requisitos]';
-    const tasksMarkdown = '- [ ] (Subtask associada)';
-    const criterions = (issue.criterions || []).map(c => `- ${c}`).join('\n') || '- [Adicione critérios de aceitação]';
-    const observation = issue.observation ? `\nh2. Observações\n${issue.observation}` : '';
+  private buildStoryBody(issue: Issue): Object {
+    const requirementsText = (issue.requirements || []).map(r => `* ${r}`).join('\n') || '[Adicione requisitos]';
+    const criterionsText = (issue.criterions || []).map(c => `* ${c}`).join('\n') || '[Adicione critérios de aceitação]';
+    const tasksMarkdownText = '* [ ] (Subtask associada)';
+    const observationText = issue.observation || '';
 
-    return storyBody
-      .replace('{{description}}', issue.description || '[Descreva de forma clara e sucinta o propósito da funcionalidade.]')
-      .replace('{{requirements}}', requirements)
-      .replace('{{tasksMarkdown}}', tasksMarkdown)
-      .replace('{{criterions}}', criterions)
-      .replace('{{observation}}', observation);
+    const adf = JSON.parse(JSON.stringify(storyBody));
+
+    // Descrição
+    adf.content[1].content[0].text = issue.description || '[Descreva de forma clara e sucinta o propósito da funcionalidade.]';
+
+    // Requisitos
+    adf.content[3].content[0].text = requirementsText || adf.content[3].content[0].text;
+
+    // Atividades/Tasks
+    adf.content[5].content[0].text = tasksMarkdownText || adf.content[5].content[0].text;
+
+    // Critérios
+    adf.content[7].content[0].text = criterionsText || adf.content[7].content[0].text;
+
+    // Observações
+    adf.content[9].content[0].text = observationText || adf.content[9].content[0].text;
+
+    return adf;
   }
 
   /**
@@ -918,16 +980,24 @@ export class JiraIssuePushService {
    * @date 28/11/2025
    * @private
    * @param {Issue} issue
-   * @return {*}  {string}
+   * @return {*}  {Object}
    * @memberof JiraIssuePushService
    */
-  private buildSubtaskBody(issue: Issue): string {
-    const deliverables = (issue.deliverables || []).map(d => `- ${d}`).join('\n') || '- [Adicione entregáveis]';
-    const observation = issue.observation ? `\nh2. Observações\n${issue.observation}` : '';
+  private buildSubtaskBody(issue: Issue): Object {
+    const deliverablesText = (issue.deliverables || []).map(d => `* ${d}`).join('\n') || '[Adicione entregáveis]';
+    const observationText = issue.observation || '';
 
-    return subtaskBody
-      .replace('{{description}}', issue.description || '[Descreva de forma clara e sucinta o propósito da tarefa.]')
-      .replace('{{deliverables}}', deliverables)
-      .replace('{{observation}}', observation);
+    const adf = JSON.parse(JSON.stringify(subtaskBody));
+
+    // Descrição/Objetivo
+    adf.content[1].content[0].text = issue.description || '[Descreva de forma clara e sucinta o propósito da tarefa.]';
+
+    // Entregáveis
+    adf.content[3].content[0].text = deliverablesText || adf.content[3].content[0].text;
+
+    // Observações
+    adf.content[5].content[0].text = observationText || adf.content[5].content[0].text;
+
+    return adf;
   }
 }

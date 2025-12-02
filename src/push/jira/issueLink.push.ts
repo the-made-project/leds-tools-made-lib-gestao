@@ -56,13 +56,7 @@ export class JiraIssueLinkPushService {
       const issueLink = this.prepareIssueLink(issueLinkTypeId, issueKey, parentKey)
 
       if (issueLink) {
-        const response = await this.axiosInstance.post('', issueLink);
-
-        // Check for request errors
-        if (!response.data) {
-          const errorMessages = response.data.errors.map((err: any) => err.message).join(', ');
-          Logger.error(`❌ Jira API errors: ${errorMessages}`);
-        }
+        await this.axiosInstance.post('', issueLink);
       }
     } catch (error: any) {
       if (error.response?.status === 422) {

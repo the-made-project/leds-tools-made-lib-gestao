@@ -1,15 +1,9 @@
-import fs from "fs";
-
 import { GitHubTokenManager } from '../../service/GitHubTokenManager';
 import { axiosInstance } from '../../util/axiosInstance';
 import { getRepositoryId, addAssigneesToIssue, addLabelsToLabelable, getLabelIds } from './githubApi';
 import { Issue } from '../../model/models';
 import { Logger } from '../../util/logger';
-
-// Templates
-const epicBody = fs.readFileSync("GITHUB_TEMPLATES/epic.md", "utf-8");
-const featureBody = fs.readFileSync("GITHUB_TEMPLATES/feature.md", "utf-8");
-const taskBody = fs.readFileSync("GITHUB_TEMPLATES/task.md", "utf-8");
+import { epicBody, featureBody, taskBody } from '../../templates/github/index'
 
 // Interface para representar uma Issue no GitHub (resumida para criação)
 export interface GitHubIssueInput {
@@ -123,8 +117,8 @@ export class GitHubIssuePushService {
    * Converte um modelo MADE Issue para o modelo de entrada do GitHub
    */
   mapIssueToGitHubInput(
-    issue: Issue, 
-    allTasks: Issue[] = [], 
+    issue: Issue,
+    allTasks: Issue[] = [],
     allStories: Issue[] = [],
     taskResults: { issueId: string, issueNumber: number }[] = [],
     storyResults: { issueId: string, issueNumber: number }[] = []
@@ -200,21 +194,21 @@ export class GitHubIssuePushService {
 
     // Cria a issue
     const axios_instance = axiosInstance(GitHubTokenManager.getInstance().getToken());
-    
+
     try {
       const response = await axios_instance.post('', { query, variables });
-      
+
       // Check for GraphQL errors
       if (response.data?.errors) {
         const errorMessages = response.data.errors.map((err: any) => err.message).join(', ');
         throw new Error(`❌ GraphQL errors: ${errorMessages}`);
       }
-      
+
       const issueData = response.data?.data?.createIssue?.issue;
       if (!issueData) {
         throw new Error('❌ A resposta da API não contém os dados esperados.');
       }
-      
+
       // Process labels and assignees
       return await this.processIssueLabelsAndAssignees(issueData, input, organizationName, repositoryName, assignees);
     } catch (error: any) {

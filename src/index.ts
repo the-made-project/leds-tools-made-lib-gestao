@@ -12,7 +12,7 @@ export class ReportManager {
     public async githubETL(token: string, org: string, project: string) {
         if (!token) throw new Error('GITHUB_TOKEN not set');
         GitHubTokenManager.initialize(token);
-        
+
         const githubService = new GitHubService();
         await githubService.ETLProject(org, project);
         await githubService.ETLIssue(org, project);
@@ -46,7 +46,7 @@ export class ReportManager {
 
     public async jiraPush(
         domain: string,
-        userName: string, 
+        userName: string,
         apiToken: string,
         project: Project,
         epics: Issue[],

@@ -2,7 +2,7 @@ import { JiraIssuePushService } from '../push/jira/issue.push';
 import { JiraIssueLinkPushService } from '../push/jira/issueLink.push';
 import { JiraIssueLinkTypePushService } from '../push/jira/issueLinkType.push';
 import { JiraIssueType, JiraIssueTypePushService } from '../push/jira/issueType.push';
-import { JiraProjectPushService } from '../push/jira/project.push';
+import { JiraProjectCreated, JiraProjectPushService } from '../push/jira/project.push';
 import { JiraRoadmapPushService } from '../push/jira/roadmap.push';
 import { JiraUserPushService } from '../push/jira/user.push';
 import { JiraBoardType, JiraSprintPushService } from '../push/jira/sprint.push';
@@ -37,17 +37,29 @@ export class JiraPushService {
    * @author Douglas Lima
    * @date 30/11/2025
    * @param {Project} project
-   * @return {*}  {Promise<string>}
+   * @param {string} accountId
+   * @return {*}  {Promise<JiraProjectCreated>}
    * @memberof JiraPushService
    */
-  async pushProject(project: Project): Promise<string> {
+  async pushProject(project: Project, accountId: string): Promise<JiraProjectCreated> {
     // Verifica se o projeto já foi processado para este org específico
     // const projectRepo = new GenericRepository<any>('./data/db', 'processed_projects.json');
 
     // Cria o projeto no Jira
-    const projectData = await this.projectPushService.createProject({ key: project.id, name: project.name });
+    const projectData = await this.projectPushService.createProject({
+      key: project.id,
+      name: project.name,
+      projectTypeKey: 'software',
+      projectTemplateKey: 'com.pyxis.greenhopper.jira:gh-simplified-agility-scrum',
+      description: project.description || `Project - ${project.id} ${project.name}`,
+      leadAccountId: accountId,
+      assigneeType: 'UNASSIGNED'
+    });
 
-    return projectData.id;
+    return {
+      id: projectData.id,
+      key: projectData.key
+    } as JiraProjectCreated;
   }
 
   /**
@@ -100,8 +112,6 @@ export class JiraPushService {
    * @description Apply the process to all Made data
    * @author Douglas Lima
    * @date 30/11/2025
-   * @param {string} org
-   * @param {string} repo
    * @param {Project} project
    * @param {Issue[]} epics
    * @param {Issue[]} stories
@@ -122,8 +132,14 @@ export class JiraPushService {
     timeboxes?: TimeBox[],
     roadmaps?: Roadmap[]
   ) {
+    // Definindo o accountId do usuário líder do projeto
+    console.log(`ℹ️ Buscando Jira Account Id para ser o Líder do projeto`);
+    const userEmail = teams && teams.length && teams[0].teamMembers && teams[0].teamMembers.length ? teams[0].teamMembers[0].email : ''
+    const accountId = await this.userPushService.getAccountId(userEmail);
+    console.log(`✅ Jira Account Id do Líder do projeto encontrado`);
+
     // O projeto precisa ser criado antes de tudo
-    const projectId = await this.pushProject(project);
+    const { key: projectKey, id: projectId } = await this.pushProject(project, accountId || '');
 
     // Cria as labels necessárias
     await this.ensureLabels(projectId, backlogs, timeboxes, roadmaps);
@@ -140,13 +156,16 @@ export class JiraPushService {
       for (const team of teams) {
         // Process team without checking if already exists
         const group = await this.userPushService.createOrEnsureUserGroup({ name: team.name, description: team.description });
+
         if (team.teamMembers && team.teamMembers.length) {
+          const usersInGroup = await this.userPushService.getUsersInGroup(group.groupId);
+
           for (const member of team.teamMembers) {
             if (member.email) {
               const accountId = await this.userPushService.getAccountId(member.email)
               if (accountId) {
                 memberToJiraAccountId.set(member.email, accountId);
-                await this.userPushService.addUserToGroup(group.groupId, accountId);
+                if (!usersInGroup.includes(accountId)) await this.userPushService.addUserToGroup(group.groupId, accountId);
               }
             }
           }
@@ -161,7 +180,7 @@ export class JiraPushService {
 
     // Buscando todas issueTypes e issueLinkTypes
     const issueTypes = await this.issueTypePushService.getIssueTypes();
-    const projectIssueTypes = issueTypes.filter(type => type.scope && type.scope.project && type.scope.project.id);
+    const projectIssueTypes = issueTypes.filter(type => type.scope && type.scope.project && type.scope.project.id && type.scope.project.id === projectId);
     const issueLinkTypes = await this.issueLinkTypePushService.getIssueLinkTypes();
     const issueLinkType = issueLinkTypes.find(link => link.outward === "blocks")!
     const issueLinksToCreate: { issueLinkTypeId: string; issueKey: string; parentKey: string }[] = []
@@ -217,7 +236,7 @@ export class JiraPushService {
 
     // Processando os timeboxes
     if (newTimeboxes && newTimeboxes.length) {
-      await this.processTimeboxes(projectId, newTimeboxes, taskIdToJiraIssueKey);
+      await this.processTimeboxes(projectId, projectKey, newTimeboxes, taskIdToJiraIssueKey);
     }
   }
 
@@ -225,14 +244,18 @@ export class JiraPushService {
    * Processa timeboxes (sprints) criando as issues de sprint usando REST API
    */
   public async processTimeboxes(
+    projectId: string,
     projectKey: string,
     timeboxes: TimeBox[],
     taskIdToJiraIssueKey: Map<string, string>
   ): Promise<void> {
+    console.log(`🗺️ Processando TimeBoxes...`);
+
     // const timeboxRepo = new GenericRepository<any>('./data/db', 'processed_timeboxes.json');
 
     for (const timebox of timeboxes) {
       try {
+        console.log(`ℹ️ Inserindo a timebox/sprint: ${timebox.name || 'Unnamed Timebox'}`);
 
         // Obter as task keys relacionadas a esta sprint
         const relatedTaskKeys = ((timebox && timebox.sprintItems) ?? []).map(item => item.issue)
@@ -240,18 +263,20 @@ export class JiraPushService {
           .filter(result => !!result) as string[]
 
         // Criando a sprint se não houver ainda
-        const sprintId = await this.sprintPushService.createSprint(projectKey, JiraBoardType.scrum, timebox);
+        const sprintId = await this.sprintPushService.createSprint(projectId, projectKey, JiraBoardType.scrum, timebox);
 
         if (relatedTaskKeys.length) {
           await this.sprintPushService.addIssuesToSprint(sprintId, relatedTaskKeys)
         }
+
+        console.log(`✅ Timebox/sprint "${timebox.name}" processada com sucesso.`);
       } catch (error: any) {
         Logger.error(`❌ Erro ao processar timebox "${timebox.name}":`, error.message);
         continue;
       }
     }
 
-    Logger.success(`🎉 Processamento de timeboxes concluído!`);
+    Logger.success(`✅ Processamento de timeboxes concluído!`);
   }
 
   /**
@@ -285,22 +310,22 @@ export class JiraPushService {
 
     // Cria labels para as sprints/timeboxes, se houver
     // Label do nome da sprint
-    const timeboxLabels = (timeboxes && timeboxes.length) ? timeboxes.map(timebox => `sprint: ${timebox.name}`) : [];
+    const timeboxLabels = (timeboxes && timeboxes.length) ? timeboxes.map(timebox => `sprint:${timebox.name}`) : [];
     // Label do status da sprint
-    const timeboxStatusLabels = (timeboxes && timeboxes.length) ? timeboxes.map(timebox => `status: ${timebox.status || 'PLANNED'}`) : [];
+    const timeboxStatusLabels = (timeboxes && timeboxes.length) ? timeboxes.map(timebox => `status:${timebox.status || 'PLANNED'}`) : [];
     // Label genérica para tipo sprint
-    const timeboxGenericLabels = (timeboxes && timeboxes.length) ? ['type: sprint'] : [];
+    const timeboxGenericLabels = (timeboxes && timeboxes.length) ? ['type:sprint'] : [];
 
     // Cria labels para roadmaps, se houver
     // Labels genéricas para roadmap
-    const roadmapGenericLabels = ['type: roadmap', 'type: milestone'];
+    const roadmapGenericLabels = ['type:roadmap', 'type:milestone'];
     // Labels para status de milestones
-    const milestoneStatusesLabelable = ['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'DELAYED'].map(status => `milestone: ${status.toLowerCase()}`);
+    const milestoneStatusesLabelable = ['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'DELAYED'].map(status => `milestone:${status.toLowerCase()}`);
     // Labels para status de releases
-    const releaseStatuses = ['PLANNED', 'IN_DEVELOPMENT', 'TESTING', 'RELEASED'].map(status => `release: ${status.toLowerCase()}`);
+    const releaseStatuses = ['PLANNED', 'IN_DEVELOPMENT', 'TESTING', 'RELEASED'].map(status => `release:${status.toLowerCase()}`);
     // Label para o roadmap
     const roadmapNames = (roadmaps && roadmaps.length) ? roadmaps.map(roadmap => roadmap.name ? roadmap.name : '').filter(label => !!label) : [];
-    const roadmapLabels = roadmapNames.map(roadmapName => `roadmap: ${roadmapName}`);
+    const roadmapLabels = roadmapNames.map(roadmapName => `roadmap:${roadmapName}`);
     const roadmapNameExpressions = roadmapNames.join(', ')
 
     // Label para as releases
@@ -333,13 +358,16 @@ export class JiraPushService {
     batchSize: number = 3
   ): Promise<{ issueId: string; issueKey: string; }[]> {
     const results: { issueId: string; issueKey: string; }[] = [];
+    const delay = 1000; // 1 segundo entre batches
 
     for (let i = 0; i < issues.length; i += batchSize) {
       const batch = issues.slice(i, i + batchSize);
 
       try {
-        const batchResults = await this.issuePushService.bulkPrepareAndCreateIssues(projectId, issues, issueTypes, parentIssues, members)
-        issues.forEach((issue: Issue, idx: number) => {
+        const batchResults = await Promise.all(
+          batch.map(issue => this.issuePushService.prepareAndCreateIssue(projectId, issue, issueTypes, parentIssues, members))
+        );
+        batch.forEach((issue: Issue, idx: number) => {
           if (issue.id && batchResults[idx]) {
             results.push({ issueId: issue.id, issueKey: batchResults[idx].key });
           }
@@ -347,7 +375,6 @@ export class JiraPushService {
 
         // Delay entre batches para evitar rate limiting
         if (i + batchSize < issues.length) {
-          const delay = 1000; // 1 segundo entre batches
           Logger.info(`⏳ Aguardando ${delay}ms antes do próximo batch...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
@@ -362,7 +389,7 @@ export class JiraPushService {
             results.push({ issueId: issue.id, issueKey: result.key });
 
             // Delay entre issues individuais
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, delay / 2));
           } catch (individualError: any) {
             Logger.error(`❌ Falha ao processar issue individual ${issue.title || issue.id}:`, individualError.message);
             // Continuar com as outras issues
@@ -383,6 +410,8 @@ export class JiraPushService {
     batchSize: number = 3
   ): Promise<void> {
     const results = []
+
+    console.log(`ℹ️ Realizando os links entres as issues, respeitando a hierarquia entre eles`);
 
     for (let i = 0; i < issueLinks.length; i += batchSize) {
       const batch = issueLinks.slice(i, i + batchSize);

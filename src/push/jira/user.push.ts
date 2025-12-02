@@ -92,13 +92,58 @@ export class JiraUserPushService {
 
       const groupName = userGroup.name.toLowerCase().replace(/ /g, '-')
 
-      const response = await this.axiosUserGroupInstance.get(`?groupname=${groupName}}`);
-      const groupData = response.data
+      try {
+        console.log(`ℹ️ Buscando Jira User Group se exirtir se não cria`);
+        const response = await this.axiosUserGroupInstance.get(`?groupname=${groupName}`);
+        const groupData = response.data
 
-      // Check for request errors
-      if (groupData && groupData.name === groupName) {
-        return groupData
+        // Check for request errors
+        if (groupData && groupData.name === groupName) {
+          console.log(`✅ Jira User Group encontrado com ID ${groupData.groupId}`);
+          return groupData
+        }
+
+        return this.createUserGroup(userGroup);
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          return this.createUserGroup(userGroup);
+        }
+
+        throw error;
       }
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      if (error.response?.status === 400) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * @description Create a user group
+   * @author Douglas Lima
+   * @date 26/11/2025
+   * @param {JiraUserGroupInput} userGroup
+   * @return {*}  {Promise<JiraUserGroup>}
+   * @memberof JiraUserPushService
+   */
+  private async createUserGroup(userGroup: JiraUserGroupInput): Promise<JiraUserGroup> {
+    try {
+      // Check input data
+      if (!userGroup || !userGroup.name) {
+        throw new Error('❌ Group data is not defined');
+      }
+
+      const groupName = userGroup.name.toLowerCase().replace(/ /g, '-')
+
+      console.log(`ℹ️ Criando Jira User Group '${groupName}'`);
 
       const group: JiraUserGroupInput = {
         name: groupName,
@@ -112,9 +157,50 @@ export class JiraUserPushService {
         throw new Error(`❌ Jira API errors: ${errorMessages}`);
       }
 
+      console.log(`✅ Jira User Group '${groupName}' criado com sucesso com ID ${groupResponse.data.groupId}`);
+
       return groupResponse.data
     } catch (error: any) {
+      if (error.response?.status === 400) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * @description Get users in the user group
+   * @author Douglas Lima
+   * @date 26/11/2025
+   * @param {string} groupId
+   * @return {*}  {Promise<string[]>}
+   * @memberof JiraUserPushService
+   */
+  async getUsersInGroup(groupId: string): Promise<string[]> {
+    try {
+      // Check input data
+      if (!groupId) {
+        throw new Error('❌ Group data is not defined');
+      }
+
+      const groupResponse = await this.axiosUserGroupInstance.get(`/member?groupId=${groupId}`);
+
+      // Check for request errors
+      if (!groupResponse.data) {
+        const errorMessages = groupResponse.data.errors.map((err: any) => err.message).join(', ');
+        throw new Error(`❌ Jira API errors: ${errorMessages}`);
+      }
+
+      return groupResponse.data.values.map((user: JiraUser) => user.accountId)
+    } catch (error: any) {
       if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      if (error.response?.status === 400) {
         const errorData = error.response.data;
         throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
       }
@@ -153,9 +239,24 @@ export class JiraUserPushService {
         throw new Error(`❌ Jira API errors: ${errorMessages}`);
       }
 
+      console.log(`✅ User added in the Group with ID ${groupId}`);
+
       return groupResponse.data
     } catch (error: any) {
       if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      if (error.response?.status === 400) {
+        if (error.response?.data && error.response.data.errorMessages && error.response.data.errorMessages.length) {
+          const messageError = error.response.data.errorMessages[0]
+
+          if (messageError.indexOf('Cannot add user. User is already a member of') >= 0) {
+            console.log(`✅ User is already a member of the group with ID ${groupId}`);
+          }
+        }
+
         const errorData = error.response.data;
         throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
       }

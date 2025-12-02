@@ -63,12 +63,12 @@ export class JiraProjectPushService {
       const response = await this.axiosInstance.get(`/${projectIdOrKey}`);
 
       // Check for request errors
-      if (!response.data) {
-        const errorMessages = response.data.errors.map((err: any) => err.message).join(', ');
+      if (response.status === 404) {
+        const errorMessages = response.data.errorMessages.join(', ');
         throw new Error(`❌ Jira API errors: ${errorMessages}`);
       }
 
-      const projectData = response.data;
+      const projectData = response.data.data;
 
       if (!projectData) {
         throw new Error('❌ A resposta da API não contém os dados esperados.');
@@ -79,6 +79,11 @@ export class JiraProjectPushService {
       if (error.response?.status === 422) {
         const errorData = error.response.data;
         throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      if (error.response?.status === 404) {
+        const errorMessages = error.response.data.errorMessages.join(', ');
+        throw new Error(`❌ Jira API errors: ${errorMessages}`);
       }
 
       throw error;
@@ -149,9 +154,20 @@ export class JiraProjectPushService {
       if (!project || !project.name) {
         throw new Error(`❌ Jira API errors: Project name does not defined`);
       }
-
       if (!project || !project.key) {
         throw new Error(`❌ Jira API errors: Project key does not defined`);
+      }
+      if (!project || !project.projectTypeKey) {
+        throw new Error(`❌ Jira API errors: Project TypeKey does not defined`);
+      }
+      if (!project || !project.projectTemplateKey) {
+        throw new Error(`❌ Jira API errors: Project TemplateKey does not defined`);
+      }
+      if (!project || !project.leadAccountId) {
+        throw new Error(`❌ Jira API errors: Project AccountId does not defined`);
+      }
+      if (!project || !project.assigneeType) {
+        throw new Error(`❌ Jira API errors: Project Type does not defined`);
       }
 
       const projectToCreate = {
@@ -160,6 +176,8 @@ export class JiraProjectPushService {
       }
 
       try {
+        console.log(`ℹ️ Buscando projeto ${project!.key} no Jira se existir`);
+
         // Verificando se o projeto existe
         const response = await this.axiosInstance.get(`/${projectToCreate.key}`);
         const projectData = response.data;
@@ -168,6 +186,8 @@ export class JiraProjectPushService {
         if (!projectData) {
           throw new Error('❌ A resposta da API não contém os dados esperados.');
         }
+
+        console.log(`✅ Projeto ${projectData!.key} encontrado com sucesso no Jira com ID ${projectData.id}`);
 
         return projectData
       } catch (error: any) {
@@ -185,12 +205,19 @@ export class JiraProjectPushService {
             throw new Error('❌ A resposta da API não contém os dados esperados.');
           }
 
+          console.log(`✅ Projeto ${projectData!.key} criado com sucesso no Jira com ID ${projectData.id}`);
+
           return projectData
         }
 
         throw error;
       }
     } catch (error: any) {
+      if (error.response?.status === 400) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
       throw error;
     }
   }
