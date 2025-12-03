@@ -1,6 +1,6 @@
 {
   "name": "made-lib-beta-grupo-2",
-  "version": "0.1.32",
+  "version": "0.1.33",
   "description": "Made`s Report Lib",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
