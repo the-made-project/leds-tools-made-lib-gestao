@@ -7,11 +7,13 @@ import { TimeBox } from '../../model/models';
 const JiraBoardTypeName: { [key: string]: string } = {
   scrum: 'Scrum',
   kanban: 'Kanban',
+  simple: 'Simple',
 }
 
 export enum JiraBoardType {
   scrum = 'scrum',
-  kanban = 'kanban'
+  kanban = 'kanban',
+  simple = 'simple'
 }
 
 export interface JiraBoard {
@@ -73,7 +75,7 @@ export class JiraSprintPushService {
    * @return {*}  {Promise<string>}
    * @memberof JiraSprintPushService
    */
-  async createSprint(projectId: string, projectKey: string, type: string, timebox: TimeBox): Promise<string> {
+  async ensureSprintExists(projectId: string, projectKey: string, type: string, timebox: TimeBox): Promise<string> {
     try {
       // Check for input errors
       if (!projectId) {
@@ -102,14 +104,25 @@ export class JiraSprintPushService {
         endDate,
         name
       } = timebox;
+      // Deafult sprint name
+      const nameToDelete = `${projectKey} Sprint 1`
 
       try {
         console.log(`ℹ️ Verificando se a Sprint "${name}" existe.`);
         const searchResponse = await this.axiosBoardInstance.get(`/${boardId}/sprint`);
+
+        // Delete default sprint if exists
+        const sprintToDelete = (searchResponse?.data?.values as JiraSprintSearchOutput[]).find(s => s.name === nameToDelete);
+
+        if (sprintToDelete) {
+          await this.axiosInstance.delete(`/${sprintToDelete.id}`);
+        }
+
+        // Getting existing sprint to update and return it
         const existingSprint = (searchResponse?.data?.values as JiraSprintSearchOutput[]).find(s => s.name === name);
 
         if (existingSprint) {
-          console.log(`   ✅ Sprint '${name}' já existe. ID: ${existingSprint.id}`);
+          console.log(`   ✅ Sprint "${name}" já existe. ID: "${existingSprint.id}"`);
           return existingSprint.id;
         }
       } catch (error) {
@@ -130,7 +143,10 @@ export class JiraSprintPushService {
         };
 
         const createResponse = await this.axiosInstance.post('', createPayload);
-        console.log(`   ✅ Sprint criado com sucesso! ID: ${createResponse.data.id}`);
+        // Ativando a sprint após a criação(isso permite que issues sejam adicionadas)
+        await this.axiosInstance.put(`/${createResponse.data.id}/issue`, { state: 'active' });
+        console.log(`   ✅ Sprint criado com sucesso! ID: "${createResponse.data.id}"`);
+
         return createResponse.data.id;
       } catch (error: any) {
         throw error;
@@ -162,7 +178,7 @@ export class JiraSprintPushService {
         return;
       }
 
-      console.log(`📋 Atribuindo ${jiraIssueKeys.length} issues na Sprint '${sprintId}'`);
+      console.log(`📋 Atribuindo ${jiraIssueKeys.length} issues na Sprint "${sprintId}"`);
 
       const payload = {
         issues: jiraIssueKeys
@@ -170,10 +186,10 @@ export class JiraSprintPushService {
 
       // A resposta de sucesso geralmente é 204 No Content
       await this.axiosInstance.post(`/${sprintId}/issue`, payload);
-      console.log(`   ✅ Todas as Issues atribuídas ao Sprint ${sprintId} com sucesso!`);
+      console.log(`   ✅ Issues atribuídas ao Sprint "${sprintId}" com sucesso!`);
 
     } catch (error: any) {
-      console.error(`   ❌ Tivemos um problema ao atribuir as Issues na Sprint ID '${sprintId}': `, error.response?.data?.errorMessages || error.message);
+      console.error(`   ❌ Tivemos um problema ao atribuir as Issues na Sprint ID "${sprintId}": `, error.response?.data?.errorMessages || error.message);
       return;
     }
   }
@@ -210,20 +226,19 @@ export class JiraSprintPushService {
       }
 
       // Define the defaul board name
-      const boardType = JiraBoardTypeName[type]
-      const boardName = `${projectKey} ${boardType} Board`
+      const boardName = `${projectKey} board`
 
       // Tenta buscar Boards associados ao projeto
       const searchResponse = await this.axiosBoardInstance.get(`?projectKeyOrId=${projectKey}`);
-      const existingBoard = (searchResponse.data.values || []).find((board: JiraBoard) => board.name === boardName && board.type === type);
+      const existingBoard = (searchResponse.data?.values || []).find((board: JiraBoard) => board.name === boardName && board.type === type);
 
       if (existingBoard) {
-        console.log(`   ✅ Board: ${existingBoard.name} já existe. ID: ${existingBoard.id}`);
+        console.log(`   ✅ Board: ${existingBoard.name} já existe. ID: "${existingBoard.id}"`);
         return existingBoard.id;
       }
 
       // Se não existir, cria um novo Board
-      console.log(`   ℹ️ '${boardName}' não encontrada. Criando uma nova...`);
+      console.log(`   ℹ️ "${boardName}" não encontrada. Criando uma nova...`);
 
       // Buscando o filter id para criar a board
       const filterId = await this.ensureFilterExists(projectId, projectKey, type)
@@ -238,7 +253,7 @@ export class JiraSprintPushService {
       };
 
       const createResponse = await this.axiosBoardInstance.post('', createPayload);
-      console.log(`   ✅ Board criado com sucesso! ID: ${createResponse.data.id}`);
+      console.log(`   ✅ Board criado com sucesso! ID: "${createResponse.data.id}"`);
 
       return createResponse.data.id;
     } catch (error: any) {
@@ -299,7 +314,7 @@ export class JiraSprintPushService {
         console.error('    ⚠️ Aviso: Falha ao buscar filtro por nome. Prosseguindo para criação.');
       }
 
-      console.log(`   ℹ️ Filtro '${filterName}' não encontrado. Criando um novo...`);
+      console.log(`   ℹ️ Filtro "${filterName}" não encontrado. Criando um novo...`);
 
       // O Papel de Projeto ID 10000 geralmente corresponde ao 'Administradores' ou 'Usuários' padrão.
       const createPayload = {

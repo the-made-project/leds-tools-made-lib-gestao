@@ -303,7 +303,7 @@ export class JiraIssuePushService {
    * @return {*}  {Promise<any>}
    * @memberof JiraIssuePushService
    */
-  async ensureLabelExists(projectId: string, labels: string[]): Promise<any> {
+  async ensureLabelExists(projectId: string, issueTypeId: string, labels: string[]): Promise<any> {
     try {
       const allLabels = await this.getAllLabels();
       const labelAlreadyExists = labels.filter(label => allLabels.includes(label))
@@ -320,8 +320,6 @@ export class JiraIssuePushService {
       }
 
       const newLabelsExpression = labelNotExistsYet.join(', ')
-      const issueTypes = await this.issueTypeInstance.getIssueTypes();
-      const issueTypeId = issueTypes.find(type => type.name.toLowerCase() === 'task' && type.scope?.project?.id === projectId)?.id;
 
       if (!issueTypeId) {
         Logger.info(`ℹ️ Não foi possível criar a(s) label(s) "${newLabelsExpression}";`);
@@ -342,6 +340,7 @@ export class JiraIssuePushService {
         },
         update: {}
       };
+
       const response = await this.createIssue(issue);
       Logger.success(`✅ Label(s) "${newLabelsExpression}" criada(s) com sucesso`);
 

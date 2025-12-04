@@ -155,26 +155,23 @@ export class JiraPushService {
   ) {
     // Definindo o accountId do usuário líder do projeto
     console.log(`ℹ️ Buscando Jira Account Id para ser o Líder do projeto`);
-    const userEmail =
-      teams &&
-      teams.length &&
-      teams[0].teamMembers &&
-      teams[0].teamMembers.length
-        ? teams[0].teamMembers[0].email
-        : "";
+    const userEmail = teams && teams.length && teams[0].teamMembers && teams[0].teamMembers.length ? teams[0].teamMembers[0].email : "";
     const accountId = await this.userPushService.getAccountId(userEmail);
-    console.log(
-      `✅ Jira Account Id do Líder do projeto encontrado: userEmail=${userEmail} accountId=${accountId}`
-    );
+    console.log(`✅ Jira Account Id do Líder do projeto encontrado: userEmail=${userEmail} accountId=${accountId}`);
 
     // O projeto precisa ser criado antes de tudo
-    const { key: projectKey, id: projectId } = await this.pushProject(
-      project,
-      accountId || ""
-    );
+    const { key: projectKey, id: projectId } = await this.pushProject(project, accountId || "");
+
+    // Buscando todas issueTypes e issueLinkTypes
+    const projectIssueTypes = await this.getAllIssueTypesFromProject(projectId);
+    const issueLinkTypes = await this.issueLinkTypePushService.getIssueLinkTypes();
+    const issueLinkType = issueLinkTypes.find((link) => link.outward === "blocks")!;
+    const issueLinksToCreate: { issueLinkTypeId: string; issueKey: string; parentKey: string; }[] = [];
 
     // Cria as labels necessárias
-    await this.ensureLabels(projectId, backlogs, timeboxes, roadmaps);
+    const issueTypeId = projectIssueTypes.find(type => type.untranslatedName.toLowerCase() === 'task')?.id;
+    console.log(`ℹ️ Criando issues com o issueTypeId=${issueTypeId}`);
+    await this.ensureLabels(projectId, issueTypeId!, backlogs, timeboxes, roadmaps);
 
     // Process all valid issues without existence checking
     const newEpics = epics.filter((issue) => issue.title); // Only include issues with titles
@@ -221,35 +218,15 @@ export class JiraPushService {
     this.prepareIssues(newStories, ISSUE_TYPES.STORY);
     this.prepareIssues(newEpics, ISSUE_TYPES.EPIC);
 
-    // Buscando todas issueTypes e issueLinkTypes
-    const issueTypes = await this.getAllIssueTypesFromProject(projectId);
-    const projectIssueTypes = issueTypes.filter(
-      (type) =>
-        type.scope &&
-        type.scope.project &&
-        type.scope.project.id &&
-        type.scope.project.id === projectId
-    );
-    const issueLinkTypes =
-      await this.issueLinkTypePushService.getIssueLinkTypes();
-    const issueLinkType = issueLinkTypes.find(
-      (link) => link.outward === "blocks"
-    )!;
-    const issueLinksToCreate: {
-      issueLinkTypeId: string;
-      issueKey: string;
-      parentKey: string;
-    }[] = [];
-
     // 1. Criando as Epics (1º nível na hierarquia de Issues)
     const epicResults = newEpics.length
       ? await this.processIssuesInBatches(
-          projectId,
-          newEpics,
-          projectIssueTypes,
-          new Map<string, string>(),
-          memberToJiraAccountId
-        )
+        projectId,
+        newEpics,
+        projectIssueTypes,
+        new Map<string, string>(),
+        memberToJiraAccountId
+      )
       : [];
     const epicIdToJiraIssueKey = new Map<string, string>();
     newEpics.forEach((epic: Issue, idx: number) => {
@@ -261,12 +238,12 @@ export class JiraPushService {
     // 2. Criando as Stories (2º nível na hierarquia de Issues)
     const storyResults = newStories.length
       ? await this.processIssuesInBatches(
-          projectId,
-          newStories,
-          projectIssueTypes,
-          epicIdToJiraIssueKey,
-          memberToJiraAccountId
-        )
+        projectId,
+        newStories,
+        projectIssueTypes,
+        epicIdToJiraIssueKey,
+        memberToJiraAccountId
+      )
       : [];
     const storyIdToJiraIssueKey = new Map<string, string>();
     newStories.forEach((story: Issue, idx: number) => {
@@ -288,12 +265,12 @@ export class JiraPushService {
     // 3. Criando as Tasks (3º nível na hierarquia de Issues)
     const taskResults = newTasks.length
       ? await this.processIssuesInBatches(
-          projectId,
-          newTasks,
-          projectIssueTypes,
-          storyIdToJiraIssueKey,
-          memberToJiraAccountId
-        )
+        projectId,
+        newTasks,
+        projectIssueTypes,
+        storyIdToJiraIssueKey,
+        memberToJiraAccountId
+      )
       : [];
     const taskIdToJiraIssueKey = new Map<string, string>();
     newTasks.forEach((task: Issue, idx: number) => {
@@ -355,8 +332,17 @@ export class JiraPushService {
     for (const timebox of timeboxes) {
       try {
         console.log(
-          `ℹ️ Inserindo a timebox/sprint: ${timebox.name || "Unnamed Timebox"}`
+          `ℹ️ Inserindo a timebox/sprint: "${timebox.name || "Unnamed Timebox"}"`
         );
+
+        /**
+         * TODO
+         * - Em relatedTaskKeys, filtrar apenas as taskes pais das issues contidas em sprintItems
+         * - No Jira, apenas issues do tipo que contenham o nível hieráruico igual a 0 (tasks pais(Story)) podem ser adicionadas a sprints
+         * - Pegar do params a lista de stories e filtrar apenas as stories que sejam pais das subtasks contidas em sprintItems
+         * - Enviar a lista atualizada com as stories para o método addIssuesToSprint
+         * 
+         */
 
         // Obter as task keys relacionadas a esta sprint
         const relatedTaskKeys = ((timebox && timebox.sprintItems) ?? [])
@@ -365,10 +351,10 @@ export class JiraPushService {
           .filter((result) => !!result) as string[];
 
         // Criando a sprint se não houver ainda
-        const sprintId = await this.sprintPushService.createSprint(
+        const sprintId = await this.sprintPushService.ensureSprintExists(
           projectId,
           projectKey,
-          JiraBoardType.scrum,
+          JiraBoardType.simple,
           timebox
         );
 
@@ -423,6 +409,7 @@ export class JiraPushService {
 
   public async ensureLabels(
     projectId: string,
+    issueTypeId: string,
     backlogs?: Backlog[],
     timeboxes?: TimeBox[],
     roadmaps?: Roadmap[]
@@ -474,8 +461,8 @@ export class JiraPushService {
     const roadmapNames =
       roadmaps && roadmaps.length
         ? roadmaps
-            .map((roadmap) => (roadmap.name ? roadmap.name : ""))
-            .filter((label) => !!label)
+          .map((roadmap) => (roadmap.name ? roadmap.name : ""))
+          .filter((label) => !!label)
         : [];
     const roadmapLabels = roadmapNames.map(
       (roadmapName) => `roadmap:${roadmapName}`
@@ -498,7 +485,7 @@ export class JiraPushService {
       .map((release) => `release: ${release.version}`);
 
     // Criando todas as labels de uma vez
-    await this.issuePushService.ensureLabelExists(projectId, [
+    await this.issuePushService.ensureLabelExists(projectId, issueTypeId!, [
       ...issueTypeLabels,
       ...backlogLabels,
       ...timeboxLabels,
@@ -584,8 +571,7 @@ export class JiraPushService {
             await new Promise((resolve) => setTimeout(resolve, delay / 2));
           } catch (individualError: any) {
             Logger.error(
-              `❌ Falha ao processar issue individual ${
-                issue.title || issue.id
+              `❌ Falha ao processar issue individual ${issue.title || issue.id
               }:`,
               individualError.message
             );
@@ -685,23 +671,9 @@ export class JiraPushService {
     const issueTypes = await this.issueTypePushService.getIssueTypesForProject(
       projectId
     );
-    const issuTypesToFilter = [
-      ISSUE_TYPES.EPIC,
-      ISSUE_TYPES.STORY,
-      ISSUE_TYPES.SUBTASK,
-    ];
-    const issueType = issueTypes.filter(
-      (type) =>
-        issuTypesToFilter.includes(type.untranslatedName as any) ||
-        issuTypesToFilter.includes(
-          ISSUE_TYPES_TRANSLATED[type.untranslatedName] as any
-        )
-    );
 
-    if (!issueTypes || issueTypes.length < 3) {
-      console.log(
-        `ℹ️ Identificando os issue types do projeto, tentando buscá-los novamente...`
-      );
+    if (!issueTypes || issueTypes.length < 5) {
+      console.log(`   ℹ️ Identificando os issue types do projeto, tentando buscá-los novamente...`);
       await new Promise((resolve) => setTimeout(resolve, 1500));
       return this.getAllIssueTypesFromProject(projectId);
     }
