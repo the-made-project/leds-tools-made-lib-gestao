@@ -3,7 +3,7 @@ name: ReportifyBot Run
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 19 * * *"   # roda todo dia às 19h UTC (opcional)
+    - cron: "0 16 * * *"   # roda todo dia às 19h UTC (opcional)
 
 jobs:
   run-bot:
