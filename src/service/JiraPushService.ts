@@ -311,7 +311,8 @@ export class JiraPushService {
         projectId,
         projectKey,
         newTimeboxes,
-        taskIdToJiraIssueKey
+        taskIdToJiraIssueKey,
+        issueLinksToCreate
       );
     }
   }
@@ -323,7 +324,8 @@ export class JiraPushService {
     projectId: string,
     projectKey: string,
     timeboxes: TimeBox[],
-    taskIdToJiraIssueKey: Map<string, string>
+    taskIdToJiraIssueKey: Map<string, string>,
+    issueLinksToCreate: { issueLinkTypeId: string; issueKey: string; parentKey: string; }[]
   ): Promise<void> {
     console.log(`🗺️ Processando TimeBoxes...`);
 
@@ -344,10 +346,17 @@ export class JiraPushService {
          * 
          */
 
-        // Obter as task keys relacionadas a esta sprint
+        // Obtendo as story keys relacionadas a esta sprint(deve-se obrigatoriamente ser uma issue de nível hierárquico 0, como uma story)
         const relatedTaskKeys = ((timebox && timebox.sprintItems) ?? [])
           .map((item) => item.issue)
-          .map((task) => taskIdToJiraIssueKey.get(task.id))
+          .map((task) => {
+            // Obtendo a issue key da subtask
+            const issueKey = taskIdToJiraIssueKey.get(task.id)
+            const parentLink = issueLinksToCreate.find(link => link.issueKey === issueKey);
+
+            // Return a parent key (story key) da subtask relacionada à sprint
+            return parentLink ? parentLink.parentKey : null;
+          })
           .filter((result) => !!result) as string[];
 
         // Criando a sprint se não houver ainda
