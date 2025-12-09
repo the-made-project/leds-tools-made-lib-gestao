@@ -1,0 +1,8 @@
+h2. Descrição
+
+{{description}}
+
+h2. Critérios de Aceitação (Feature-Level)
+
+{{criterions}}
+{{observation}}

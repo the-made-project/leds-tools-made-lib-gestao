@@ -38,7 +38,7 @@ export interface JiraProjectInput {
 }
 
 export interface JiraProjectCreated {
-  id: number;
+  id: string;
   key: string;
   self: string
 }
@@ -63,12 +63,12 @@ export class JiraProjectPushService {
       const response = await this.axiosInstance.get(`/${projectIdOrKey}`);
 
       // Check for request errors
-      if (!response.data) {
-        const errorMessages = response.data.errors.map((err: any) => err.message).join(', ');
+      if (response.status === 404) {
+        const errorMessages = response.data.errorMessages.join(', ');
         throw new Error(`❌ Jira API errors: ${errorMessages}`);
       }
 
-      const projectData = response.data;
+      const projectData = response.data.data;
 
       if (!projectData) {
         throw new Error('❌ A resposta da API não contém os dados esperados.');
@@ -79,6 +79,11 @@ export class JiraProjectPushService {
       if (error.response?.status === 422) {
         const errorData = error.response.data;
         throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+
+      if (error.response?.status === 404) {
+        const errorMessages = error.response.data.errorMessages.join(', ');
+        throw new Error(`❌ Jira API errors: ${errorMessages}`);
       }
 
       throw error;
@@ -92,23 +97,45 @@ export class JiraProjectPushService {
    * @return {*}  {Promise<JiraProject[]>}
    * @memberof JiraProjectPushService
    */
-  async getProjects(): Promise<JiraProject[]> {
+  async getProjects(projectName: string = '', startAt: number = 0, maxResults: number = 5): Promise<JiraProject[]> {
     try {
-      const response = await this.axiosInstance.get('/search');
+      return this.getProjectsPaginated(`/search?startAt=${startAt}&maxResults=${maxResults}&query=${encodeURIComponent(`name ~ "${projectName}"`)}`);
 
-      const projectData = response.data?.values;
-
-      if (!projectData) {
-        throw new Error('❌ A resposta da API não contém os dados esperados.');
-      }
-
-      return projectData
     } catch (error: any) {
       if (error.response?.status === 422) {
         const errorData = error.response.data;
         throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
       }
 
+      throw error;
+    }
+  }
+
+  private async getProjectsPaginated(urlSearch: string): Promise<JiraProject[]> {
+    try {
+      const response = await this.axiosInstance.get(urlSearch);
+
+      if (!response.data) {
+        throw new Error('❌ A resposta da API não contém os dados esperados.');
+      }
+      const nextPage = (!response.data.isLast ? [] : await this.getProjectsPaginated(response.data.nextPage));
+      return [...response.data.values, ...nextPage];
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+      }
+      throw error;
+    }
+  }
+
+  async getProjectIdByName(projectName: string): Promise<string> {
+    try {
+      const projects = await this.getProjects(projectName);
+      const project = projects.find(proj => proj.name.toLowerCase() === projectName.toLowerCase());
+      return project ? project.id : '';
+    } catch (error) {
+      console.error('❌ Erro ao buscar projeto pelo nome:', error);
       throw error;
     }
   }
@@ -124,31 +151,69 @@ export class JiraProjectPushService {
   async createProject(project: JiraProjectInput): Promise<JiraProjectCreated> {
     try {
       // Check for input errors
-      if (!project.name) {
+      if (!project || !project.name) {
         throw new Error(`❌ Jira API errors: Project name does not defined`);
       }
-
-      if (!project.key) {
+      if (!project || !project.key) {
         throw new Error(`❌ Jira API errors: Project key does not defined`);
       }
-
-      const response = await this.axiosInstance.post('', project);
-
-      // Check for request errors
-      if (!response.data) {
-        const errorMessages = response.data.errors.map((err: any) => err.message).join(', ');
-        throw new Error(`❌ Jira API errors: ${errorMessages}`);
+      if (!project || !project.projectTypeKey) {
+        throw new Error(`❌ Jira API errors: Project TypeKey does not defined`);
+      }
+      if (!project || !project.projectTemplateKey) {
+        throw new Error(`❌ Jira API errors: Project TemplateKey does not defined`);
+      }
+      if (!project || !project.leadAccountId) {
+        throw new Error(`❌ Jira API errors: Project AccountId does not defined`);
+      }
+      if (!project || !project.assigneeType) {
+        throw new Error(`❌ Jira API errors: Project Type does not defined`);
       }
 
-      const projectData = response.data;
-
-      if (!projectData) {
-        throw new Error('❌ A resposta da API não contém os dados esperados.');
+      const projectToCreate = {
+        ...project,
+        key: project.key.toUpperCase()
       }
 
-      return projectData
+      try {
+        console.log(`ℹ️ Buscando projeto "${projectToCreate!.key}" no Jira se existir`);
+
+        // Verificando se o projeto existe
+        const response = await this.axiosInstance.get(`/${projectToCreate.key}`);
+        const projectData = response.data;
+
+        // Check for request errors
+        if (!projectData) {
+          throw new Error('❌ A resposta da API não contém os dados esperados.');
+        }
+
+        console.log(`✅ Projeto "${projectData!.key}" encontrado com sucesso no Jira com ID "${projectData.id}"`);
+
+        return projectData
+      } catch (error: any) {
+        if (error.response?.status === 422) {
+          const errorData = error.response.data;
+          throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+        }
+
+        if (error.response?.status === 404) {
+          const response = await this.axiosInstance.post('', projectToCreate);
+          const projectData = response.data;
+
+          // Check for request errors
+          if (!projectData) {
+            throw new Error('❌ A resposta da API não contém os dados esperados.');
+          }
+
+          console.log(`✅ Projeto "${projectData!.key}" criado com sucesso no Jira com ID "${projectData.id}"`);
+
+          return projectData
+        }
+
+        throw error;
+      }
     } catch (error: any) {
-      if (error.response?.status === 422) {
+      if (error.response?.status === 400) {
         const errorData = error.response.data;
         throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
       }

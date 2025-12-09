@@ -1,7 +1,7 @@
-import { AxiosInstance } from 'axios';
+import { AxiosInstance } from "axios";
 
-import { JiraTokenManager } from '../../service/JiraTokenManager';
-import { axiosJiraInstance } from '../../util/axiosInstance';
+import { JiraTokenManager } from "../../service/JiraTokenManager";
+import { axiosJiraInstance } from "../../util/axiosInstance";
 
 export interface JiraIssueType {
   id: string;
@@ -16,8 +16,8 @@ export interface JiraIssueType {
     type: "PROJECT";
     project: {
       id: string;
-    }
-  }
+    };
+  };
   self: string;
 }
 
@@ -41,14 +41,14 @@ export interface JiraIssueTypeCreated {
       name: string;
       self: string;
       projectTypeKey: string;
-      projectCategory: {},
-      avatarUrls: {},
-      simplified: boolean
-    },
+      projectCategory: {};
+      avatarUrls: {};
+      simplified: boolean;
+    };
     type: "PROJECT";
-  },
+  };
   self: string;
-  subtask: boolean
+  subtask: boolean;
 }
 
 export class JiraIssueTypePushService {
@@ -56,7 +56,12 @@ export class JiraIssueTypePushService {
 
   constructor() {
     const jiraTokenManager = JiraTokenManager.getInstance();
-    this.axiosInstance = axiosJiraInstance(jiraTokenManager.getDomain(), jiraTokenManager.getUserName(), jiraTokenManager.getApiToken(), 'issuetype');
+    this.axiosInstance = axiosJiraInstance(
+      jiraTokenManager.getDomain(),
+      jiraTokenManager.getUserName(),
+      jiraTokenManager.getApiToken(),
+      "issuetype"
+    );
   }
 
   /**
@@ -68,24 +73,64 @@ export class JiraIssueTypePushService {
    */
   async getIssueTypes(): Promise<JiraIssueType[]> {
     try {
-      const response = await this.axiosInstance.get('');
+      const response = await this.axiosInstance.get("");
 
       // Check for request errors
       if (!response.data) {
-        const errorMessages = response.data.errors.map((err: any) => err.message).join(', ');
+        const errorMessages = response.data.errors
+          .map((err: any) => err.message)
+          .join(", ");
         throw new Error(`❌ Jira API errors: ${errorMessages}`);
       }
 
-      const issueTypeData = response.data;
+      const issueTypeData = response.data as JiraIssueType[];
       if (!issueTypeData) {
-        throw new Error('❌ A resposta da API não contém os dados esperados.');
+        throw new Error("❌ A resposta da API não contém os dados esperados.");
       }
 
-      return issueTypeData
+      return issueTypeData;
     } catch (error: any) {
       if (error.response?.status === 422) {
         const errorData = error.response.data;
-        throw new Error(`❌ Validation error (422): ${JSON.stringify(errorData)}. Check issue title, body length, or repository permissions.`);
+        throw new Error(
+          `❌ Validation error (422): ${JSON.stringify(
+            errorData
+          )}. Check issue title, body length, or repository permissions.`
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  async getIssueTypesForProject(projectId: string): Promise<JiraIssueType[]> {
+    try {
+      const response = await this.axiosInstance.get(
+        `/project?projectId=${projectId}`
+      );
+
+      // Check for request errors
+      if (!response.data) {
+        const errorMessages = response.data.errors
+          .map((err: any) => err.message)
+          .join(", ");
+        throw new Error(`❌ Jira API errors: ${errorMessages}`);
+      }
+
+      const issueTypeData = response.data as JiraIssueType[];
+      if (!issueTypeData) {
+        throw new Error("❌ A resposta da API não contém os dados esperados.");
+      }
+
+      return issueTypeData;
+    } catch (error: any) {
+      if (error.response?.status === 422) {
+        const errorData = error.response.data;
+        throw new Error(
+          `❌ Validation error (422): ${JSON.stringify(
+            errorData
+          )}. Check issue title, body length, or repository permissions.`
+        );
       }
 
       throw error;
