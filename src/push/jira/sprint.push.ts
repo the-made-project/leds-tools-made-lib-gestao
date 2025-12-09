@@ -116,6 +116,7 @@ export class JiraSprintPushService {
 
         if (sprintToDelete) {
           await this.axiosInstance.delete(`/${sprintToDelete.id}`);
+          console.log(`   ℹ️ Removido a Sprint padrão "${nameToDelete}" para criar pelo made.`);
         }
 
         // Getting existing sprint to update and return it
@@ -142,12 +143,20 @@ export class JiraSprintPushService {
           originBoardId: boardId
         };
 
+        console.log(`ℹ️ Criando Sprint "${name}"`);
         const createResponse = await this.axiosInstance.post('', createPayload);
-        // Ativando a sprint após a criação(isso permite que issues sejam adicionadas)
-        await this.axiosInstance.put(`/${createResponse.data.id}/issue`, { state: 'active' });
-        console.log(`   ✅ Sprint criado com sucesso! ID: "${createResponse.data.id}"`);
+        const sprintData = createResponse.data;
 
-        return createResponse.data.id;
+        // // Ativando a sprint após a criação(isso permite que issues sejam adicionadas)
+        // try {
+        //   if (sprintData && sprintData.id) await this.axiosInstance.put(`/${sprintData.id}`, { state: 'active' });
+        // } catch (error: any) {
+        //   console.log(`   ℹ️ Não foi possível ativar a Sprint "${name}".`, error.response?.data?.errorMessages || error.message);
+        // }
+
+        console.log(`   ✅ Sprint criado com sucesso! ID: "${sprintData.id}"`);
+
+        return sprintData.id;
       } catch (error: any) {
         throw error;
       }

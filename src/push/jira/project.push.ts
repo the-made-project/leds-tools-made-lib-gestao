@@ -176,7 +176,7 @@ export class JiraProjectPushService {
       }
 
       try {
-        console.log(`ℹ️ Buscando projeto ${project!.key} no Jira se existir`);
+        console.log(`ℹ️ Buscando projeto "${projectToCreate!.key}" no Jira se existir`);
 
         // Verificando se o projeto existe
         const response = await this.axiosInstance.get(`/${projectToCreate.key}`);
@@ -187,7 +187,7 @@ export class JiraProjectPushService {
           throw new Error('❌ A resposta da API não contém os dados esperados.');
         }
 
-        console.log(`✅ Projeto ${projectData!.key} encontrado com sucesso no Jira com ID ${projectData.id}`);
+        console.log(`✅ Projeto "${projectData!.key}" encontrado com sucesso no Jira com ID "${projectData.id}"`);
 
         return projectData
       } catch (error: any) {
@@ -205,7 +205,7 @@ export class JiraProjectPushService {
             throw new Error('❌ A resposta da API não contém os dados esperados.');
           }
 
-          console.log(`✅ Projeto ${projectData!.key} criado com sucesso no Jira com ID ${projectData.id}`);
+          console.log(`✅ Projeto "${projectData!.key}" criado com sucesso no Jira com ID "${projectData.id}"`);
 
           return projectData
         }

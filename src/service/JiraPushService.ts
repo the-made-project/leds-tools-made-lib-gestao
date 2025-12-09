@@ -337,17 +337,16 @@ export class JiraPushService {
           `ℹ️ Inserindo a timebox/sprint: "${timebox.name || "Unnamed Timebox"}"`
         );
 
-        /**
-         * TODO
-         * - Em relatedTaskKeys, filtrar apenas as taskes pais das issues contidas em sprintItems
-         * - No Jira, apenas issues do tipo que contenham o nível hieráruico igual a 0 (tasks pais(Story)) podem ser adicionadas a sprints
-         * - Pegar do params a lista de stories e filtrar apenas as stories que sejam pais das subtasks contidas em sprintItems
-         * - Enviar a lista atualizada com as stories para o método addIssuesToSprint
-         * 
-         */
+        // Criando a sprint se não houver ainda
+        const sprintId = await this.sprintPushService.ensureSprintExists(
+          projectId,
+          projectKey,
+          JiraBoardType.simple,
+          timebox
+        );
 
         // Obtendo as story keys relacionadas a esta sprint(deve-se obrigatoriamente ser uma issue de nível hierárquico 0, como uma story)
-        const relatedTaskKeys = ((timebox && timebox.sprintItems) ?? [])
+        const relatedStoryKeys = ((timebox && timebox.sprintItems) ?? [])
           .map((item) => item.issue)
           .map((task) => {
             // Obtendo a issue key da subtask
@@ -359,18 +358,14 @@ export class JiraPushService {
           })
           .filter((result) => !!result) as string[];
 
-        // Criando a sprint se não houver ainda
-        const sprintId = await this.sprintPushService.ensureSprintExists(
-          projectId,
-          projectKey,
-          JiraBoardType.simple,
-          timebox
-        );
+        // Criando um array único de issue keys relacionadas à sprint
+        const relatedIssueKeys = Array.from(new Set(relatedStoryKeys));
 
-        if (relatedTaskKeys.length) {
+        // Se existir issues relacionadas, adiciona-as à sprint
+        if (relatedIssueKeys.length) {
           await this.sprintPushService.addIssuesToSprint(
             sprintId,
-            relatedTaskKeys
+            relatedIssueKeys
           );
         }
 
